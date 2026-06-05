@@ -1,0 +1,10 @@
+Đề tài số 3 :  Quản lý nhân  sự  và chấm công 
+-  Nhóm  7  Phụ  trách về :   HR Core Service ( Nhóm  3 đình phụ trách)
+- Nhóm 8 : Attendance Service 
+- Nhóm 9 :  Payroll & Report Service
+
+
+
+
+============================================
+Link Phan cong: https://docs.google.com/spreadsheets/d/1tUK5imlO7z20d8BExonoU6tLs7vTW0nrSHjYYTdzx4g/edit?gid=0#gid=0
