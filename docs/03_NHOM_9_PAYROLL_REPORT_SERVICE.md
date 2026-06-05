@@ -42,7 +42,7 @@ Trách nhiệm:
 
 Task checklist:
 
-- [ ] Tạo project Payroll & Report theo skeleton nhóm 7.
+- [x] Tạo project Payroll & Report theo skeleton nhóm 7.
 - [ ] Tạo DbContext Payroll.
 - [ ] Tạo entity `EmployeeProjection`.
 - [ ] Tạo entity `AttendanceProjection`.
@@ -387,4 +387,3 @@ UI smoke:
 - [ ] Test chính pass.
 - [ ] Tài liệu API/event cập nhật.
 - [ ] Demo flow Payroll/Report thành công.
-
