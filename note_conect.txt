@@ -1,0 +1,23 @@
+Tóm lại bây giờ bạn có 2 nơi DB:
+
+SQL Server local:  localhost
+SQL Server Docker: localhost,1434
+Từ giờ nếu chạy theo Docker thì dùng connection string kiểu:
+
+Server=localhost,1434;Database=HRMS_HrCoreDb;User Id=sa;Password=Hrms@12345
+
+
+
+Xem Db trong SQL server:
+Thông tin kết nối:
+
+Server name: localhost,1434
+Authentication: SQL Server Authentication
+Login: sa
+Password: Hrms@123456789
+Trust server certificate: tick/bật
+
+
+Cach xem DB Tren Termial : 
+
+sqlcmd -S localhost,1434 -U sa -P "Hrms@123456789" -C -d HRMS_PayrollReportDb -Q "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES ORDER BY TABLE_NAME"
