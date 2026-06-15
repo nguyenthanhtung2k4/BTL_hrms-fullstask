@@ -2,6 +2,7 @@ using Hrms.Contracts.Api;
 using Hrms.Contracts.Events;
 using Hrms.HrCore.Application;
 using Hrms.HrCore.Infrastructure;
+using Hrms.HrCore.Infrastructure.Persistence;
 using Hrms.Shared.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,10 +10,18 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
+builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks();
 
 var app = builder.Build();
+
+// Seed Database on Startup
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<HrDbContext>();
+    await DbInitializer.SeedAsync(context);
+}
 
 app.UseMiddleware<ExceptionMiddleware>();
 
@@ -22,7 +31,9 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+app.MapControllers();
 app.MapHealthChecks("/health");
+
 
 var group = app.MapGroup("/api/hr").WithTags("HR Core");
 
