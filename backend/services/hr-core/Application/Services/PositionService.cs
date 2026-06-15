@@ -142,7 +142,8 @@ public class PositionService : IPositionService
             Description: p.Description,
             IsActive: p.IsActive,
             CreatedAt: p.CreatedAt,
-            UpdatedAt: p.LastModifiedAt
+            UpdatedAt: p.UpdatedAt
         );
     }
+
 }

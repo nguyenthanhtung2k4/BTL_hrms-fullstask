@@ -16,6 +16,8 @@ public class Employee : AuditableEntity
     public Guid DepartmentId { get; set; }
     public Guid PositionId { get; set; }
     public Guid? ManagerEmployeeId { get; set; }
+    public string Status { get; set; } = "Active";
+
 
     // Navigation properties
     public Department Department { get; set; } = null!;

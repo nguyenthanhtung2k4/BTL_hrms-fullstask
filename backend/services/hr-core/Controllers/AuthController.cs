@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Hrms.HrCore.Controllers;
 
 [ApiController]
-[Route("api/hr/auth")]
+[Route("api/v1/hr/auth")]
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;

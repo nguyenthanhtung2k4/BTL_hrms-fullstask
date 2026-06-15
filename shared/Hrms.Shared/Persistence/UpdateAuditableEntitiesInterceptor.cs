@@ -41,14 +41,13 @@ public class UpdateAuditableEntitiesInterceptor : SaveChangesInterceptor
             if (entry.State == EntityState.Added)
             {
                 entry.Entity.CreatedAt = DateTime.UtcNow;
-                entry.Entity.CreatedBy = email;
             }
 
             if (entry.State == EntityState.Added || entry.State == EntityState.Modified)
             {
-                entry.Entity.LastModifiedAt = DateTime.UtcNow;
-                entry.Entity.LastModifiedBy = email;
+                entry.Entity.UpdatedAt = DateTime.UtcNow;
             }
         }
+
     }
 }

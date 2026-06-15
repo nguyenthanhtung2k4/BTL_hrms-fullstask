@@ -305,7 +305,8 @@ public class EmployeeService : IEmployeeService
             ManagerName: e.Manager?.FullName,
             Status: e.Status,
             CreatedAt: e.CreatedAt,
-            UpdatedAt: e.LastModifiedAt
+            UpdatedAt: e.UpdatedAt
         );
     }
+
 }

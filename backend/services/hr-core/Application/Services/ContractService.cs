@@ -178,8 +178,9 @@ public class ContractService : IContractService
             BaseSalary: c.BaseSalary,
             Status: c.Status,
             CreatedAt: c.CreatedAt,
-            UpdatedAt: c.LastModifiedAt
+            UpdatedAt: c.UpdatedAt
         );
     }
+
 
 }

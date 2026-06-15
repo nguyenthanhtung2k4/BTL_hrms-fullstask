@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Hrms.HrCore.Controllers;
 
 [ApiController]
-[Route("api/hr/departments")]
+[Route("api/v1/hr/departments")]
 public class DepartmentsController : ControllerBase
 {
     private readonly IDepartmentService _departmentService;

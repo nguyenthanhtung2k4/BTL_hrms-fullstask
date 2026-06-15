@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Hrms.HrCore.Controllers;
 
 [ApiController]
-[Route("api/hr/positions")]
+[Route("api/v1/hr/positions")]
 public class PositionsController : ControllerBase
 {
     private readonly IPositionService _positionService;

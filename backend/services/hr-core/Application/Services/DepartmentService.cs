@@ -188,7 +188,8 @@ public class DepartmentService : IDepartmentService
             ManagerName: d.ManagerEmployee?.FullName,
             IsActive: d.IsActive,
             CreatedAt: d.CreatedAt,
-            UpdatedAt: d.LastModifiedAt
+            UpdatedAt: d.UpdatedAt
         );
     }
+
 }

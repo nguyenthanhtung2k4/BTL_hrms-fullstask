@@ -34,7 +34,7 @@ http://localhost:5173
 Test gateway:
 
 ```text
-http://localhost:5000/api/hr/info
+http://localhost:5000/api/v1/hr/info
 http://localhost:5000/api/attendance/info
 http://localhost:5000/api/payroll/info
 ```
