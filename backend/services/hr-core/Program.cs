@@ -1,12 +1,21 @@
 using Hrms.Contracts.Api;
 using Hrms.Contracts.Events;
+using Hrms.HrCore.Application;
+using Hrms.HrCore.Infrastructure;
+using Hrms.Shared.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks();
 
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionMiddleware>();
+
 
 if (app.Environment.IsDevelopment())
 {
