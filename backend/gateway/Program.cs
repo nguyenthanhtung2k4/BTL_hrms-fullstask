@@ -22,7 +22,7 @@ app.UseCors("Frontend");
 app.MapGet("/", () => Results.Ok(new
 {
     service = "hrms-api-gateway",
-    routes = new[] { "/api/v1/hr/*", "/api/attendance/*", "/api/payroll/*" }
+    routes = new[] { "/api/v1/hr/*", "/api/v1/attendance/*", "/api/v1/payroll/*" }
 }));
 
 app.MapHealthChecks("/health");
