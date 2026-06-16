@@ -571,13 +571,13 @@ Một task chỉ được tick hoàn thành khi:
 
 ### 12.1. Khung kiến trúc
 
-- [ ] Tạo cấu trúc thư mục monorepo.
-- [ ] Tạo solution backend và các project service.
-- [ ] Tạo Vue app với Tailwind.
-- [ ] Tạo API Gateway.
+- [x] Tạo cấu trúc thư mục monorepo.
+- [x] Tạo solution backend và các project service.
+- [x] Tạo Vue app với Tailwind.
+- [x] Tạo API Gateway.
 - [ ] Tạo Docker Compose cho SQL Server, RabbitMQ, gateway, services, frontend.
-- [ ] Tạo shared event contract.
-- [ ] Tạo shared API convention.
+- [x] Tạo shared event contract.
+- [x] Tạo shared API convention.
 - [ ] Tạo seed data demo.
 
 ### 12.2. Auth và bảo mật nền
@@ -663,4 +663,3 @@ Một task chỉ được tick hoàn thành khi:
 - Admin/HR/PayrollStaff xem báo cáo tương ứng.
 - Dữ liệu đi qua 3 service bằng API/event, không hard-code thủ công khi demo.
 - Repo có README hướng dẫn chạy local và Docker Compose.
-

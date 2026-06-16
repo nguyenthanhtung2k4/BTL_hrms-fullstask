@@ -1,0 +1,88 @@
+@HostAddress = http://localhost:5001
+@GatewayAddress = http://localhost:5000
+
+### 1. Đăng nhập hệ thống (Lấy Access Token)
+# Đăng nhập bằng tài khoản Admin mặc định do Seeder tạo ra
+POST {{HostAddress}}/api/v1/hr/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@hrms.com",
+  "password": "admin123"
+}
+
+### Lưu Access Token nhận được từ phản hồi trên vào biến bên dưới để chạy các API tiếp theo
+@authToken = <PASTE_YOUR_ACCESS_TOKEN_HERE>
+
+### 2. Lấy thông tin module của Service
+GET {{HostAddress}}/api/v1/hr/info
+Accept: application/json
+
+### 3. Lấy danh sách Phòng ban
+GET {{HostAddress}}/api/v1/hr/departments
+Authorization: Bearer {{authToken}}
+
+### 4. Tạo mới Phòng ban (Ví dụ: Phòng Kỹ thuật)
+POST {{HostAddress}}/api/v1/hr/departments
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "code": "DEPT_TECH",
+  "name": "Phòng Kỹ thuật công nghệ",
+  "parentDepartmentId": null,
+  "managerEmployeeId": null
+}
+
+### 5. Lấy danh sách Chức vụ
+GET {{HostAddress}}/api/v1/hr/positions
+Authorization: Bearer {{authToken}}
+
+### 6. Tạo mới Chức vụ (Ví dụ: Lập trình viên)
+POST {{HostAddress}}/api/v1/hr/positions
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "code": "POS_DEV",
+  "name": "Lập trình viên Fullstack",
+  "description": "Phát triển ứng dụng Web"
+}
+
+### 7. Lấy danh sách Nhân viên
+GET {{HostAddress}}/api/v1/hr/employees
+Authorization: Bearer {{authToken}}
+
+### 8. Tạo mới Nhân viên (Cần thay DepartmentId và PositionId bằng Guid thực tế vừa tạo ở trên)
+# Đăng ký tài khoản nhân viên mới, đồng thời bắn event EmployeeCreated sang RabbitMQ
+POST {{HostAddress}}/api/v1/hr/employees
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "employeeCode": "EMP001",
+  "fullName": "Nguyen Van A",
+  "email": "nguyenvana@hrms.com",
+  "phone": "0987654321",
+  "gender": "Male",
+  "dateOfBirth": "1995-10-15T00:00:00Z",
+  "hireDate": "2026-06-15T00:00:00Z",
+  "departmentId": "00000000-0000-0000-0000-000000000000",
+  "positionId": "00000000-0000-0000-0000-000000000000",
+  "managerEmployeeId": null
+}
+
+### 9. Ký Hợp đồng lao động mới cho Nhân viên (Cần thay EmployeeId bằng Guid thực tế của nhân viên mới tạo)
+# Tạo hợp đồng, xác định mức lương và bắn event ContractCreated để đồng bộ sang dịch vụ tính lương
+POST {{HostAddress}}/api/v1/hr/contracts
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "contractNumber": "HDLD/2026/001",
+  "employeeId": "00000000-0000-0000-0000-000000000000",
+  "contractType": "FullTime",
+  "startDate": "2026-06-15T00:00:00Z",
+  "endDate": "2027-06-15T00:00:00Z",
+  "baseSalary": 15000000
+}

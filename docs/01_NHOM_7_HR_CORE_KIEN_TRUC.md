@@ -44,23 +44,23 @@ Trách nhiệm:
 
 Task checklist:
 
-- [ ] Tạo cấu trúc thư mục `frontend/`, `backend/`, `shared/`, `infra/`, `docs/`.
-- [ ] Tạo `backend/HRMS.sln`.
-- [ ] Tạo project `backend/gateway`.
-- [ ] Tạo project `backend/services/hr-core`.
-- [ ] Tạo placeholder project cho `attendance` và `payroll-report` để nhóm khác làm tiếp.
-- [ ] Tạo `shared/contracts/events`.
-- [ ] Tạo `shared/contracts/api`.
-- [ ] Tạo `infra/docker-compose.yml` cho SQL Server và RabbitMQ.
+- [x] Tạo cấu trúc thư mục `frontend/`, `backend/`, `shared/`, `infra/`, `docs/`.
+- [x] Tạo `backend/HRMS.sln`.
+- [x] Tạo project `backend/gateway`.
+- [x] Tạo project `backend/services/hr-core`.
+- [x] Tạo placeholder project cho `attendance` và `payroll-report` để nhóm khác làm tiếp.
+- [x] Tạo `shared/contracts/events`.
+- [x] Tạo `shared/contracts/api`.
+- [x] Tạo `infra/docker-compose.yml` cho SQL Server và RabbitMQ.
 - [ ] Thêm service gateway vào Docker Compose.
 - [ ] Thêm HR Core vào Docker Compose.
-- [ ] Tạo route gateway đến HR Core.
-- [ ] Tạo file `.env.example`.
-- [ ] Tạo PR template có checklist contract/security/test/UI.
-- [ ] Tạo quy định branch trong README hoặc docs.
-- [ ] Tạo GitHub Actions build backend.
-- [ ] Tạo GitHub Actions build frontend.
-- [ ] Tạo tài liệu hướng dẫn chạy local.
+- [x] Tạo route gateway đến HR Core.
+- [x] Tạo file `.env.example`.
+- [x] Tạo PR template có checklist contract/security/test/UI.
+- [x] Tạo quy định branch trong README hoặc docs.
+- [x] Tạo GitHub Actions build backend.
+- [x] Tạo GitHub Actions build frontend.
+- [x] Tạo tài liệu hướng dẫn chạy local.
 
 Definition of Done:
 
@@ -136,18 +136,18 @@ Trách nhiệm:
 
 Task checklist:
 
-- [ ] Tạo Vue 3 + Vite app trong `frontend/`.
-- [ ] Cấu hình Tailwind CSS.
-- [ ] Cấu hình router.
-- [ ] Cấu hình store auth.
-- [ ] Tạo API client dùng base URL gateway.
+- [x] Tạo Vue 3 + Vite app trong `frontend/`.
+- [x] Cấu hình Tailwind CSS.
+- [x] Cấu hình router.
+- [x] Cấu hình store auth.
+- [x] Tạo API client dùng base URL gateway.
 - [ ] Tạo interceptor gắn JWT vào request.
-- [ ] Tạo login page.
-- [ ] Tạo route guard nếu chưa login.
-- [ ] Tạo role-based route guard.
-- [ ] Tạo main layout.
-- [ ] Tạo sidebar.
-- [ ] Tạo topbar/user menu.
+- [x] Tạo login page.
+- [x] Tạo route guard nếu chưa login.
+- [x] Tạo role-based route guard.
+- [x] Tạo main layout.
+- [x] Tạo sidebar.
+- [x] Tạo topbar/user menu.
 - [ ] Tạo component table dùng chung.
 - [ ] Tạo component form input/select/date dùng chung.
 - [ ] Tạo toast/alert lỗi.
@@ -363,4 +363,3 @@ Checklist review của nhóm 7:
 - [ ] PR template có checklist.
 - [ ] Hướng dẫn chạy local rõ ràng.
 - [ ] Tích hợp demo end-to-end thành công.
-

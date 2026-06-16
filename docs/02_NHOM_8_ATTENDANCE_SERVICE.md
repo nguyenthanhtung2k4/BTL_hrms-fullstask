@@ -40,7 +40,7 @@ Trách nhiệm:
 
 Task checklist:
 
-- [ ] Tạo project Attendance theo skeleton nhóm 7.
+- [x] Tạo project Attendance theo skeleton nhóm 7.
 - [ ] Tạo DbContext Attendance.
 - [ ] Tạo entity `EmployeeProjection`.
 - [ ] Tạo entity `Shift`.
@@ -348,4 +348,3 @@ UI smoke:
 - [ ] Test chính pass.
 - [ ] Tài liệu API/event cập nhật.
 - [ ] Demo flow Attendance thành công.
-
