@@ -4,7 +4,7 @@
 > Mục tiêu: Xây dựng giao diện đầy đủ kết nối với 3 backend services qua API Gateway
 
 ---
-
+addc
 ## 📋 Tổng quan tài liệu
 
 | Tài liệu | Mô tả |
@@ -271,44 +271,47 @@ Attendance:
 
 ## 📅 Thứ tự thực hiện (Task Order)
 
+> ✅ **TẤT CẢ BƯỚC ĐÃ HOÀN THÀNH** — Login test thành công tại `http://localhost:5173`
+
 ```
-[ ] Bước 1: Shared Foundation
-    [ ] apiClient.ts — JWT interceptor thật
-    [ ] auth.ts store — gọi API thật
-    [ ] toast.ts store
-    [ ] AppButton, AppInput, AppTable, AppModal, AppBadge, AppToast
-    [ ] Router với role guard
+[x] Bước 1: Shared Foundation ✅
+    [x] apiClient.ts — JWT interceptor thật
+    [x] auth.ts store — gọi API thật (+ fix normalize roles string→array)
+    [x] toast.ts store
+    [x] AppButton, AppInput, AppTable, AppModal, AppBadge, AppToast, AppConfirm
+    [x] Router với role guard
 
-[ ] Bước 2: Auth Module
-    [ ] LoginView thật (gọi POST /api/v1/hr/auth/login)
-    [ ] Lưu JWT vào localStorage + store
-    [ ] GET /auth/me khi khởi động app
-    [ ] Route guard theo role
+[x] Bước 2: Auth Module ✅
+    [x] LoginView thật (gọi POST /api/v1/hr/auth/login)
+    [x] Lưu JWT vào localStorage + store
+    [x] GET /auth/me khi khởi động app
+    [x] Route guard theo role
 
-[ ] Bước 3: HR Module
-    [ ] Departments — CRUD
-    [ ] Positions — CRUD
-    [ ] Employees — CRUD + đổi trạng thái
-    [ ] Contracts — CRUD
+[x] Bước 3: HR Module ✅
+    [x] Departments — CRUD
+    [x] Positions — CRUD
+    [x] Employees — CRUD + đổi trạng thái
+    [x] Contracts — CRUD
 
-[ ] Bước 4: Attendance Module
-    [ ] Shifts — CRUD
-    [ ] WorkSchedules — CRUD
-    [ ] Attendance — Check-in/out + lịch sử
-    [ ] Leave Requests — Tạo/Duyệt/Từ chối
-    [ ] Timesheets — Xem bảng công tháng
+[x] Bước 4: Attendance Module ✅
+    [x] Shifts — CRUD
+    [x] WorkSchedules — CRUD
+    [x] Attendance — Check-in/out + lịch sử
+    [x] Leave Requests — Tạo/Duyệt/Từ chối/Hủy
+    [x] Timesheets — Xem bảng công tháng + Tính bảng công
 
-[ ] Bước 5: Payroll Module
-    [ ] Payroll Periods — CRUD + calculate + close
-    [ ] Payroll Rules — CRUD
-    [ ] Allowances & Deductions — CRUD
-    [ ] Payslips — Xem + GET /me
-    [ ] Reports — Dashboard summary
+[x] Bước 5: Payroll Module ✅
+    [x] Payroll Periods — CRUD + calculate + close
+    [x] Payroll Rules — CRUD
+    [x] Allowances & Deductions — CRUD
+    [x] Payslips — Xem + GET /me + detail
+    [x] Reports — Dashboard summary theo phòng ban
 
-[ ] Bước 6: Dashboard
-    [ ] Thống kê tổng số nhân viên, kỳ lương, nghỉ phép pending
-    [ ] Charts theo role
-    [ ] Quick actions
+[x] Bước 6: Dashboard ✅
+    [x] Thống kê tổng số nhân viên, kỳ lương, nghỉ phép pending
+    [x] Stat cards theo role (Admin/Manager/PayrollStaff/Employee)
+    [x] Dept breakdown chart + Pending leaves list
+    [x] Quick actions cho Employee
 ```
 
 ---

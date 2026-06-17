@@ -6,108 +6,110 @@
 
 ## Thứ tự tạo file (theo dependency)
 
-### 🔴 Phase 1 — Foundation (Tạo trước tiên)
+### ✅ Phase 1 — Foundation (HOÀN THÀNH)
 ```
-- [ ] src/types/auth.types.ts
-- [ ] src/types/hr.types.ts
-- [ ] src/types/attendance.types.ts
-- [ ] src/types/payroll.types.ts
-- [ ] src/services/apiClient.ts         ← JWT interceptor
-- [ ] src/stores/auth.ts                ← Pinia auth store thật
-- [ ] src/stores/toast.ts               ← Global toast
-- [ ] src/stores/ui.ts                  ← Loading/sidebar state
-- [ ] src/services/auth.service.ts
-```
-
-### 🔴 Phase 2 — Shared UI Components
-```
-- [ ] src/components/ui/AppButton.vue
-- [ ] src/components/ui/AppInput.vue
-- [ ] src/components/ui/AppSelect.vue
-- [ ] src/components/ui/AppModal.vue
-- [ ] src/components/ui/AppTable.vue
-- [ ] src/components/ui/AppBadge.vue
-- [ ] src/components/ui/AppPagination.vue
-- [ ] src/components/ui/AppToast.vue
-- [ ] src/components/ui/AppConfirm.vue
-- [ ] src/components/layout/PageHeader.vue
-- [ ] src/components/layout/StatCard.vue
+- [x] src/types/auth.types.ts
+- [x] src/types/hr.types.ts
+- [x] src/types/attendance.types.ts
+- [x] src/types/payroll.types.ts
+- [x] src/services/apiClient.ts         ← JWT interceptor
+- [x] src/stores/auth.ts                ← Pinia auth store thật
+- [x] src/stores/toast.ts               ← Global toast
+- [x] src/stores/ui.ts                  ← Loading/sidebar state
+- [x] src/services/auth.service.ts
 ```
 
-### 🔴 Phase 3 — Auth + Layout + Router
+### ✅ Phase 2 — Shared UI Components (HOÀN THÀNH)
 ```
-- [ ] src/modules/auth/LoginView.vue    ← Login thật
-- [ ] src/layouts/MainLayout.vue        ← Upgrade: role-based sidebar
-- [ ] src/router/index.ts               ← Full routes + role guard
-- [ ] src/App.vue                       ← Gọi auth.fetchMe() khi mount
-```
-
-### 🟡 Phase 4 — HR Module
-```
-- [ ] src/services/department.service.ts
-- [ ] src/services/position.service.ts
-- [ ] src/services/employee.service.ts
-- [ ] src/services/contract.service.ts
-- [ ] src/modules/hr/departments/DepartmentListView.vue
-- [ ] src/modules/hr/departments/DepartmentFormModal.vue
-- [ ] src/modules/hr/positions/PositionListView.vue
-- [ ] src/modules/hr/positions/PositionFormModal.vue
-- [ ] src/modules/hr/employees/EmployeeListView.vue
-- [ ] src/modules/hr/employees/EmployeeDetailView.vue
-- [ ] src/modules/hr/employees/EmployeeFormModal.vue
-- [ ] src/modules/hr/employees/EmployeeStatusModal.vue
-- [ ] src/modules/hr/contracts/ContractListView.vue
-- [ ] src/modules/hr/contracts/ContractFormModal.vue
+- [x] src/components/ui/AppButton.vue
+- [x] src/components/ui/AppInput.vue
+- [x] src/components/ui/AppSelect.vue
+- [x] src/components/ui/AppModal.vue
+- [x] src/components/ui/AppTable.vue
+- [x] src/components/ui/AppBadge.vue
+- [x] src/components/ui/AppPagination.vue
+- [x] src/components/ui/AppToast.vue
+- [x] src/components/ui/AppConfirm.vue
+- [x] src/components/layout/PageHeader.vue
+- [x] src/components/layout/StatCard.vue
 ```
 
-### 🟡 Phase 5 — Attendance Module
+### ✅ Phase 3 — Auth + Layout + Router (HOÀN THÀNH)
 ```
-- [ ] src/services/shift.service.ts
-- [ ] src/services/workSchedule.service.ts
-- [ ] src/services/attendance.service.ts
-- [ ] src/services/leave.service.ts
-- [ ] src/services/timesheet.service.ts
-- [ ] src/modules/attendance/shifts/ShiftListView.vue
-- [ ] src/modules/attendance/shifts/ShiftFormModal.vue
-- [ ] src/modules/attendance/work-schedules/WorkScheduleListView.vue
-- [ ] src/modules/attendance/work-schedules/WorkScheduleFormModal.vue
-- [ ] src/modules/attendance/attendance/MyAttendanceView.vue
-- [ ] src/modules/attendance/attendance/AttendanceListView.vue
-- [ ] src/modules/attendance/leaves/LeaveListView.vue
-- [ ] src/modules/attendance/leaves/LeaveFormModal.vue
-- [ ] src/modules/attendance/leaves/LeaveApproveModal.vue
-- [ ] src/modules/attendance/timesheets/TimesheetView.vue
+- [x] src/modules/auth/LoginView.vue    ← Login thật
+- [x] src/layouts/MainLayout.vue        ← Upgrade: role-based sidebar
+- [x] src/router/index.ts               ← Full routes + role guard
+- [x] src/App.vue                       ← Gọi auth.fetchMe() khi mount
 ```
 
-### 🟡 Phase 6 — Payroll Module
+### ✅ Phase 4 — HR Module (HOÀN THÀNH)
 ```
-- [ ] src/services/payrollPeriod.service.ts
-- [ ] src/services/payrollRule.service.ts
-- [ ] src/services/allowance.service.ts
-- [ ] src/services/deduction.service.ts
-- [ ] src/services/payslip.service.ts
-- [ ] src/services/report.service.ts
-- [ ] src/modules/payroll/periods/PeriodListView.vue
-- [ ] src/modules/payroll/periods/PeriodFormModal.vue
-- [ ] src/modules/payroll/periods/PeriodDetailView.vue
-- [ ] src/modules/payroll/rules/RuleListView.vue
-- [ ] src/modules/payroll/rules/RuleFormModal.vue
-- [ ] src/modules/payroll/allowances/AllowanceListView.vue
-- [ ] src/modules/payroll/allowances/AllowanceFormModal.vue
-- [ ] src/modules/payroll/deductions/DeductionListView.vue
-- [ ] src/modules/payroll/deductions/DeductionFormModal.vue
-- [ ] src/modules/payroll/payslips/PayslipListView.vue
-- [ ] src/modules/payroll/payslips/MyPayslipView.vue
-- [ ] src/modules/payroll/payslips/PayslipDetailView.vue
-- [ ] src/modules/payroll/reports/ReportView.vue
+- [x] src/services/department.service.ts
+- [x] src/services/position.service.ts
+- [x] src/services/employee.service.ts
+- [x] src/services/contract.service.ts
+- [x] src/modules/hr/departments/DepartmentListView.vue
+- [x] src/modules/hr/departments/DepartmentFormModal.vue   ← inline trong ListView
+- [x] src/modules/hr/positions/PositionListView.vue
+- [x] src/modules/hr/positions/PositionFormModal.vue       ← inline trong ListView
+- [x] src/modules/hr/employees/EmployeeListView.vue
+- [x] src/modules/hr/employees/EmployeeDetailView.vue
+- [x] src/modules/hr/employees/EmployeeFormModal.vue       ← inline trong ListView
+- [x] src/modules/hr/employees/EmployeeStatusModal.vue     ← inline trong ListView
+- [x] src/modules/hr/contracts/ContractListView.vue
+- [x] src/modules/hr/contracts/ContractFormModal.vue       ← inline trong ListView
 ```
 
-### 🟢 Phase 7 — Dashboard nâng cấp
+### ✅ Phase 5 — Attendance Module (HOÀN THÀNH)
 ```
-- [ ] src/modules/dashboard/DashboardView.vue  ← Nâng cấp với API thật
+- [x] src/services/shift.service.ts
+- [x] src/services/workSchedule.service.ts
+- [x] src/services/attendance.service.ts
+- [x] src/services/leave.service.ts
+- [x] src/services/timesheet.service.ts
+- [x] src/modules/attendance/shifts/ShiftListView.vue
+- [x] src/modules/attendance/shifts/ShiftFormModal.vue     ← inline trong ListView
+- [x] src/modules/attendance/work-schedules/WorkScheduleListView.vue
+- [x] src/modules/attendance/work-schedules/WorkScheduleFormModal.vue ← inline
+- [x] src/modules/attendance/attendance/MyAttendanceView.vue
+- [x] src/modules/attendance/attendance/AttendanceListView.vue
+- [x] src/modules/attendance/leaves/LeaveListView.vue
+- [x] src/modules/attendance/leaves/LeaveFormModal.vue     ← inline trong ListView
+- [x] src/modules/attendance/leaves/LeaveApproveModal.vue  ← inline (AppConfirm)
+- [x] src/modules/attendance/timesheets/TimesheetView.vue
+```
+
+### ✅ Phase 6 — Payroll Module (HOÀN THÀNH)
+```
+- [x] src/services/payrollPeriod.service.ts
+- [x] src/services/payrollRule.service.ts
+- [x] src/services/allowance.service.ts
+- [x] src/services/deduction.service.ts
+- [x] src/services/payslip.service.ts
+- [x] src/services/report.service.ts
+- [x] src/modules/payroll/periods/PeriodListView.vue
+- [x] src/modules/payroll/periods/PeriodFormModal.vue      ← inline trong ListView
+- [x] src/modules/payroll/periods/PeriodDetailView.vue
+- [x] src/modules/payroll/rules/RuleListView.vue
+- [x] src/modules/payroll/rules/RuleFormModal.vue          ← inline trong ListView
+- [x] src/modules/payroll/allowances/AllowanceListView.vue
+- [x] src/modules/payroll/allowances/AllowanceFormModal.vue ← inline
+- [x] src/modules/payroll/deductions/DeductionListView.vue
+- [x] src/modules/payroll/deductions/DeductionFormModal.vue ← inline
+- [x] src/modules/payroll/payslips/PayslipListView.vue
+- [x] src/modules/payroll/payslips/MyPayslipView.vue
+- [x] src/modules/payroll/payslips/PayslipDetailView.vue
+- [x] src/modules/payroll/reports/ReportView.vue
+```
+
+### ✅ Phase 7 — Dashboard nâng cấp (HOÀN THÀNH)
+```
+- [x] src/modules/dashboard/DashboardView.vue  ← Nâng cấp với API thật, stat cards, role-based content
 ```
 
 ---
+
+> 🎉 **TẤT CẢ 7 PHASES ĐÃ HOÀN THÀNH** — Frontend kết nối đầy đủ với 3 backend services qua API Gateway
 
 ## Naming conventions
 
