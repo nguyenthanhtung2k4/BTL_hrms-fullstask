@@ -4,12 +4,14 @@ using System.Threading.Tasks;
 using Hrms.HrCore.Application.Dtos;
 using Hrms.HrCore.Application.Interfaces;
 using Hrms.Shared.Domain;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Hrms.HrCore.Controllers;
 
 [ApiController]
 [Route("api/v1/hr/employees")]
+[Authorize]
 public class EmployeesController : ControllerBase
 {
     private readonly IEmployeeService _employeeService;
