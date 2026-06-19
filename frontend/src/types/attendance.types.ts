@@ -56,13 +56,15 @@ export interface AttendanceRecord {
   employeeId: string
   employeeName: string
   workScheduleId?: string
+  shiftId: string
   shiftName?: string
-  checkInTime?: string
-  checkOutTime?: string
-  totalMinutesWorked: number
-  notes?: string
-  date: string
+  workDate: string
+  checkInAt: string
+  checkOutAt?: string
+  workedMinutes: number
+  status: string
   createdAt: string
+  updatedAt?: string
 }
 
 // ---
@@ -109,12 +111,13 @@ export interface Timesheet {
   id: string
   employeeId: string
   employeeName: string
-  departmentName: string
-  month: number
   year: number
-  totalWorkDays: number
-  totalPaidLeaveDays: number
-  totalUnpaidLeaveDays: number
-  totalAbsentDays: number
-  totalOvertimeMinutes: number
+  month: number
+  totalWorkedMinutes: number
+  paidLeaveDays: number
+  unpaidLeaveDays: number
+  status: string
+  createdAt: string
+  updatedAt?: string
 }
+

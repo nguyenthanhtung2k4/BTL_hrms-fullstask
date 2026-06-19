@@ -4,6 +4,7 @@ export type PeriodStatus = 'Draft' | 'Calculated' | 'Closed'
 
 export interface PayrollPeriod {
   id: string
+  code: string
   name: string
   fromDate: string
   toDate: string
@@ -14,6 +15,7 @@ export interface PayrollPeriod {
 }
 
 export interface CreatePayrollPeriodDto {
+  code: string
   name: string
   fromDate: string
   toDate: string

@@ -7,9 +7,12 @@ import type { Timesheet } from '../../../types/attendance.types'
 import PageHeader from '../../../components/layout/PageHeader.vue'
 import AppTable from '../../../components/ui/AppTable.vue'
 import AppButton from '../../../components/ui/AppButton.vue'
+import AppBadge from '../../../components/ui/AppBadge.vue'
 
 const auth = useAuthStore()
 const toast = useToastStore()
+
+const WORK_DAY_MINUTES = 480 // 8h per day
 
 const timesheets = ref<Timesheet[]>([])
 const loading = ref(false)
@@ -18,13 +21,26 @@ const filterMonth = ref(new Date().getMonth() + 1)
 const filterYear = ref(new Date().getFullYear())
 
 const columns = [
-  { key: 'employee', label: 'Nhân viên' }, { key: 'dept', label: 'Phòng ban' },
-  { key: 'workDays', label: 'Ngày làm' }, { key: 'paidLeave', label: 'Phép CL' },
-  { key: 'unpaidLeave', label: 'Phép KL' }, { key: 'absent', label: 'Vắng' }, { key: 'overtime', label: 'Tăng ca' },
+  { key: 'employee', label: 'Nhân viên' },
+  { key: 'workDays', label: 'Ngày công' },
+  { key: 'totalHours', label: 'Tổng giờ' },
+  { key: 'paidLeave', label: 'Phép CL' },
+  { key: 'unpaidLeave', label: 'Phép KL' },
+  { key: 'status', label: 'Trạng thái' },
 ]
 
 const months = Array.from({ length: 12 }, (_, i) => ({ value: i + 1, label: `Tháng ${i + 1}` }))
 const years = [2024, 2025, 2026]
+
+function workDays(t: Timesheet) {
+  return (t.totalWorkedMinutes / WORK_DAY_MINUTES).toFixed(1)
+}
+
+function totalHours(t: Timesheet) {
+  const h = Math.floor(t.totalWorkedMinutes / 60)
+  const m = t.totalWorkedMinutes % 60
+  return `${h}h ${m}m`
+}
 
 async function load() {
   loading.value = true
@@ -46,8 +62,6 @@ async function calculate() {
   } catch (err: any) { toast.error(err?.response?.data?.message ?? 'Tính bảng công thất bại') }
   finally { calculating.value = false }
 }
-
-function fmtMin(m: number) { return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m` }
 
 onMounted(load)
 </script>
@@ -76,12 +90,11 @@ onMounted(load)
     <AppTable :columns="columns" :rows="timesheets" :loading="loading" row-key="id" empty-text="Chưa có bảng công — hãy nhấn Tính bảng công">
       <template #default="{ row }">
         <td class="px-4 py-3 text-sm font-medium">{{ (row as Timesheet).employeeName }}</td>
-        <td class="px-4 py-3 text-sm text-slate-600">{{ (row as Timesheet).departmentName }}</td>
-        <td class="px-4 py-3 text-sm font-semibold text-emerald-700">{{ (row as Timesheet).totalWorkDays }}</td>
-        <td class="px-4 py-3 text-sm">{{ (row as Timesheet).totalPaidLeaveDays }}</td>
-        <td class="px-4 py-3 text-sm">{{ (row as Timesheet).totalUnpaidLeaveDays }}</td>
-        <td class="px-4 py-3 text-sm text-red-600">{{ (row as Timesheet).totalAbsentDays }}</td>
-        <td class="px-4 py-3 text-sm">{{ (row as Timesheet).totalOvertimeMinutes > 0 ? fmtMin((row as Timesheet).totalOvertimeMinutes) : '—' }}</td>
+        <td class="px-4 py-3 text-sm font-semibold text-emerald-700">{{ workDays(row as Timesheet) }}</td>
+        <td class="px-4 py-3 text-sm text-slate-600">{{ totalHours(row as Timesheet) }}</td>
+        <td class="px-4 py-3 text-sm">{{ (row as Timesheet).paidLeaveDays > 0 ? (row as Timesheet).paidLeaveDays : '—' }}</td>
+        <td class="px-4 py-3 text-sm">{{ (row as Timesheet).unpaidLeaveDays > 0 ? (row as Timesheet).unpaidLeaveDays : '—' }}</td>
+        <td class="px-4 py-3"><AppBadge :status="(row as Timesheet).status" /></td>
       </template>
     </AppTable>
   </div>

@@ -64,11 +64,11 @@ onMounted(load)
     <AppTable :columns="columns" :rows="records" :loading="loading" row-key="id" empty-text="Không có dữ liệu chấm công">
       <template #default="{ row }">
         <td class="px-4 py-3 text-sm font-medium">{{ (row as AttendanceRecord).employeeName }}</td>
-        <td class="px-4 py-3 text-sm text-slate-600">{{ fmtDate((row as AttendanceRecord).date) }}</td>
+        <td class="px-4 py-3 text-sm text-slate-600">{{ fmtDate((row as AttendanceRecord).workDate) }}</td>
         <td class="px-4 py-3 text-sm text-slate-600">{{ (row as AttendanceRecord).shiftName ?? '—' }}</td>
-        <td class="px-4 py-3 text-sm text-emerald-700">{{ fmtTime((row as AttendanceRecord).checkInTime) }}</td>
-        <td class="px-4 py-3 text-sm text-blue-700">{{ fmtTime((row as AttendanceRecord).checkOutTime) }}</td>
-        <td class="px-4 py-3 text-sm font-medium">{{ (row as AttendanceRecord).totalMinutesWorked > 0 ? fmtMin((row as AttendanceRecord).totalMinutesWorked) : '—' }}</td>
+        <td class="px-4 py-3 text-sm text-emerald-700">{{ fmtTime((row as AttendanceRecord).checkInAt) }}</td>
+        <td class="px-4 py-3 text-sm text-blue-700">{{ fmtTime((row as AttendanceRecord).checkOutAt) }}</td>
+        <td class="px-4 py-3 text-sm font-medium">{{ (row as AttendanceRecord).workedMinutes > 0 ? fmtMin((row as AttendanceRecord).workedMinutes) : '—' }}</td>
       </template>
     </AppTable>
   </div>

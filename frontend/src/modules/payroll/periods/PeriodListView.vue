@@ -26,7 +26,7 @@ const editTarget = ref<PayrollPeriod | null>(null)
 const deleteTarget = ref<PayrollPeriod | null>(null)
 const deleteLoading = ref(false)
 const saving = ref(false)
-const form = ref({ name: '', fromDate: '', toDate: '', payrollRuleId: '' })
+const form = ref({ code: '', name: '', fromDate: '', toDate: '', payrollRuleId: '' })
 const errors = ref<Record<string, string>>({})
 
 const columns = [
@@ -44,12 +44,21 @@ async function load() {
 function openCreate() {
   editTarget.value = null
   const now = new Date()
-  form.value = { name: `Lương tháng ${now.getMonth() + 1}/${now.getFullYear()}`, fromDate: new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0], toDate: new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0], payrollRuleId: rules.value[0]?.id ?? '' }
+  const mm = String(now.getMonth() + 1).padStart(2, '0')
+  const yy = now.getFullYear()
+  form.value = {
+    code: `KY-${mm}-${yy}`,
+    name: `Lương tháng ${now.getMonth() + 1}/${yy}`,
+    fromDate: new Date(yy, now.getMonth(), 1).toISOString().split('T')[0],
+    toDate: new Date(yy, now.getMonth() + 1, 0).toISOString().split('T')[0],
+    payrollRuleId: rules.value[0]?.id ?? ''
+  }
   errors.value = {}; showForm.value = true
 }
 
 function validate() {
   errors.value = {}
+  if (!form.value.code.trim()) errors.value.code = 'Mã kỳ bắt buộc'
   if (!form.value.name.trim()) errors.value.name = 'Tên bắt buộc'
   if (!form.value.fromDate) errors.value.fromDate = 'Từ ngày bắt buộc'
   if (!form.value.toDate) errors.value.toDate = 'Đến ngày bắt buộc'
@@ -118,7 +127,10 @@ onMounted(load)
 
     <AppModal v-if="showForm" :title="editTarget ? 'Sửa kỳ lương' : 'Tạo kỳ lương'" @close="showForm = false">
       <div class="space-y-4">
-        <AppInput id="pp-name" v-model="form.name" label="Tên kỳ lương" required :error="errors.name" placeholder="VD: Lương tháng 06/2026" />
+        <div class="grid grid-cols-2 gap-3">
+          <AppInput id="pp-code" v-model="form.code" label="Mã kỳ lương" required :disabled="!!editTarget" :error="errors.code" placeholder="VD: KY-06-2026" />
+          <AppInput id="pp-name" v-model="form.name" label="Tên kỳ lương" required :error="errors.name" placeholder="VD: Lương tháng 06/2026" />
+        </div>
         <div class="grid grid-cols-2 gap-3">
           <AppInput id="pp-from" v-model="form.fromDate" label="Từ ngày" type="date" required :error="errors.fromDate" />
           <AppInput id="pp-to" v-model="form.toDate" label="Đến ngày" type="date" required :error="errors.toDate" />

@@ -4,7 +4,7 @@
 > Mục tiêu: Xây dựng giao diện đầy đủ kết nối với 3 backend services qua API Gateway
 
 ---
-addc
+
 ## 📋 Tổng quan tài liệu
 
 | Tài liệu | Mô tả |

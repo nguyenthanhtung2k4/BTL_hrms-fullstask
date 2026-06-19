@@ -21,21 +21,22 @@ const employeeId = computed(() => auth.employeeId ?? '')
 
 const checkStatus = computed(() => {
   if (!todayRecord.value) return 'not_checked_in'
-  if (todayRecord.value.checkInTime && !todayRecord.value.checkOutTime) return 'checked_in'
-  if (todayRecord.value.checkOutTime) return 'checked_out'
+  if (todayRecord.value.checkInAt && !todayRecord.value.checkOutAt) return 'checked_in'
+  if (todayRecord.value.checkOutAt) return 'checked_out'
   return 'not_checked_in'
 })
 
 const workMinutes = computed(() => {
-  if (!todayRecord.value?.checkInTime || !todayRecord.value?.checkOutTime) return 0
-  return todayRecord.value.totalMinutesWorked
+  if (!todayRecord.value?.checkInAt || !todayRecord.value?.checkOutAt) return 0
+  return todayRecord.value.workedMinutes
 })
 
 async function load() {
   if (!employeeId.value) { loading.value = false; return }
   try {
-    todayRecord.value = await attendanceService.getMyToday(employeeId.value)
-    history.value = (await attendanceService.getAll({ employeeId: employeeId.value })).slice(0, 30)
+    const myRecords = await attendanceService.getMyToday()
+    todayRecord.value = Array.isArray(myRecords) && myRecords.length > 0 ? myRecords[myRecords.length - 1] : null
+    history.value = Array.isArray(myRecords) ? myRecords.slice(0, 30) : []
   } catch { /* có thể chưa có record hôm nay */ }
   finally { loading.value = false }
 }
@@ -44,7 +45,7 @@ async function doCheckIn() {
   if (!employeeId.value) { toast.error('Không tìm thấy thông tin nhân viên'); return }
   actionLoading.value = true
   try {
-    await attendanceService.checkIn(employeeId.value)
+    await attendanceService.checkIn()
     toast.success('Check-in thành công!')
     await load()
   } catch (err: any) { toast.error(err?.response?.data?.message ?? 'Check-in thất bại') }
@@ -55,7 +56,7 @@ async function doCheckOut() {
   if (!employeeId.value) return
   actionLoading.value = true
   try {
-    await attendanceService.checkOut(employeeId.value)
+    await attendanceService.checkOut()
     toast.success('Check-out thành công!')
     await load()
   } catch (err: any) { toast.error(err?.response?.data?.message ?? 'Check-out thất bại') }
@@ -93,15 +94,15 @@ onMounted(load)
         <div class="flex items-center gap-6 mb-6">
           <div class="text-center">
             <div class="text-xs text-slate-500 mb-1">Giờ vào</div>
-            <div class="text-2xl font-bold" :class="todayRecord?.checkInTime ? 'text-emerald-600' : 'text-slate-300'">
-              {{ fmtTime(todayRecord?.checkInTime) }}
+            <div class="text-2xl font-bold" :class="todayRecord?.checkInAt ? 'text-emerald-600' : 'text-slate-300'">
+              {{ fmtTime(todayRecord?.checkInAt) }}
             </div>
           </div>
           <div class="text-slate-300 text-xl">→</div>
           <div class="text-center">
             <div class="text-xs text-slate-500 mb-1">Giờ ra</div>
-            <div class="text-2xl font-bold" :class="todayRecord?.checkOutTime ? 'text-blue-600' : 'text-slate-300'">
-              {{ fmtTime(todayRecord?.checkOutTime) }}
+            <div class="text-2xl font-bold" :class="todayRecord?.checkOutAt ? 'text-blue-600' : 'text-slate-300'">
+              {{ fmtTime(todayRecord?.checkOutAt) }}
             </div>
           </div>
           <div v-if="checkStatus === 'checked_out'" class="ml-auto text-center">
@@ -167,10 +168,10 @@ onMounted(load)
               <td colspan="4" class="px-4 py-8 text-center text-slate-400">Chưa có lịch sử</td>
             </tr>
             <tr v-for="r in history" :key="r.id" class="hover:bg-slate-50">
-              <td class="px-4 py-3">{{ fmtDate(r.date) }}</td>
-              <td class="px-4 py-3 text-emerald-700">{{ fmtTime(r.checkInTime) }}</td>
-              <td class="px-4 py-3 text-blue-700">{{ fmtTime(r.checkOutTime) }}</td>
-              <td class="px-4 py-3 font-medium">{{ r.totalMinutesWorked > 0 ? fmtMinutes(r.totalMinutesWorked) : '—' }}</td>
+              <td class="px-4 py-3">{{ fmtDate(r.workDate) }}</td>
+              <td class="px-4 py-3 text-emerald-700">{{ fmtTime(r.checkInAt) }}</td>
+              <td class="px-4 py-3 text-blue-700">{{ fmtTime(r.checkOutAt) }}</td>
+              <td class="px-4 py-3 font-medium">{{ r.workedMinutes > 0 ? fmtMinutes(r.workedMinutes) : '—' }}</td>
             </tr>
           </tbody>
         </table>

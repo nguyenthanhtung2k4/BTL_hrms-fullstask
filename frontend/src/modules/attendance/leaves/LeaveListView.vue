@@ -68,7 +68,7 @@ async function submitLeave() {
   saving.value = true
   try {
     const dto: CreateLeaveRequestDto = { leaveTypeId: form.value.leaveTypeId, fromDate: form.value.fromDate, toDate: form.value.toDate, reason: form.value.reason }
-    await leaveService.create(auth.employeeId, dto)
+    await leaveService.create(dto)
     toast.success('Gửi đơn nghỉ phép thành công')
     showCreateForm.value = false
     form.value = { leaveTypeId: '', fromDate: '', toDate: '', reason: '' }
@@ -81,7 +81,7 @@ async function doApprove() {
   if (!approveTarget.value || !auth.employeeId) return
   actionLoading.value = true
   try {
-    await leaveService.approve(approveTarget.value.id, auth.employeeId)
+    await leaveService.approve(approveTarget.value.id)
     toast.success('Đã duyệt đơn nghỉ phép')
     approveTarget.value = null; await load()
   } catch (err: any) { toast.error(err?.response?.data?.message ?? 'Duyệt thất bại') }
@@ -92,7 +92,7 @@ async function doReject() {
   if (!rejectTarget.value || !auth.employeeId) return
   actionLoading.value = true
   try {
-    await leaveService.reject(rejectTarget.value.id, auth.employeeId)
+    await leaveService.reject(rejectTarget.value.id)
     toast.success('Đã từ chối đơn nghỉ phép')
     rejectTarget.value = null; await load()
   } catch (err: any) { toast.error(err?.response?.data?.message ?? 'Từ chối thất bại') }
@@ -102,7 +102,7 @@ async function doReject() {
 async function cancelLeave(l: LeaveRequest) {
   if (!auth.employeeId) return
   try {
-    await leaveService.cancel(l.id, auth.employeeId)
+    await leaveService.cancel(l.id)
     toast.success('Đã hủy đơn nghỉ phép')
     await load()
   } catch (err: any) { toast.error(err?.response?.data?.message ?? 'Hủy thất bại') }
