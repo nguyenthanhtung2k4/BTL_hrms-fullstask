@@ -178,10 +178,15 @@ public class PayslipService : IPayslipService
             .Where(d => d.PayrollPeriodId == periodId)
             .ToListAsync();
 
-        // Delete existing payslips for this period
+        // Delete existing payslips for this period (items first due to FK constraint)
         var existingPayslips = await _dbContext.Payslips
+            .Include(p => p.Items)
             .Where(p => p.PayrollPeriodId == periodId)
             .ToListAsync();
+        foreach (var ps in existingPayslips)
+        {
+            _dbContext.PayslipItems.RemoveRange(ps.Items);
+        }
         _dbContext.Payslips.RemoveRange(existingPayslips);
         await _dbContext.SaveChangesAsync();
 
