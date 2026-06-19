@@ -22,7 +22,7 @@ const filterPeriod = ref('')
 const filterEmployee = ref('')
 
 const columns = [
-  { key: 'employee', label: 'Nhân viên' }, { key: 'dept', label: 'Phòng ban' }, { key: 'period', label: 'Kỳ lương' },
+  { key: 'employee', label: 'Nhân viên' }, { key: 'code', label: 'Mã NV' },
   { key: 'work', label: 'Ngày công' }, { key: 'gross', label: 'Gross' }, { key: 'net', label: 'Net lương' }, { key: 'actions', label: '' },
 ]
 
@@ -30,7 +30,7 @@ async function load() {
   loading.value = true
   try {
     [payslips.value, periods.value, employees.value] = await Promise.all([
-      payslipService.getAll({ payrollPeriodId: filterPeriod.value || undefined, employeeId: filterEmployee.value || undefined }),
+      payslipService.getAll({ periodId: filterPeriod.value || undefined, employeeId: filterEmployee.value || undefined }),
       payrollPeriodService.getAll(), employeeService.getAll(),
     ])
   } catch { toast.error('Không thể tải dữ liệu') }
@@ -59,10 +59,9 @@ onMounted(load)
 
     <AppTable :columns="columns" :rows="payslips" :loading="loading" row-key="id" empty-text="Chưa có phiếu lương nào">
       <template #default="{ row }">
-        <td class="px-4 py-3 text-sm font-medium">{{ (row as Payslip).employeeName }}</td>
-        <td class="px-4 py-3 text-sm text-slate-600">{{ (row as Payslip).departmentName }}</td>
-        <td class="px-4 py-3 text-sm text-slate-600">{{ (row as Payslip).periodName }}</td>
-        <td class="px-4 py-3 text-sm">{{ (row as Payslip).actualWorkDays }}/{{ (row as Payslip).standardWorkDays }}</td>
+        <td class="px-4 py-3 text-sm font-medium">{{ (row as Payslip).fullName }}</td>
+        <td class="px-4 py-3 text-sm text-slate-500">{{ (row as Payslip).employeeCode }}</td>
+        <td class="px-4 py-3 text-sm font-semibold text-emerald-700">{{ (row as Payslip).workedDays?.toFixed(1) }}</td>
         <td class="px-4 py-3 text-sm">{{ fmtMoney((row as Payslip).grossSalary) }}</td>
         <td class="px-4 py-3 text-sm font-bold text-emerald-700">{{ fmtMoney((row as Payslip).netSalary) }}</td>
         <td class="px-4 py-3">

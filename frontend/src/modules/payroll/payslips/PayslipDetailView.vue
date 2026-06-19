@@ -26,7 +26,7 @@ onMounted(load)
 
 <template>
   <div class="max-w-2xl">
-    <PageHeader :title="payslip ? `Phiếu lương — ${payslip.periodName}` : '...'" :breadcrumbs="[{ label: 'Lương & Báo cáo' }, { label: 'Phiếu lương', to: '/payroll/payslips' }, { label: payslip?.employeeName ?? '' }]" />
+    <PageHeader :title="payslip ? `Phiếu lương — ${payslip.fullName}` : '...'" :breadcrumbs="[{ label: 'Lương & Báo cáo' }, { label: 'Phiếu lương', to: '/payroll/payslips' }, { label: payslip?.fullName ?? '' }]" />
 
     <div v-if="loading" class="space-y-3">
       <div v-for="n in 6" :key="n" class="h-10 animate-pulse rounded-lg bg-slate-200" />
@@ -36,16 +36,16 @@ onMounted(load)
       <!-- Header -->
       <div class="bg-emerald-600 px-6 py-5 text-white">
         <div class="text-lg font-bold">PHIẾU LƯƠNG</div>
-        <div class="text-sm opacity-80 mt-0.5">{{ payslip.periodName }}</div>
+        <div class="text-sm opacity-80 mt-0.5">{{ payslip.employeeCode }} — {{ payslip.fullName }}</div>
       </div>
 
       <!-- Employee info -->
       <div class="border-b border-slate-200 px-6 py-4">
         <div class="grid grid-cols-2 gap-2 text-sm">
-          <div><span class="text-slate-500">Họ tên:</span> <span class="ml-1 font-semibold">{{ payslip.employeeName }}</span></div>
-          <div><span class="text-slate-500">Phòng ban:</span> <span class="ml-1">{{ payslip.departmentName }}</span></div>
-          <div><span class="text-slate-500">Chức vụ:</span> <span class="ml-1">{{ payslip.positionName }}</span></div>
-          <div><span class="text-slate-500">Ngày công:</span> <span class="ml-1 font-semibold">{{ payslip.actualWorkDays }}/{{ payslip.standardWorkDays }} ngày</span></div>
+          <div><span class="text-slate-500">Họ tên:</span> <span class="ml-1 font-semibold">{{ payslip.fullName }}</span></div>
+          <div><span class="text-slate-500">Mã NV:</span> <span class="ml-1">{{ payslip.employeeCode }}</span></div>
+          <div><span class="text-slate-500">Ngày công:</span> <span class="ml-1 font-semibold">{{ payslip.workedDays?.toFixed(1) }} ngày</span></div>
+          <div><span class="text-slate-500">Phép có lương:</span> <span class="ml-1">{{ payslip.paidLeaveDays }} ngày</span></div>
         </div>
       </div>
 
@@ -53,8 +53,7 @@ onMounted(load)
       <div class="px-6 py-4 space-y-1">
         <div class="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-2">Thu nhập</div>
         <div class="flex justify-between text-sm"><span>Lương cơ bản</span><span class="font-medium">{{ fmtMoney(payslip.baseSalary) }}</span></div>
-        <div class="flex justify-between text-sm"><span>Lương theo ngày công</span><span class="font-medium">{{ fmtMoney(payslip.salaryByWork) }}</span></div>
-        <template v-for="item in payslip.items?.filter(i => i.type === 'Earning')" :key="item.id">
+        <template v-for="item in payslip.items" :key="item.id">
           <div class="flex justify-between text-sm text-blue-700"><span>+ {{ item.name }}</span><span>{{ fmtMoney(item.amount) }}</span></div>
         </template>
         <div class="flex justify-between text-sm font-semibold border-t border-slate-100 pt-2 mt-1">
@@ -65,11 +64,9 @@ onMounted(load)
       <!-- Deduction rows -->
       <div class="border-t border-slate-100 px-6 py-4 space-y-1">
         <div class="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-2">Khấu trừ</div>
-        <template v-for="item in payslip.items?.filter(i => i.type === 'Deduction')" :key="item.id">
-          <div class="flex justify-between text-sm text-red-600"><span>- {{ item.name }}</span><span>{{ fmtMoney(item.amount) }}</span></div>
-        </template>
-        <div class="flex justify-between text-sm font-semibold border-t border-slate-100 pt-2">
-          <span>Tổng khấu trừ</span><span class="text-red-700">{{ fmtMoney(payslip.totalDeductions) }}</span>
+        <div v-if="payslip.totalDeduction === 0" class="text-sm text-slate-400">Không có khấu trừ</div>
+        <div v-else class="flex justify-between text-sm font-semibold border-t border-slate-100 pt-2">
+          <span>Tổng khấu trừ</span><span class="text-red-700">{{ fmtMoney(payslip.totalDeduction) }}</span>
         </div>
       </div>
 
