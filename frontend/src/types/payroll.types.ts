@@ -115,29 +115,27 @@ export interface CreateDeductionDto {
 
 export interface PayslipItem {
   id: string
-  type: 'Earning' | 'Deduction'
+  itemType: string
+  code: string
   name: string
   amount: number
+  sourceType?: string
 }
 
 export interface Payslip {
   id: string
   payrollPeriodId: string
-  periodName?: string
   employeeId: string
-  employeeName?: string
-  departmentName?: string
-  positionName?: string
+  employeeCode: string
+  fullName: string
   baseSalary: number
-  actualWorkDays: number
-  standardWorkDays: number
-  salaryByWork: number
-  totalAllowances: number
-  totalDeductions: number
+  workedDays: number
+  paidLeaveDays: number
   grossSalary: number
+  totalDeduction: number
   netSalary: number
+  status: string
   items?: PayslipItem[]
-  createdAt: string
 }
 
 // ---

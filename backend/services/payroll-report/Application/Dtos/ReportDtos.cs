@@ -10,8 +10,9 @@ public record DepartmentSummaryDto(
     int EmployeeCount,
     decimal TotalBaseSalary,
     decimal TotalWorkedDays,
-    decimal TotalGrossSalary,
+    decimal TotalAllowance,
     decimal TotalDeduction,
+    decimal TotalGrossSalary,
     decimal TotalNetSalary
 );
 
@@ -20,6 +21,7 @@ public record PayrollSummaryReportDto(
     string PeriodName,
     int TotalEmployees,
     decimal TotalBaseSalary,
+    decimal TotalAllowance,
     decimal TotalGrossSalary,
     decimal TotalDeduction,
     decimal TotalNetSalary,

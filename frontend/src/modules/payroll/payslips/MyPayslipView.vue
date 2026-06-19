@@ -48,12 +48,12 @@ onMounted(load)
         class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
         @click="router.push(`/payroll/payslips/${p.id}`)"
       >
-        <div class="text-sm font-semibold text-slate-700">{{ p.periodName }}</div>
+        <div class="text-sm font-semibold text-slate-700">{{ p.fullName }} ({{ p.employeeCode }})</div>
         <div class="mt-3 text-3xl font-bold text-emerald-700">{{ fmtMoney(p.netSalary) }}</div>
-        <div class="mt-2 text-xs text-slate-500">Ngày công: {{ p.actualWorkDays }}/{{ p.standardWorkDays }} ngày</div>
+        <div class="mt-2 text-xs text-slate-500">Ngày công: {{ p.workedDays?.toFixed(1) }} ngày</div>
         <div class="mt-3 flex justify-between text-xs text-slate-400">
           <span>Gross: {{ fmtMoney(p.grossSalary) }}</span>
-          <span class="text-red-400">-{{ fmtMoney(p.totalDeductions) }}</span>
+          <span class="text-red-400">-{{ fmtMoney(p.totalDeduction) }}</span>
         </div>
         <div class="mt-2 text-xs text-emerald-600 font-medium">Xem chi tiết →</div>
       </div>

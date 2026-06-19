@@ -23,9 +23,10 @@ const closing = ref(false)
 const showCloseConfirm = ref(false)
 
 const columns = [
-  { key: 'employee', label: 'Nhân viên' }, { key: 'dept', label: 'Phòng ban' },
-  { key: 'workDays', label: 'Ngày công' }, { key: 'allowances', label: 'Phụ cấp' },
-  { key: 'deductions', label: 'Khấu trừ' }, { key: 'gross', label: 'Gross' }, { key: 'net', label: 'Net lương' }, { key: 'actions', label: '' },
+  { key: 'employee', label: 'Nhân viên' }, { key: 'code', label: 'Mã NV' },
+  { key: 'workDays', label: 'Ngày công' }, { key: 'paidLeave', label: 'Phép CL' },
+  { key: 'gross', label: 'Gross' }, { key: 'deductions', label: 'Khấu trừ' },
+  { key: 'net', label: 'Net lương' }, { key: 'actions', label: '' },
 ]
 
 async function load() {
@@ -34,7 +35,7 @@ async function load() {
   try {
     [period.value, payslips.value] = await Promise.all([
       payrollPeriodService.getById(id),
-      payslipService.getAll({ payrollPeriodId: id }),
+      payslipService.getAll({ periodId: id }),
     ])
   } catch { toast.error('Không tìm thấy kỳ lương'); router.push('/payroll/periods') }
   finally { loading.value = false }
@@ -103,12 +104,12 @@ onMounted(load)
     <!-- Payslips table -->
     <AppTable :columns="columns" :rows="payslips" :loading="loading" row-key="id" empty-text="Chưa có phiếu lương — hãy nhấn Tính lương">
       <template #default="{ row }">
-        <td class="px-4 py-3 text-sm font-medium">{{ (row as Payslip).employeeName }}</td>
-        <td class="px-4 py-3 text-sm text-slate-600">{{ (row as Payslip).departmentName }}</td>
-        <td class="px-4 py-3 text-sm">{{ (row as Payslip).actualWorkDays }}/{{ (row as Payslip).standardWorkDays }}</td>
-        <td class="px-4 py-3 text-sm text-blue-600">{{ fmtMoney((row as Payslip).totalAllowances) }}</td>
-        <td class="px-4 py-3 text-sm text-red-600">{{ fmtMoney((row as Payslip).totalDeductions) }}</td>
+        <td class="px-4 py-3 text-sm font-medium">{{ (row as Payslip).fullName }}</td>
+        <td class="px-4 py-3 text-sm text-slate-500">{{ (row as Payslip).employeeCode }}</td>
+        <td class="px-4 py-3 text-sm font-semibold text-emerald-700">{{ (row as Payslip).workedDays.toFixed(1) }}</td>
+        <td class="px-4 py-3 text-sm">{{ (row as Payslip).paidLeaveDays > 0 ? (row as Payslip).paidLeaveDays : '—' }}</td>
         <td class="px-4 py-3 text-sm font-medium">{{ fmtMoney((row as Payslip).grossSalary) }}</td>
+        <td class="px-4 py-3 text-sm text-red-600">{{ (row as Payslip).totalDeduction > 0 ? fmtMoney((row as Payslip).totalDeduction) : '—' }}</td>
         <td class="px-4 py-3 text-sm font-bold text-emerald-700">{{ fmtMoney((row as Payslip).netSalary) }}</td>
         <td class="px-4 py-3">
           <AppButton size="sm" variant="ghost" @click="router.push(`/payroll/payslips/${(row as Payslip).id}`)">Xem</AppButton>
