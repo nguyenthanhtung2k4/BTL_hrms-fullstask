@@ -1,61 +1,116 @@
 -- ============================================================
 -- Sync Projections between HRMS Databases
--- Syncs Departments, Positions and updates EmployeeProjections
+-- Pulls the latest master data from HR Core database (HRMS_HrCoreDb)
+-- to Attendance (HRMS_AttendanceDb) and Payroll (HRMS_PayrollReportDb)
 -- ============================================================
 
--- 1. Sync Departments to HRMS_AttendanceDb
+-- 1. Sync DepartmentProjections to HRMS_AttendanceDb
 MERGE HRMS_AttendanceDb.dbo.DepartmentProjections AS target
 USING HRMS_HrCoreDb.dbo.Departments AS source
 ON (target.DepartmentId = source.Id)
 WHEN MATCHED THEN
-    UPDATE SET target.Code = source.Code, target.Name = source.Name, target.IsActive = source.IsActive, target.LastSyncedAt = GETUTCDATE()
+    UPDATE SET 
+        target.Code = source.Code, 
+        target.Name = source.Name, 
+        target.IsActive = source.IsActive, 
+        target.LastSyncedAt = GETUTCDATE()
 WHEN NOT MATCHED THEN
     INSERT (DepartmentId, Code, Name, IsActive, LastSyncedAt)
     VALUES (source.Id, source.Code, source.Name, source.IsActive, GETUTCDATE());
 
--- 2. Sync Departments to HRMS_PayrollReportDb
+-- 2. Sync DepartmentProjections to HRMS_PayrollReportDb
 MERGE HRMS_PayrollReportDb.dbo.DepartmentProjections AS target
 USING HRMS_HrCoreDb.dbo.Departments AS source
 ON (target.DepartmentId = source.Id)
 WHEN MATCHED THEN
-    UPDATE SET target.Code = source.Code, target.Name = source.Name, target.IsActive = source.IsActive, target.LastSyncedAt = GETUTCDATE()
+    UPDATE SET 
+        target.Code = source.Code, 
+        target.Name = source.Name, 
+        target.IsActive = source.IsActive, 
+        target.LastSyncedAt = GETUTCDATE()
 WHEN NOT MATCHED THEN
     INSERT (DepartmentId, Code, Name, IsActive, LastSyncedAt)
     VALUES (source.Id, source.Code, source.Name, source.IsActive, GETUTCDATE());
 
--- 3. Sync Positions to HRMS_AttendanceDb
+-- 3. Sync PositionProjections to HRMS_AttendanceDb
 MERGE HRMS_AttendanceDb.dbo.PositionProjections AS target
 USING HRMS_HrCoreDb.dbo.Positions AS source
 ON (target.PositionId = source.Id)
 WHEN MATCHED THEN
-    UPDATE SET target.Code = source.Code, target.Name = source.Name, target.IsActive = source.IsActive, target.LastSyncedAt = GETUTCDATE()
+    UPDATE SET 
+        target.Code = source.Code, 
+        target.Name = source.Name, 
+        target.IsActive = source.IsActive, 
+        target.LastSyncedAt = GETUTCDATE()
 WHEN NOT MATCHED THEN
     INSERT (PositionId, Code, Name, IsActive, LastSyncedAt)
     VALUES (source.Id, source.Code, source.Name, source.IsActive, GETUTCDATE());
 
--- 4. Sync Positions to HRMS_PayrollReportDb
+-- 4. Sync PositionProjections to HRMS_PayrollReportDb
 MERGE HRMS_PayrollReportDb.dbo.PositionProjections AS target
 USING HRMS_HrCoreDb.dbo.Positions AS source
 ON (target.PositionId = source.Id)
 WHEN MATCHED THEN
-    UPDATE SET target.Code = source.Code, target.Name = source.Name, target.IsActive = source.IsActive, target.LastSyncedAt = GETUTCDATE()
+    UPDATE SET 
+        target.Code = source.Code, 
+        target.Name = source.Name, 
+        target.IsActive = source.IsActive, 
+        target.LastSyncedAt = GETUTCDATE()
 WHEN NOT MATCHED THEN
     INSERT (PositionId, Code, Name, IsActive, LastSyncedAt)
     VALUES (source.Id, source.Code, source.Name, source.IsActive, GETUTCDATE());
 
--- 5. Update EmployeeProjections in HRMS_AttendanceDb
-UPDATE dest
-SET dest.DepartmentId = src.DepartmentId,
-    dest.PositionId = src.PositionId
-FROM HRMS_AttendanceDb.dbo.EmployeeProjections dest
-INNER JOIN HRMS_HrCoreDb.dbo.Employees src ON dest.EmployeeId = src.Id;
+-- 5. Sync EmployeeProjections to HRMS_AttendanceDb
+MERGE HRMS_AttendanceDb.dbo.EmployeeProjections AS target
+USING HRMS_HrCoreDb.dbo.Employees AS source
+ON (target.EmployeeId = source.Id)
+WHEN MATCHED THEN
+    UPDATE SET 
+        target.EmployeeCode = source.EmployeeCode,
+        target.FullName = source.FullName,
+        target.Email = source.Email,
+        target.DepartmentId = source.DepartmentId,
+        target.PositionId = source.PositionId,
+        target.ManagerEmployeeId = source.ManagerEmployeeId,
+        target.Status = source.Status,
+        target.LastSyncedAt = GETUTCDATE()
+WHEN NOT MATCHED THEN
+    INSERT (EmployeeId, EmployeeCode, FullName, Email, DepartmentId, PositionId, ManagerEmployeeId, Status, LastSyncedAt)
+    VALUES (source.Id, source.EmployeeCode, source.FullName, source.Email, source.DepartmentId, source.PositionId, source.ManagerEmployeeId, source.Status, GETUTCDATE());
 
--- 6. Update EmployeeProjections in HRMS_PayrollReportDb
-UPDATE dest
-SET dest.DepartmentId = src.DepartmentId,
-    dest.PositionId = src.PositionId
-FROM HRMS_PayrollReportDb.dbo.EmployeeProjections dest
-INNER JOIN HRMS_HrCoreDb.dbo.Employees src ON dest.EmployeeId = src.Id;
+-- 6. Sync EmployeeProjections to HRMS_PayrollReportDb
+MERGE HRMS_PayrollReportDb.dbo.EmployeeProjections AS target
+USING HRMS_HrCoreDb.dbo.Employees AS source
+ON (target.EmployeeId = source.Id)
+WHEN MATCHED THEN
+    UPDATE SET 
+        target.EmployeeCode = source.EmployeeCode,
+        target.FullName = source.FullName,
+        target.Email = source.Email,
+        target.DepartmentId = source.DepartmentId,
+        target.PositionId = source.PositionId,
+        target.ManagerEmployeeId = source.ManagerEmployeeId,
+        target.Status = source.Status,
+        target.LastSyncedAt = GETUTCDATE()
+WHEN NOT MATCHED THEN
+    INSERT (EmployeeId, EmployeeCode, FullName, Email, DepartmentId, PositionId, ManagerEmployeeId, Status, LastSyncedAt)
+    VALUES (source.Id, source.EmployeeCode, source.FullName, source.Email, source.DepartmentId, source.PositionId, source.ManagerEmployeeId, source.Status, GETUTCDATE());
 
-PRINT 'Projections synchronized successfully.';
+-- 7. Sync EmployeeSalaryProjections to HRMS_PayrollReportDb (Contracts -> SalaryProjections)
+MERGE HRMS_PayrollReportDb.dbo.EmployeeSalaryProjections AS target
+USING HRMS_HrCoreDb.dbo.Contracts AS source
+ON (target.ContractId = source.Id)
+WHEN MATCHED THEN
+    UPDATE SET 
+        target.EmployeeId = source.EmployeeId,
+        target.BaseSalary = source.BaseSalary,
+        target.EffectiveFrom = source.StartDate,
+        target.EffectiveTo = source.EndDate,
+        target.Status = source.Status,
+        target.LastSyncedAt = GETUTCDATE()
+WHEN NOT MATCHED THEN
+    INSERT (Id, EmployeeId, ContractId, BaseSalary, EffectiveFrom, EffectiveTo, Status, LastSyncedAt)
+    VALUES (NEWID(), source.EmployeeId, source.Id, source.BaseSalary, source.StartDate, source.EndDate, source.Status, GETUTCDATE());
+
+PRINT 'All projections synchronized with the latest data from HR Core successfully.';
 GO
