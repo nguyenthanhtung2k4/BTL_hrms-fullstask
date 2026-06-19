@@ -30,6 +30,7 @@ public class ReportService : IReportService
         // Get all payslips for this period
         var payslips = await _dbContext.Payslips
             .Include(p => p.Employee)
+            .Include(p => p.Items)
             .Where(p => p.PayrollPeriodId == periodId)
             .ToListAsync();
 
@@ -51,7 +52,7 @@ public class ReportService : IReportService
                     dept.Id,
                     dept.Code,
                     dept.Name,
-                    0, 0, 0, 0, 0, 0
+                    0, 0, 0, 0, 0, 0, 0
                 ));
                 continue;
             }
@@ -63,8 +64,9 @@ public class ReportService : IReportService
                 EmployeeCount: deptPayslips.Count,
                 TotalBaseSalary: deptPayslips.Sum(p => p.BaseSalary),
                 TotalWorkedDays: deptPayslips.Sum(p => p.WorkedDays),
-                TotalGrossSalary: deptPayslips.Sum(p => p.GrossSalary),
+                TotalAllowance: deptPayslips.Sum(p => p.Items.Where(i => i.ItemType == "Allowance").Sum(i => i.Amount)),
                 TotalDeduction: deptPayslips.Sum(p => p.TotalDeduction),
+                TotalGrossSalary: deptPayslips.Sum(p => p.GrossSalary),
                 TotalNetSalary: deptPayslips.Sum(p => p.NetSalary)
             ));
         }
@@ -83,8 +85,9 @@ public class ReportService : IReportService
                 unassignedPayslips.Count,
                 unassignedPayslips.Sum(p => p.BaseSalary),
                 unassignedPayslips.Sum(p => p.WorkedDays),
-                unassignedPayslips.Sum(p => p.GrossSalary),
+                unassignedPayslips.Sum(p => p.Items.Where(i => i.ItemType == "Allowance").Sum(i => i.Amount)),
                 unassignedPayslips.Sum(p => p.TotalDeduction),
+                unassignedPayslips.Sum(p => p.GrossSalary),
                 unassignedPayslips.Sum(p => p.NetSalary)
             ));
         }
@@ -94,6 +97,7 @@ public class ReportService : IReportService
             PeriodName: period.Name,
             TotalEmployees: payslips.Count,
             TotalBaseSalary: payslips.Sum(p => p.BaseSalary),
+            TotalAllowance: payslips.Sum(p => p.Items.Where(i => i.ItemType == "Allowance").Sum(i => i.Amount)),
             TotalGrossSalary: payslips.Sum(p => p.GrossSalary),
             TotalDeduction: payslips.Sum(p => p.TotalDeduction),
             TotalNetSalary: payslips.Sum(p => p.NetSalary),
