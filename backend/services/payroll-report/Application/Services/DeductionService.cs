@@ -25,6 +25,7 @@ public class DeductionService : IDeductionService
         var query = _dbContext.EmployeeDeductions
             .Include(d => d.Employee)
             .Include(d => d.DeductionType)
+            .Include(d => d.PayrollPeriod)
             .AsQueryable();
 
         if (employeeId.HasValue)
@@ -44,6 +45,7 @@ public class DeductionService : IDeductionService
                 d.Employee != null ? d.Employee.EmployeeCode : string.Empty,
                 d.Employee != null ? d.Employee.FullName : string.Empty,
                 d.PayrollPeriodId,
+                d.PayrollPeriod != null ? d.PayrollPeriod.Name : string.Empty,
                 d.DeductionTypeId,
                 d.DeductionType != null ? d.DeductionType.Code : string.Empty,
                 d.DeductionType != null ? d.DeductionType.Name : string.Empty,
@@ -61,6 +63,7 @@ public class DeductionService : IDeductionService
         var deduction = await _dbContext.EmployeeDeductions
             .Include(d => d.Employee)
             .Include(d => d.DeductionType)
+            .Include(d => d.PayrollPeriod)
             .FirstOrDefaultAsync(d => d.Id == id);
 
         if (deduction == null)
@@ -74,6 +77,7 @@ public class DeductionService : IDeductionService
             deduction.Employee != null ? deduction.Employee.EmployeeCode : string.Empty,
             deduction.Employee != null ? deduction.Employee.FullName : string.Empty,
             deduction.PayrollPeriodId,
+            deduction.PayrollPeriod != null ? deduction.PayrollPeriod.Name : string.Empty,
             deduction.DeductionTypeId,
             deduction.DeductionType != null ? deduction.DeductionType.Code : string.Empty,
             deduction.DeductionType != null ? deduction.DeductionType.Name : string.Empty,

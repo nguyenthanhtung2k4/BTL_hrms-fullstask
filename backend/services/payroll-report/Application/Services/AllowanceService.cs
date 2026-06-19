@@ -25,6 +25,7 @@ public class AllowanceService : IAllowanceService
         var query = _dbContext.EmployeeAllowances
             .Include(a => a.Employee)
             .Include(a => a.AllowanceType)
+            .Include(a => a.PayrollPeriod)
             .AsQueryable();
 
         if (employeeId.HasValue)
@@ -44,6 +45,7 @@ public class AllowanceService : IAllowanceService
                 a.Employee != null ? a.Employee.EmployeeCode : string.Empty,
                 a.Employee != null ? a.Employee.FullName : string.Empty,
                 a.PayrollPeriodId,
+                a.PayrollPeriod != null ? a.PayrollPeriod.Name : string.Empty,
                 a.AllowanceTypeId,
                 a.AllowanceType != null ? a.AllowanceType.Code : string.Empty,
                 a.AllowanceType != null ? a.AllowanceType.Name : string.Empty,
@@ -61,6 +63,7 @@ public class AllowanceService : IAllowanceService
         var allowance = await _dbContext.EmployeeAllowances
             .Include(a => a.Employee)
             .Include(a => a.AllowanceType)
+            .Include(a => a.PayrollPeriod)
             .FirstOrDefaultAsync(a => a.Id == id);
 
         if (allowance == null)
@@ -74,6 +77,7 @@ public class AllowanceService : IAllowanceService
             allowance.Employee != null ? allowance.Employee.EmployeeCode : string.Empty,
             allowance.Employee != null ? allowance.Employee.FullName : string.Empty,
             allowance.PayrollPeriodId,
+            allowance.PayrollPeriod != null ? allowance.PayrollPeriod.Name : string.Empty,
             allowance.AllowanceTypeId,
             allowance.AllowanceType != null ? allowance.AllowanceType.Code : string.Empty,
             allowance.AllowanceType != null ? allowance.AllowanceType.Name : string.Empty,
