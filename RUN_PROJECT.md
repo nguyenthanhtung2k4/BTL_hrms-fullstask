@@ -2,6 +2,123 @@
 
 File này ghi các lệnh chạy nhanh backend, frontend, SQL Server và RabbitMQ.
 
+## 0. Yêu cầu cài đặt (Prerequisites)
+
+### 0.1 Cài Docker Desktop (bắt buộc)
+
+Dự án sử dụng Docker để chạy **SQL Server 2022** và **RabbitMQ**. Cần cài Docker Desktop trước.
+
+**Bước 1: Bật WSL2 (Windows Subsystem for Linux)**
+
+Mở PowerShell **với quyền Admin** và chạy:
+
+```powershell
+wsl --install
+```
+
+Nếu đã cài WSL rồi, đảm bảo đang dùng WSL2:
+
+```powershell
+wsl --set-default-version 2
+```
+
+Khởi động lại máy sau khi cài xong.
+
+**Bước 2: Tải và cài Docker Desktop**
+
+- Tải từ: https://www.docker.com/products/docker-desktop/
+- Chọn phiên bản **Windows (AMD64)** hoặc **ARM64** tùy máy
+- Chạy file `.exe` vừa tải, chọn **Use WSL 2 instead of Hyper-V** khi được hỏi
+- Cài xong → khởi động lại máy
+
+**Bước 3: Kiểm tra Docker đã cài thành công**
+
+```powershell
+docker --version
+# Kết quả mong đợi: Docker version 27.x.x, build ...
+
+docker compose version
+# Kết quả mong đợi: Docker Compose version v2.x.x
+```
+
+**Bước 4: Chạy Docker containers cho dự án**
+
+```powershell
+cd D:\CODE\DNU_Full_Stask\BTL_FULL_STASK
+docker compose -f infra/docker-compose.yml up -d
+```
+
+Kiểm tra containers đang chạy:
+
+```powershell
+docker ps
+```
+
+Kết quả mong đợi:
+
+```text
+CONTAINER ID   IMAGE                                        PORTS                              NAMES
+xxxxxxxxxxxx   mcr.microsoft.com/mssql/server:2022-latest   0.0.0.0:1434->1433/tcp             hrms-sqlserver
+xxxxxxxxxxxx   rabbitmq:3-management                        0.0.0.0:5672->5672/tcp, 15672/tcp  hrms-rabbitmq
+```
+
+**Bước 5: Kiểm tra kết nối SQL Server**
+
+```powershell
+sqlcmd -S localhost,1434 -U sa -P "Hrms@123456789" -C -Q "SELECT @@VERSION"
+```
+
+Hoặc dùng SQL Server Management Studio (SSMS) kết nối:
+
+```text
+Server:   localhost,1434
+Login:    sa
+Password: Hrms@123456789
+```
+
+### 0.2 Docker — Xử lý lỗi thường gặp
+
+| Lỗi | Nguyên nhân | Cách sửa |
+|---|---|---|
+| `docker: command not found` | Chưa cài Docker hoặc chưa thêm PATH | Cài lại Docker Desktop, tick "Add to PATH" |
+| `Cannot connect to Docker daemon` | Docker Desktop chưa khởi động | Mở Docker Desktop, đợi icon xanh ở taskbar |
+| `WSL 2 installation is incomplete` | Chưa cài WSL2 kernel | Chạy `wsl --install` rồi restart |
+| `port 1434 already in use` | SQL Server local đang chạy | Tắt SQL Server local: `net stop MSSQLSERVER` |
+| `port 5672 already in use` | RabbitMQ/Erlang local đang chạy | Tắt service RabbitMQ local |
+| Container tự tắt sau vài giây | Thiếu RAM (SQL Server cần ≥ 2GB) | Tăng RAM cho Docker: Settings → Resources → Memory ≥ 4GB |
+
+### 0.3 Các phần mềm khác cần cài
+
+| Phần mềm | Phiên bản | Link tải |
+|---|---|---|
+| **.NET SDK** | 8.0+ | https://dotnet.microsoft.com/download/dotnet/8.0 |
+| **Node.js** | 18+ (LTS) | https://nodejs.org/ |
+| **Docker Desktop** | Latest | https://www.docker.com/products/docker-desktop/ |
+| **Git** | Latest | https://git-scm.com/downloads |
+
+Kiểm tra nhanh:
+
+```powershell
+dotnet --version    # >= 8.0.x
+node --version      # >= 18.x
+npm --version       # >= 9.x
+docker --version    # >= 24.x
+git --version       # >= 2.x
+```
+
+### 0.4 Thông tin kết nối
+
+| Service | Host | Port | Credentials |
+|---|---|---|---|
+| SQL Server | localhost | **1434** | `sa` / `Hrms@123456789` |
+| RabbitMQ | localhost | **5672** (AMQP) / **15672** (Web UI) | `guest` / `guest` |
+| API Gateway | localhost | **5000** | — |
+| HR Core | localhost | **5001** | — |
+| Attendance | localhost | **5002** | — |
+| Payroll | localhost | **5003** | — |
+| Frontend | localhost | **5173** | `admin@hrms.com` / `admin123` |
+
+---
 ## 1. Chạy tất cả bằng một lệnh
 
 Mở PowerShell tại root repo:
