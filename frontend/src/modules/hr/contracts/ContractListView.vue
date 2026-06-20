@@ -105,19 +105,22 @@ onMounted(load)
       </template>
     </PageHeader>
 
-    <div class="mb-4 flex gap-3 flex-wrap">
-      <select v-model="filterEmployee" class="h-9 rounded-lg border border-slate-300 px-3 text-sm bg-white outline-none focus:border-emerald-500">
-        <option value="">Tất cả nhân viên</option>
-        <option v-for="e in employees" :key="e.id" :value="e.id">{{ e.fullName }}</option>
-      </select>
-      <select v-model="filterStatus" class="h-9 rounded-lg border border-slate-300 px-3 text-sm bg-white outline-none focus:border-emerald-500">
-        <option value="">Tất cả trạng thái</option>
-        <option value="Active">Hiệu lực</option>
-        <option value="Expired">Hết hạn</option>
-        <option value="Terminated">Chấm dứt</option>
-      </select>
+    <div class="mb-6 flex gap-4 items-center">
+      <div class="flex gap-3">
+        <select v-model="filterEmployee" class="px-4 py-2.5 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200">
+          <option value="">Tất cả nhân viên</option>
+          <option v-for="e in employees" :key="e.id" :value="e.id">{{ e.fullName }}</option>
+        </select>
+        <select v-model="filterStatus" class="px-4 py-2.5 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200">
+          <option value="">Tất cả trạng thái</option>
+          <option value="Active">Hiệu lực</option>
+          <option value="Expired">Hết hạn</option>
+          <option value="Terminated">Chấm dứt</option>
+        </select>
+      </div>
     </div>
 
+    <div class="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
     <AppTable :columns="columns" :rows="filtered" :loading="loading" row-key="id" empty-text="Chưa có hợp đồng nào">
       <template #default="{ row }">
         <td class="px-4 py-3 text-sm font-mono">{{ (row as Contract).contractNumber }}</td>
@@ -135,6 +138,7 @@ onMounted(load)
         </td>
       </template>
     </AppTable>
+    </div>
 
     <AppModal v-if="showForm" :title="editTarget ? 'Sửa hợp đồng' : 'Thêm hợp đồng'" size="lg" @close="showForm = false">
       <div class="grid grid-cols-2 gap-4">

@@ -38,8 +38,8 @@ const map: Record<string, BadgeConfig> = {
 <template>
   <span
     :class="[
-      'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-      map[status]?.bg ?? 'bg-slate-100',
+      'inline-flex items-center rounded-md px-3 py-0.5 text-sm font-semibold',
+      map[status]?.bg ?? 'bg-slate-50',
       map[status]?.text ?? 'text-slate-600',
     ]"
   >

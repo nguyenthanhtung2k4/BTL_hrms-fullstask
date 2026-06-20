@@ -3,16 +3,14 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { employeeService } from '../../../services/employee.service'
 import { contractService } from '../../../services/contract.service'
-import { useAuthStore } from '../../../stores/auth'
 import { useToastStore } from '../../../stores/toast'
 import type { Employee, Contract } from '../../../types/hr.types'
 import PageHeader from '../../../components/layout/PageHeader.vue'
 import AppBadge from '../../../components/ui/AppBadge.vue'
-import AppButton from '../../../components/ui/AppButton.vue'
+import { Building2, Briefcase, User, Calendar, Phone, Users } from '@lucide/vue'
 
 const route = useRoute()
 const router = useRouter()
-const auth = useAuthStore()
 const toast = useToastStore()
 
 const employee = ref<Employee | null>(null)
@@ -33,6 +31,8 @@ async function load() {
 function fmt(d?: string) { return d ? new Date(d).toLocaleDateString('vi-VN') : '—' }
 function fmtMoney(n: number) { return n.toLocaleString('vi-VN') + ' ₫' }
 
+function setActiveTab(key: string) { activeTab.value = key as any }
+
 onMounted(load)
 </script>
 
@@ -52,36 +52,106 @@ onMounted(load)
             v-for="tab in [{ key: 'info', label: 'Thông tin cơ bản' }, { key: 'contracts', label: `Hợp đồng (${contracts.length})` }]"
             :key="tab.key"
             :class="['pb-3 text-sm font-medium border-b-2 transition-colors', activeTab === tab.key ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-900']"
-            @click="activeTab = tab.key as any"
+            @click="setActiveTab(tab.key)"
           >
             {{ tab.label }}
           </button>
         </nav>
       </div>
 
-      <!-- Tab: Info -->
+      <!-- Tab: Info (redesigned) -->
       <div v-if="activeTab === 'info'" class="rounded-xl border border-slate-200 bg-white p-6">
-        <div class="flex items-start justify-between">
-          <div class="flex items-center gap-4">
-            <div class="grid h-16 w-16 place-items-center rounded-full bg-emerald-100 text-2xl font-bold text-emerald-700">
+        <div class="flex flex-col lg:flex-row lg:items-start gap-6">
+          <!-- Avatar -->
+          <div class="flex-shrink-0">
+            <div class="h-28 w-28 overflow-hidden rounded-xl bg-slate-100 flex items-center justify-center text-3xl font-bold text-slate-700">
               {{ employee.fullName[0] }}
             </div>
-            <div>
-              <div class="text-xl font-bold text-slate-900">{{ employee.fullName }}</div>
-              <div class="text-sm text-slate-500">{{ employee.employeeCode }} · {{ employee.email }}</div>
-              <div class="mt-1"><AppBadge :status="employee.status" /></div>
+          </div>
+
+          <!-- Main info -->
+          <div class="flex-1">
+            <div class="flex items-start justify-between">
+              <div>
+                <div class="text-2xl font-bold text-slate-900">{{ employee.fullName }}</div>
+                <div class="mt-1 text-sm text-slate-500">{{ employee.employeeCode }} · {{ employee.email }}</div>
+                <div class="mt-3"><AppBadge :status="employee.status" /></div>
+              </div>
+            </div>
+
+            <!-- Info grid -->
+            <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+              <div class="flex items-center gap-3 rounded-lg border border-slate-100 p-3">
+                <div class="grid h-10 w-10 place-items-center rounded-lg bg-blue-50 text-blue-600">
+                  <Building2 :size="18" />
+                </div>
+                <div>
+                  <div class="text-[12px] text-slate-500">Phòng ban</div>
+                  <div class="font-medium text-slate-900">{{ employee.departmentName }}</div>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-3 rounded-lg border border-slate-100 p-3">
+                <div class="grid h-10 w-10 place-items-center rounded-lg bg-blue-50 text-blue-600">
+                  <Briefcase :size="18" />
+                </div>
+                <div>
+                  <div class="text-[12px] text-slate-500">Chức vụ</div>
+                  <div class="font-medium text-slate-900">{{ employee.positionName }}</div>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-3 rounded-lg border border-slate-100 p-3">
+                <div class="grid h-10 w-10 place-items-center rounded-lg bg-blue-50 text-blue-600">
+                  <User :size="18" />
+                </div>
+                <div>
+                  <div class="text-[12px] text-slate-500">Giới tính</div>
+                  <div class="font-medium text-slate-900">{{ employee.gender ?? '—' }}</div>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-3 rounded-lg border border-slate-100 p-3">
+                <div class="grid h-10 w-10 place-items-center rounded-lg bg-blue-50 text-blue-600">
+                  <Calendar :size="18" />
+                </div>
+                <div>
+                  <div class="text-[12px] text-slate-500">Ngày sinh</div>
+                  <div class="font-medium text-slate-900">{{ fmt(employee.dateOfBirth) }}</div>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-3 rounded-lg border border-slate-100 p-3">
+                <div class="grid h-10 w-10 place-items-center rounded-lg bg-blue-50 text-blue-600">
+                  <Calendar :size="18" />
+                </div>
+                <div>
+                  <div class="text-[12px] text-slate-500">Ngày vào làm</div>
+                  <div class="font-medium text-slate-900">{{ fmt(employee.hireDate) }}</div>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-3 rounded-lg border border-slate-100 p-3">
+                <div class="grid h-10 w-10 place-items-center rounded-lg bg-blue-50 text-blue-600">
+                  <Users :size="18" />
+                </div>
+                <div>
+                  <div class="text-[12px] text-slate-500">Quản lý</div>
+                  <div class="font-medium text-slate-900">{{ employee.managerName ?? '—' }}</div>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-3 rounded-lg border border-slate-100 p-3">
+                <div class="grid h-10 w-10 place-items-center rounded-lg bg-blue-50 text-blue-600">
+                  <Phone :size="18" />
+                </div>
+                <div>
+                  <div class="text-[12px] text-slate-500">Điện thoại</div>
+                  <div class="font-medium text-slate-900">{{ employee.phone ?? '—' }}</div>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-
-        <div class="mt-6 grid grid-cols-2 gap-x-8 gap-y-4 text-sm">
-          <div><span class="text-slate-500">Phòng ban:</span> <span class="ml-2 font-medium">{{ employee.departmentName }}</span></div>
-          <div><span class="text-slate-500">Chức vụ:</span> <span class="ml-2 font-medium">{{ employee.positionName }}</span></div>
-          <div><span class="text-slate-500">Quản lý:</span> <span class="ml-2 font-medium">{{ employee.managerName ?? '—' }}</span></div>
-          <div><span class="text-slate-500">SĐT:</span> <span class="ml-2 font-medium">{{ employee.phone ?? '—' }}</span></div>
-          <div><span class="text-slate-500">Giới tính:</span> <span class="ml-2 font-medium">{{ employee.gender ?? '—' }}</span></div>
-          <div><span class="text-slate-500">Ngày sinh:</span> <span class="ml-2 font-medium">{{ fmt(employee.dateOfBirth) }}</span></div>
-          <div><span class="text-slate-500">Ngày vào làm:</span> <span class="ml-2 font-medium">{{ fmt(employee.hireDate) }}</span></div>
         </div>
       </div>
 

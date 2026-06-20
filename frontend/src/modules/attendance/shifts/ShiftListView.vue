@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { shiftService } from '../../../services/shift.service'
 import { useAuthStore } from '../../../stores/auth'
 import { useToastStore } from '../../../stores/toast'
@@ -72,6 +72,10 @@ async function confirmDelete() {
   finally { deleteLoading.value = false }
 }
 
+function getShift(row: any): Shift {
+  return row as Shift
+}
+
 onMounted(load)
 </script>
 
@@ -86,22 +90,24 @@ onMounted(load)
       </template>
     </PageHeader>
 
+    <div class="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
     <AppTable :columns="columns" :rows="shifts" :loading="loading" row-key="id" empty-text="Chưa có ca làm việc nào">
       <template #default="{ row }">
-        <td class="px-4 py-3 text-sm font-mono">{{ (row as Shift).code }}</td>
-        <td class="px-4 py-3 text-sm font-medium">{{ (row as Shift).name }}</td>
-        <td class="px-4 py-3 text-sm">{{ (row as Shift).startTime }}</td>
-        <td class="px-4 py-3 text-sm">{{ (row as Shift).endTime }}</td>
-        <td class="px-4 py-3 text-sm">{{ (row as Shift).breakMinutes }} phút</td>
-        <td class="px-4 py-3"><AppBadge :status="(row as Shift).isActive ? 'Active' : 'Inactive'" /></td>
+        <td class="px-4 py-3 text-sm font-mono">{{ getShift(row).code }}</td>
+        <td class="px-4 py-3 text-sm font-medium">{{ getShift(row).name }}</td>
+        <td class="px-4 py-3 text-sm">{{ getShift(row).startTime }}</td>
+        <td class="px-4 py-3 text-sm">{{ getShift(row).endTime }}</td>
+        <td class="px-4 py-3 text-sm">{{ getShift(row).breakMinutes }} phút</td>
+        <td class="px-4 py-3"><AppBadge :status="getShift(row).isActive ? 'Active' : 'Inactive'" /></td>
         <td class="px-4 py-3 text-right">
           <div class="flex justify-end gap-2">
-            <AppButton v-if="auth.isHR" size="sm" variant="secondary" @click="openEdit(row as Shift)">Sửa</AppButton>
-            <AppButton v-if="auth.isAdmin" size="sm" variant="danger" @click="deleteTarget = row as Shift">Xóa</AppButton>
+            <AppButton v-if="auth.isHR" size="sm" variant="secondary" @click="openEdit(getShift(row))">Sửa</AppButton>
+            <AppButton v-if="auth.isAdmin" size="sm" variant="danger" @click="deleteTarget = getShift(row)">Xóa</AppButton>
           </div>
         </td>
       </template>
     </AppTable>
+    </div>
 
     <AppModal v-if="showForm" :title="editTarget ? 'Sửa ca làm việc' : 'Thêm ca làm việc'" @close="showForm = false">
       <div class="space-y-4">

@@ -25,7 +25,7 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="max-w-2xl">
+  <div class="w-full">
     <PageHeader :title="payslip ? `Phiếu lương — ${payslip.fullName}` : '...'" :breadcrumbs="[{ label: 'Lương & Báo cáo' }, { label: 'Phiếu lương', to: '/payroll/payslips' }, { label: payslip?.fullName ?? '' }]" />
 
     <div v-if="loading" class="space-y-3">

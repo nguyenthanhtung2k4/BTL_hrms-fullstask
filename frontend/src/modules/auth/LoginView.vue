@@ -45,120 +45,121 @@ async function handleLogin() {
 </script>
 
 <template>
-  <main class="min-h-screen bg-gradient-to-br from-slate-100 via-white to-emerald-50 flex items-center justify-center px-4">
-    <div class="w-full max-w-md">
-      <!-- Card -->
-      <div class="rounded-2xl border border-slate-200 bg-white/90 p-8 shadow-xl backdrop-blur">
-        <!-- Logo -->
-        <div class="flex items-center gap-3 mb-8">
-          <div class="grid h-12 w-12 place-items-center rounded-xl bg-emerald-600 text-white shadow-lg shadow-emerald-200">
-            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round"
-                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          </div>
-          <div>
-            <h1 class="text-xl font-bold text-slate-900">HRMS Workspace</h1>
-            <p class="text-xs text-slate-500">Hệ thống Quản lý Nhân sự & Chấm công</p>
+  <div class="min-h-screen w-full flex items-center justify-center bg-[#0f172a] p-4 md:p-8 select-none">
+    <div class="flex w-full max-w-5xl bg-[#1e293b] rounded-2xl overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.6)] min-h-[600px]">
+      <div class="hidden md:flex md:w-1/2 bg-[#0f172a] p-12 flex-col justify-between border-r border-slate-800">
+        <div>
+          <span class="inline-block px-3 py-1 text-xs font-semibold tracking-wider text-blue-300 bg-blue-900/50 rounded-full uppercase">
+            HRMS Enterprise
+          </span>
+
+          <h1 class="mt-6 text-3xl font-extrabold text-white tracking-tight leading-tight">
+            Quản lý nhân sự doanh nghiệp chuẩn mực
+          </h1>
+          <p class="mt-3 text-sm text-slate-400 leading-relaxed">
+            Nền tảng HRMS toàn diện dành cho doanh nghiệp: chấm công, quản lý nhân viên, lương thưởng và báo cáo chuyên sâu.
+          </p>
+
+          <div class="mt-8 space-y-4">
+            <div class="flex items-start gap-3">
+              <span class="flex items-center justify-center w-6 h-6 text-xs font-bold text-blue-400 bg-blue-950/50 border border-blue-800/50 rounded-full mt-0.5">01</span>
+              <div>
+                <h4 class="text-sm font-semibold text-slate-200">Bảo mật doanh nghiệp</h4>
+                <p class="text-xs text-slate-400">Hệ thống phân quyền rõ ràng và bảo vệ dữ liệu nhân sự toàn diện.</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <span class="flex items-center justify-center w-6 h-6 text-xs font-bold text-blue-400 bg-blue-950/50 border border-blue-800/50 rounded-full mt-0.5">02</span>
+              <div>
+                <h4 class="text-sm font-semibold text-slate-200">Quy trình vận hành</h4>
+                <p class="text-xs text-slate-400">Tích hợp chấm công, duyệt phép và báo cáo lương trong cùng một luồng.</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <span class="flex items-center justify-center w-6 h-6 text-xs font-bold text-blue-400 bg-blue-950/50 border border-blue-800/50 rounded-full mt-0.5">03</span>
+              <div>
+                <h4 class="text-sm font-semibold text-slate-200">Giao diện chuyên nghiệp</h4>
+                <p class="text-xs text-slate-400">Thiết kế tinh gọn, dễ dùng cho cả nhân viên và cấp quản lý.</p>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Error chung -->
-        <div
-          v-if="errors.general"
-          class="mb-4 flex items-center gap-2 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700"
-        >
-          <svg class="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          {{ errors.general }}
-        </div>
-
-        <!-- Form -->
-        <form class="space-y-4" @submit.prevent="handleLogin">
-          <!-- Email -->
-          <div class="flex flex-col gap-1">
-            <label class="text-sm font-medium text-slate-700" for="login-email">
-              Email <span class="text-red-500">*</span>
-            </label>
-            <input
-              id="login-email"
-              v-model="email"
-              type="email"
-              placeholder="admin@hrms.com"
-              autocomplete="email"
-              :class="[
-                'h-11 w-full rounded-lg border px-4 text-sm outline-none transition-colors',
-                errors.email
-                  ? 'border-red-400 bg-red-50 focus:border-red-500 focus:ring-1 focus:ring-red-400'
-                  : 'border-slate-300 bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-400',
-              ]"
-            />
-            <p v-if="errors.email" class="text-xs text-red-500">{{ errors.email }}</p>
-          </div>
-
-          <!-- Password -->
-          <div class="flex flex-col gap-1">
-            <label class="text-sm font-medium text-slate-700" for="login-password">
-              Mật khẩu <span class="text-red-500">*</span>
-            </label>
-            <input
-              id="login-password"
-              v-model="password"
-              type="password"
-              placeholder="••••••••"
-              autocomplete="current-password"
-              :class="[
-                'h-11 w-full rounded-lg border px-4 text-sm outline-none transition-colors',
-                errors.password
-                  ? 'border-red-400 bg-red-50 focus:border-red-500 focus:ring-1 focus:ring-red-400'
-                  : 'border-slate-300 bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-400',
-              ]"
-            />
-            <p v-if="errors.password" class="text-xs text-red-500">{{ errors.password }}</p>
-          </div>
-
-          <!-- Submit -->
-          <button
-            type="submit"
-            :disabled="auth.loading"
-            class="mt-2 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-1 disabled:bg-emerald-300"
-          >
-            <svg
-              v-if="auth.loading"
-              class="h-4 w-4 animate-spin"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-            <svg
-              v-else
-              class="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-            </svg>
-            {{ auth.loading ? 'Đang đăng nhập...' : 'Đăng nhập' }}
-          </button>
-        </form>
-
-        <!-- Hint tài khoản demo -->
-        <div class="mt-5 rounded-lg bg-slate-50 border border-slate-200 p-3 text-xs text-slate-500">
-          <span class="font-medium text-slate-700">Tài khoản demo:</span><br>
-          Email: <code class="text-emerald-700">admin@hrms.com</code> &nbsp;|&nbsp;
-          Mật khẩu: <code class="text-emerald-700">admin123</code>
+        <div class="pt-6 border-t border-slate-800/60">
+          <h5 class="text-xs font-bold text-slate-300 uppercase tracking-wide">Triển khai doanh nghiệp</h5>
+          <p class="mt-1 text-xs text-slate-400 leading-relaxed">
+            Giao diện tối ưu cho doanh nghiệp vừa và lớn, tập trung vào trải nghiệm người dùng và khả năng mở rộng.
+          </p>
         </div>
       </div>
 
-      <p class="mt-4 text-center text-xs text-slate-400">
-        BTL Fullstack — Đề tài 03: HRMS Microservices
-      </p>
+      <div class="w-full md:w-1/2 bg-white p-8 md:p-12 flex flex-col justify-center">
+        <div class="mb-6">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="flex items-center justify-center w-5 h-5 rounded bg-blue-100 text-blue-600">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+              </svg>
+            </div>
+            <span class="text-xs font-bold tracking-wider text-gray-400 uppercase">Hệ thống quản lý nhân sự</span>
+          </div>
+
+          <h2 class="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">
+            Đăng nhập hệ thống
+          </h2>
+          <p class="mt-1.5 text-xs md:text-sm text-gray-500">
+            Truy cập nhanh các chức năng nhân sự và báo cáo theo vai trò của bạn.
+          </p>
+        </div>
+
+        <div v-if="errors.general" class="p-3 mb-4 text-xs font-medium text-red-600 bg-red-50 border border-red-100 rounded-lg flex items-center gap-1.5">
+          <span>⚠️</span> {{ errors.general }}
+        </div>
+
+        <form @submit.prevent="handleLogin" class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1" for="login-email">E-mail</label>
+            <input
+              id="login-email"
+              type="email"
+              v-model="email"
+              class="w-full px-4 py-2.5 text-sm text-gray-900 border border-slate-200 rounded-lg bg-white placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all duration-200"
+              placeholder="admin@hrms.com"
+            />
+            <p v-if="errors.email" class="mt-1 text-xs text-red-600">{{ errors.email }}</p>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1" for="login-password">Mật khẩu</label>
+            <input
+              id="login-password"
+              type="password"
+              v-model="password"
+              class="w-full px-4 py-2.5 text-sm text-gray-900 border border-slate-200 rounded-lg bg-white placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all duration-200"
+              placeholder="••••••••"
+            />
+            <p v-if="errors.password" class="mt-1 text-xs text-red-600">{{ errors.password }}</p>
+          </div>
+
+          <button
+            type="submit"
+            :disabled="auth.loading"
+            class="w-full py-2.5 mt-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition duration-150 active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            Đăng nhập
+          </button>
+        </form>
+
+        <div class="mt-6 p-4 bg-blue-50 border border-blue-100 rounded-lg text-xs text-gray-500">
+          <span class="font-bold text-gray-700 block mb-1">Tài khoản demo</span>
+          <p class="flex justify-between">Email: <span class="text-blue-700 font-semibold selection:bg-blue-100">admin@hrms.com</span></p>
+          <p class="flex justify-between mt-0.5">Mật khẩu: <span class="text-blue-700 font-semibold selection:bg-blue-100">admin123</span></p>
+        </div>
+
+        <p class="mt-6 text-[11px] text-center text-gray-400">
+          BTL Fullstack — Đề tài 03: HRMS Microservices
+        </p>
+      </div>
     </div>
-  </main>
+  </div>
 </template>

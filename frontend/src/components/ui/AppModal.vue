@@ -27,13 +27,13 @@ onUnmounted(() => document.removeEventListener('keydown', onEsc))
   <!-- Backdrop -->
   <Teleport to="body">
     <div
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
       @mousedown.self="closable !== false && $emit('close')"
     >
       <!-- Panel -->
       <div
         :class="[
-          'relative w-full rounded-xl bg-white shadow-2xl flex flex-col max-h-[90vh]',
+          'relative flex max-h-[92vh] w-full flex-col overflow-hidden rounded-2xl bg-white shadow-[0_24px_60px_rgba(15,23,42,0.18)]',
           sizeClass[size ?? 'md'],
         ]"
         role="dialog"
@@ -42,12 +42,12 @@ onUnmounted(() => document.removeEventListener('keydown', onEsc))
         <!-- Header -->
         <div
           v-if="title || closable !== false"
-          class="flex items-center justify-between border-b border-slate-200 px-6 py-4 flex-shrink-0"
+          class="flex flex-shrink-0 items-center justify-between px-6 pb-0 pt-6"
         >
-          <h2 class="text-base font-semibold text-slate-900">{{ title }}</h2>
+          <h2 class="text-lg font-semibold text-slate-900">{{ title }}</h2>
           <button
             v-if="closable !== false"
-            class="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+            class="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
             type="button"
             @click="$emit('close')"
           >
@@ -58,14 +58,14 @@ onUnmounted(() => document.removeEventListener('keydown', onEsc))
         </div>
 
         <!-- Body -->
-        <div class="overflow-y-auto flex-1 px-6 py-5">
+        <div class="flex-1 overflow-y-auto px-6 py-6">
           <slot />
         </div>
 
         <!-- Footer -->
         <div
           v-if="$slots.footer"
-          class="flex justify-end gap-3 border-t border-slate-200 px-6 py-4 flex-shrink-0"
+          class="flex flex-shrink-0 justify-end gap-3 px-6 pb-6 pt-0"
         >
           <slot name="footer" />
         </div>

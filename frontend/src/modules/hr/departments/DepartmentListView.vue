@@ -78,6 +78,10 @@ function formatDate(d: string) {
   return new Date(d).toLocaleDateString('vi-VN')
 }
 
+function getDept(row: any): Department {
+  return row as Department
+}
+
 onMounted(load)
 </script>
 
@@ -98,33 +102,37 @@ onMounted(load)
       </template>
     </PageHeader>
 
-    <!-- Search -->
-    <div class="mb-4">
-      <input
-        v-model="search"
-        type="text"
-        placeholder="Tìm theo tên hoặc mã phòng ban..."
-        class="h-9 w-full max-w-sm rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-400"
-      />
+    <!-- Search & Filter -->
+    <div class="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+      <div class="flex-1 max-w-md">
+        <input
+          v-model="search"
+          type="text"
+          placeholder="Tìm theo tên hoặc mã phòng ban..."
+          class="w-full px-4 py-2.5 rounded-lg border border-slate-200 bg-white text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all duration-200"
+        />
+      </div>
     </div>
 
     <!-- Table -->
+    <div class="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
     <AppTable :columns="columns" :rows="filtered" :loading="loading" row-key="id" empty-text="Chưa có phòng ban nào">
       <template #default="{ row }">
-        <td class="px-4 py-3 text-sm font-mono text-slate-600">{{ (row as Department).code }}</td>
-        <td class="px-4 py-3 text-sm font-medium text-slate-900">{{ (row as Department).name }}</td>
+        <td class="px-4 py-3 text-sm font-mono text-slate-600">{{ getDept(row).code }}</td>
+        <td class="px-4 py-3 text-sm font-medium text-slate-900">{{ getDept(row).name }}</td>
         <td class="px-4 py-3">
-          <AppBadge :status="(row as Department).isActive ? 'Active' : 'Inactive'" />
+          <AppBadge :status="getDept(row).isActive ? 'Active' : 'Inactive'" />
         </td>
-        <td class="px-4 py-3 text-sm text-slate-500">{{ formatDate((row as Department).createdAt) }}</td>
+        <td class="px-4 py-3 text-sm text-slate-500">{{ formatDate(getDept(row).createdAt) }}</td>
         <td class="px-4 py-3 text-right">
           <div class="flex justify-end gap-2">
-            <AppButton v-if="auth.isHR" size="sm" variant="secondary" @click="openEdit(row as Department)">Sửa</AppButton>
-            <AppButton v-if="auth.isAdmin" size="sm" variant="danger" @click="deleteTarget = row as Department">Xóa</AppButton>
+            <AppButton v-if="auth.isHR" size="sm" variant="secondary" @click="openEdit(getDept(row))">Sửa</AppButton>
+            <AppButton v-if="auth.isAdmin" size="sm" variant="danger" @click="deleteTarget = getDept(row)">Xóa</AppButton>
           </div>
         </td>
       </template>
     </AppTable>
+    </div>
 
     <!-- Form modal -->
     <DepartmentFormModal

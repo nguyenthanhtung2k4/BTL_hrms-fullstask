@@ -17,14 +17,14 @@ const emit = defineEmits<{
 <template>
   <Teleport to="body">
     <div
-      class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+      class="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
       @mousedown.self="emit('cancel')"
     >
-      <div class="w-full max-w-sm rounded-xl bg-white shadow-2xl p-6">
+      <div class="w-full max-w-sm rounded-2xl bg-white p-6 shadow-[0_24px_60px_rgba(15,23,42,0.18)]">
         <div class="flex items-start gap-3">
           <div
             :class="[
-              'flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full',
+              'flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full',
               danger ? 'bg-red-100' : 'bg-amber-100',
             ]"
           >
@@ -43,14 +43,14 @@ const emit = defineEmits<{
             </svg>
           </div>
           <div>
-            <h3 class="text-base font-semibold text-slate-900">{{ title }}</h3>
+            <h3 class="text-lg font-semibold text-slate-900">{{ title }}</h3>
             <p v-if="message" class="mt-1 text-sm text-slate-600">{{ message }}</p>
           </div>
         </div>
 
         <div class="mt-5 flex justify-end gap-3">
           <button
-            class="rounded border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            class="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
             type="button"
             :disabled="loading"
             @click="emit('cancel')"
@@ -59,10 +59,10 @@ const emit = defineEmits<{
           </button>
           <button
             :class="[
-              'inline-flex items-center gap-2 rounded px-4 py-2 text-sm font-medium text-white transition-colors',
+              'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors',
               danger
                 ? 'bg-red-600 hover:bg-red-700 disabled:bg-red-300'
-                : 'bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300',
+                : 'bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300',
             ]"
             type="button"
             :disabled="loading"

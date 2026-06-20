@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { employeeService } from '../../../services/employee.service'
-import { useAuthStore } from '../../../stores/auth'
 import { useToastStore } from '../../../stores/toast'
 import type { Employee, CreateEmployeeDto, UpdateEmployeeDto, Department, Position } from '../../../types/hr.types'
 import AppModal from '../../../components/ui/AppModal.vue'
@@ -16,7 +15,6 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{ close: []; saved: [] }>()
 
-const auth = useAuthStore()
 const toast = useToastStore()
 const saving = ref(false)
 
@@ -72,14 +70,14 @@ async function save() {
 
 <template>
   <AppModal :title="edit ? 'Sửa nhân viên' : 'Thêm nhân viên'" size="lg" @close="emit('close')">
-    <div class="grid grid-cols-2 gap-4">
+    <div class="grid grid-cols-2 gap-5">
       <AppInput id="emp-code" v-model="form.employeeCode" label="Mã nhân viên" required :disabled="!!edit" :error="errors.employeeCode" placeholder="VD: NV001" />
       <AppInput id="emp-name" v-model="form.fullName" label="Họ tên" required :error="errors.fullName" />
       <AppInput id="emp-email" v-model="form.email" label="Email" type="email" required :disabled="!!edit" :error="errors.email" />
       <AppInput id="emp-phone" v-model="form.phone" label="Số điện thoại" type="tel" />
-      <div class="flex flex-col gap-1">
+      <div class="flex flex-col space-y-1.5">
         <label class="text-sm font-medium text-slate-700">Giới tính</label>
-        <select v-model="form.gender" class="h-9 rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-500 bg-white">
+        <select v-model="form.gender" class="h-10 rounded-lg border border-slate-200 bg-white px-3.5 text-sm outline-none transition-all duration-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100">
           <option value="">-- Chọn --</option>
           <option value="Nam">Nam</option>
           <option value="Nữ">Nữ</option>
@@ -88,32 +86,32 @@ async function save() {
       </div>
       <AppInput id="emp-dob" v-model="form.dateOfBirth" label="Ngày sinh" type="date" />
       <AppInput id="emp-hire" v-model="form.hireDate" label="Ngày vào làm" type="date" required :error="errors.hireDate" />
-      <div class="flex flex-col gap-1">
-        <label class="text-sm font-medium text-slate-700">Phòng ban <span class="text-red-500">*</span></label>
-        <select v-model="form.departmentId" :class="['h-9 rounded-lg border px-3 text-sm outline-none bg-white', errors.departmentId ? 'border-red-400' : 'border-slate-300 focus:border-emerald-500']">
+      <div class="flex flex-col space-y-1.5">
+        <label class="text-sm font-medium text-slate-700">Phòng ban <span class="ml-1 text-red-500">*</span></label>
+        <select v-model="form.departmentId" :class="['h-10 rounded-lg border bg-white px-3.5 text-sm outline-none transition-all duration-200', errors.departmentId ? 'border-red-400 focus:border-red-500 focus:ring-4 focus:ring-red-100' : 'border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100']">
           <option value="">-- Chọn phòng ban --</option>
           <option v-for="d in departments" :key="d.id" :value="d.id">{{ d.name }}</option>
         </select>
         <p v-if="errors.departmentId" class="text-xs text-red-500">{{ errors.departmentId }}</p>
       </div>
-      <div class="flex flex-col gap-1">
-        <label class="text-sm font-medium text-slate-700">Chức vụ <span class="text-red-500">*</span></label>
-        <select v-model="form.positionId" :class="['h-9 rounded-lg border px-3 text-sm outline-none bg-white', errors.positionId ? 'border-red-400' : 'border-slate-300 focus:border-emerald-500']">
+      <div class="flex flex-col space-y-1.5">
+        <label class="text-sm font-medium text-slate-700">Chức vụ <span class="ml-1 text-red-500">*</span></label>
+        <select v-model="form.positionId" :class="['h-10 rounded-lg border bg-white px-3.5 text-sm outline-none transition-all duration-200', errors.positionId ? 'border-red-400 focus:border-red-500 focus:ring-4 focus:ring-red-100' : 'border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100']">
           <option value="">-- Chọn chức vụ --</option>
           <option v-for="p in positions" :key="p.id" :value="p.id">{{ p.name }}</option>
         </select>
         <p v-if="errors.positionId" class="text-xs text-red-500">{{ errors.positionId }}</p>
       </div>
-      <div class="flex flex-col gap-1">
+      <div class="flex flex-col space-y-1.5">
         <label class="text-sm font-medium text-slate-700">Quản lý trực tiếp</label>
-        <select v-model="form.managerEmployeeId" class="h-9 rounded-lg border border-slate-300 px-3 text-sm outline-none bg-white focus:border-emerald-500">
+        <select v-model="form.managerEmployeeId" class="h-10 rounded-lg border border-slate-200 bg-white px-3.5 text-sm outline-none transition-all duration-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100">
           <option value="">-- Không có --</option>
           <option v-for="e in employees.filter(e2 => !edit || e2.id !== edit.id)" :key="e.id" :value="e.id">{{ e.fullName }} ({{ e.employeeCode }})</option>
         </select>
       </div>
-      <div v-if="edit" class="flex flex-col gap-1">
+      <div v-if="edit" class="flex flex-col space-y-1.5">
         <label class="text-sm font-medium text-slate-700">Trạng thái</label>
-        <select v-model="form.status" class="h-9 rounded-lg border border-slate-300 px-3 text-sm outline-none bg-white focus:border-emerald-500">
+        <select v-model="form.status" class="h-10 rounded-lg border border-slate-200 bg-white px-3.5 text-sm outline-none transition-all duration-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100">
           <option value="Active">Đang làm</option>
           <option value="Inactive">Ngưng</option>
           <option value="OnLeave">Nghỉ phép</option>

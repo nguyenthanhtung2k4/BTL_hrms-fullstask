@@ -71,7 +71,7 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="max-w-2xl">
+  <div class="w-full">
     <div class="mb-6">
       <h1 class="text-xl font-bold text-slate-900">Check-in / Check-out</h1>
       <p class="text-sm text-slate-500 mt-0.5 capitalize">{{ todayStr }}</p>

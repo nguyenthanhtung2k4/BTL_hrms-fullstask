@@ -42,26 +42,26 @@ async function save() {
 
 <template>
   <AppModal title="Đổi trạng thái nhân viên" size="sm" @close="emit('close')">
-    <div class="space-y-4">
-      <div class="rounded-lg bg-slate-50 p-3">
-        <div class="text-sm font-semibold text-slate-800">{{ employee.fullName }}</div>
-        <div class="text-xs text-slate-500 mt-0.5">{{ employee.employeeCode }} · {{ employee.departmentName }}</div>
+    <div class="space-y-5">
+      <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <div class="text-sm font-semibold text-slate-900">{{ employee.fullName }}</div>
+        <div class="mt-0.5 text-xs text-slate-500">{{ employee.employeeCode }} · {{ employee.departmentName }}</div>
         <div class="mt-2 flex items-center gap-2">
           <span class="text-xs text-slate-500">Hiện tại:</span>
           <AppBadge :status="employee.status" />
         </div>
       </div>
 
-      <div class="flex flex-col gap-1">
-        <label class="text-sm font-medium text-slate-700">Trạng thái mới <span class="text-red-500">*</span></label>
-        <select v-model="newStatus" class="h-9 rounded-lg border border-slate-300 px-3 text-sm outline-none bg-white focus:border-emerald-500">
+      <div class="flex flex-col space-y-1.5">
+        <label class="text-sm font-medium text-slate-700">Trạng thái mới <span class="ml-1 text-red-500">*</span></label>
+        <select v-model="newStatus" class="h-10 rounded-lg border border-slate-200 bg-white px-3.5 text-sm outline-none transition-all duration-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100">
           <option v-for="opt in statusOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
         </select>
       </div>
 
-      <div class="flex flex-col gap-1">
+      <div class="flex flex-col space-y-1.5">
         <label class="text-sm font-medium text-slate-700">Lý do</label>
-        <textarea v-model="reason" rows="3" placeholder="Nhập lý do đổi trạng thái..." class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-500" />
+        <textarea v-model="reason" rows="3" placeholder="Nhập lý do đổi trạng thái..." class="min-h-24 w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100" />
       </div>
     </div>
     <template #footer>

@@ -2,7 +2,6 @@
 import { ref, onMounted } from 'vue'
 import { payrollPeriodService } from '../../../services/payrollPeriod.service'
 import { payrollRuleService } from '../../../services/payrollRule.service'
-import { useAuthStore } from '../../../stores/auth'
 import { useToastStore } from '../../../stores/toast'
 import type { PayrollPeriod, PayrollRule, CreatePayrollPeriodDto } from '../../../types/payroll.types'
 import PageHeader from '../../../components/layout/PageHeader.vue'
@@ -14,7 +13,6 @@ import AppInput from '../../../components/ui/AppInput.vue'
 import AppConfirm from '../../../components/ui/AppConfirm.vue'
 import { useRouter } from 'vue-router'
 
-const auth = useAuthStore()
 const toast = useToastStore()
 const router = useRouter()
 
@@ -106,6 +104,7 @@ onMounted(load)
       </template>
     </PageHeader>
 
+    <div class="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
     <AppTable :columns="columns" :rows="periods" :loading="loading" row-key="id" empty-text="Chưa có kỳ lương nào">
       <template #default="{ row }">
         <td class="px-4 py-3 text-sm font-medium">{{ (row as PayrollPeriod).name }}</td>
@@ -117,13 +116,14 @@ onMounted(load)
           <div class="flex justify-end gap-1.5">
             <AppButton size="sm" variant="ghost" @click="router.push(`/payroll/periods/${(row as PayrollPeriod).id}`)">Chi tiết</AppButton>
             <template v-if="(row as PayrollPeriod).status !== 'Closed'">
-              <AppButton size="sm" variant="secondary" @click="editTarget = row as PayrollPeriod; form = { name: (row as PayrollPeriod).name, fromDate: (row as PayrollPeriod).fromDate.split('T')[0], toDate: (row as PayrollPeriod).toDate.split('T')[0], payrollRuleId: (row as PayrollPeriod).payrollRuleId }; errors = {}; showForm = true">Sửa</AppButton>
+              <AppButton size="sm" variant="secondary" @click="editTarget = row as PayrollPeriod; form = { code: (row as PayrollPeriod).code, name: (row as PayrollPeriod).name, fromDate: (row as PayrollPeriod).fromDate.split('T')[0], toDate: (row as PayrollPeriod).toDate.split('T')[0], payrollRuleId: (row as PayrollPeriod).payrollRuleId }; errors = {}; showForm = true">Sửa</AppButton>
               <AppButton size="sm" variant="danger" @click="deleteTarget = row as PayrollPeriod">Xóa</AppButton>
             </template>
           </div>
         </td>
       </template>
     </AppTable>
+    </div>
 
     <AppModal v-if="showForm" :title="editTarget ? 'Sửa kỳ lương' : 'Tạo kỳ lương'" @close="showForm = false">
       <div class="space-y-4">

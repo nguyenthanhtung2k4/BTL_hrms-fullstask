@@ -11,7 +11,6 @@ import AppTable from '../../../components/ui/AppTable.vue'
 import AppButton from '../../../components/ui/AppButton.vue'
 import AppBadge from '../../../components/ui/AppBadge.vue'
 import AppConfirm from '../../../components/ui/AppConfirm.vue'
-import AppSelect from '../../../components/ui/AppSelect.vue'
 import EmployeeFormModal from './EmployeeFormModal.vue'
 import EmployeeStatusModal from './EmployeeStatusModal.vue'
 import { useRouter } from 'vue-router'
@@ -84,6 +83,10 @@ async function confirmDelete() {
   finally { deleteLoading.value = false }
 }
 
+function getEmployee(row: any): Employee {
+  return row as Employee
+}
+
 onMounted(load)
 </script>
 
@@ -99,44 +102,49 @@ onMounted(load)
     </PageHeader>
 
     <!-- Filters -->
-    <div class="mb-4 flex flex-wrap gap-3">
-      <input v-model="search" type="text" placeholder="Tìm theo tên, mã NV, email..." class="h-9 w-full max-w-xs rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-500" />
-      <select v-model="filterDept" class="h-9 rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-500 bg-white">
-        <option value="">Tất cả phòng ban</option>
-        <option v-for="d in departments" :key="d.id" :value="d.id">{{ d.name }}</option>
-      </select>
-      <select v-model="filterStatus" class="h-9 rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-500 bg-white">
-        <option value="">Tất cả trạng thái</option>
-        <option value="Active">Đang làm</option>
-        <option value="Inactive">Ngưng</option>
-        <option value="OnLeave">Nghỉ phép</option>
-        <option value="Resigned">Đã nghỉ</option>
-      </select>
-      <AppButton variant="ghost" size="sm" @click="search = ''; filterDept = ''; filterStatus = ''">Reset</AppButton>
+    <div class="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+      <div class="flex-1 max-w-md">
+        <input v-model="search" type="text" placeholder="Tìm theo tên, mã NV, email..." class="w-full px-4 py-2.5 rounded-lg border border-slate-200 bg-white text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all duration-200" />
+      </div>
+      <div class="flex gap-3">
+        <select v-model="filterDept" class="px-4 py-2.5 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200">
+          <option value="">Tất cả phòng ban</option>
+          <option v-for="d in departments" :key="d.id" :value="d.id">{{ d.name }}</option>
+        </select>
+        <select v-model="filterStatus" class="px-4 py-2.5 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200">
+          <option value="">Tất cả trạng thái</option>
+          <option value="Active">Đang làm</option>
+          <option value="Inactive">Ngưng</option>
+          <option value="OnLeave">Nghỉ phép</option>
+          <option value="Resigned">Đã nghỉ</option>
+        </select>
+      </div>
     </div>
 
     <!-- Table -->
+    <div class="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
     <AppTable :columns="columns" :rows="filtered" :loading="loading" row-key="id" empty-text="Chưa có nhân viên nào">
       <template #default="{ row }">
-        <td class="px-4 py-3 text-sm font-mono text-slate-600">{{ (row as Employee).employeeCode }}</td>
+        <td class="px-4 py-3 text-sm font-mono text-slate-600">{{ getEmployee(row).employeeCode }}</td>
         <td class="px-4 py-3">
-          <div class="text-sm font-medium text-slate-900">{{ (row as Employee).fullName }}</div>
-          <div class="text-xs text-slate-500">{{ (row as Employee).email }}</div>
+          <div class="text-sm font-medium text-slate-900">{{ getEmployee(row).fullName }}</div>
+          <div class="text-xs text-slate-500">{{ getEmployee(row).email }}</div>
         </td>
-        <td class="px-4 py-3 text-sm text-slate-600">{{ (row as Employee).departmentName }}</td>
-        <td class="px-4 py-3 text-sm text-slate-600">{{ (row as Employee).positionName }}</td>
-        <td class="px-4 py-3 text-sm text-slate-500">{{ new Date((row as Employee).hireDate).toLocaleDateString('vi-VN') }}</td>
-        <td class="px-4 py-3"><AppBadge :status="(row as Employee).status" /></td>
+        <td class="px-4 py-3 text-sm text-slate-600">{{ getEmployee(row).departmentName }}</td>
+        <td class="px-4 py-3 text-sm text-slate-600">{{ getEmployee(row).positionName }}</td>
+        <td class="px-4 py-3 text-sm text-slate-500">{{ new Date(getEmployee(row).hireDate).toLocaleDateString('vi-VN') }}</td>
+        <td class="px-4 py-3"><AppBadge :status="getEmployee(row).status" /></td>
         <td class="px-4 py-3 text-right">
           <div class="flex justify-end gap-2">
-            <AppButton size="sm" variant="ghost" @click="router.push(`/hr/employees/${(row as Employee).id}`)">Xem</AppButton>
-            <AppButton v-if="auth.isHR" size="sm" variant="secondary" @click="openEdit(row as Employee)">Sửa</AppButton>
-            <AppButton v-if="auth.isHR" size="sm" variant="ghost" @click="statusTarget = row as Employee">Trạng thái</AppButton>
-            <AppButton v-if="auth.isAdmin" size="sm" variant="danger" @click="deleteTarget = row as Employee">Xóa</AppButton>
+            <AppButton size="sm" variant="ghost" @click="router.push(`/hr/employees/${getEmployee(row).id}`)">Xem</AppButton>
+            <AppButton v-if="auth.isHR" size="sm" variant="secondary" @click="openEdit(getEmployee(row))">Sửa</AppButton>
+            <AppButton v-if="auth.isHR" size="sm" variant="ghost" @click="statusTarget = getEmployee(row)">Trạng thái</AppButton>
+            <AppButton v-if="auth.isAdmin" size="sm" variant="danger" @click="deleteTarget = getEmployee(row)">Xóa</AppButton>
           </div>
         </td>
       </template>
     </AppTable>
+    </div>
 
     <EmployeeFormModal v-if="showForm" :edit="editTarget" :departments="departments" :positions="positions" :employees="employees" @close="showForm = false" @saved="load(); showForm = false" />
     <EmployeeStatusModal v-if="statusTarget" :employee="statusTarget" @close="statusTarget = null" @saved="load(); statusTarget = null" />

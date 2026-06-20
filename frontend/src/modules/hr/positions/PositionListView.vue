@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { positionService } from '../../../services/position.service'
 import { useAuthStore } from '../../../stores/auth'
 import { useToastStore } from '../../../stores/toast'
-import type { Position, CreatePositionDto, UpdatePositionDto } from '../../../types/hr.types'
+import type { Position } from '../../../types/hr.types'
 import PageHeader from '../../../components/layout/PageHeader.vue'
 import AppTable from '../../../components/ui/AppTable.vue'
 import AppButton from '../../../components/ui/AppButton.vue'
@@ -40,6 +40,10 @@ const filtered = computed(() =>
       p.code.toLowerCase().includes(search.value.toLowerCase()),
   ),
 )
+
+function asPosition(row: unknown) {
+  return row as Position
+}
 
 async function load() {
   loading.value = true
@@ -99,36 +103,40 @@ onMounted(load)
       </template>
     </PageHeader>
 
-    <div class="mb-4">
-      <input v-model="search" type="text" placeholder="Tìm chức vụ..." class="h-9 w-full max-w-sm rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-500" />
+    <div class="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+      <div class="flex-1 max-w-md">
+        <input v-model="search" type="text" placeholder="Tìm theo tên hoặc mã chức vụ..." class="w-full px-4 py-2.5 rounded-lg border border-slate-200 bg-white text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all duration-200" />
+      </div>
     </div>
 
+    <div class="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
     <AppTable :columns="columns" :rows="filtered" :loading="loading" row-key="id" empty-text="Chưa có chức vụ nào">
       <template #default="{ row }">
-        <td class="px-4 py-3 text-sm font-mono text-slate-600">{{ (row as Position).code }}</td>
-        <td class="px-4 py-3 text-sm font-medium">{{ (row as Position).name }}</td>
-        <td class="px-4 py-3"><AppBadge :status="(row as Position).isActive ? 'Active' : 'Inactive'" /></td>
-        <td class="px-4 py-3 text-sm text-slate-500">{{ new Date((row as Position).createdAt).toLocaleDateString('vi-VN') }}</td>
+        <td class="px-4 py-3 text-sm font-mono text-slate-600">{{ asPosition(row).code }}</td>
+        <td class="px-4 py-3 text-sm font-medium">{{ asPosition(row).name }}</td>
+        <td class="px-4 py-3"><AppBadge :status="asPosition(row).isActive ? 'Active' : 'Inactive'" /></td>
+        <td class="px-4 py-3 text-sm text-slate-500">{{ new Date(asPosition(row).createdAt).toLocaleDateString('vi-VN') }}</td>
         <td class="px-4 py-3 text-right">
           <div class="flex justify-end gap-2">
-            <AppButton v-if="auth.isHR" size="sm" variant="secondary" @click="openEdit(row as Position)">Sửa</AppButton>
-            <AppButton v-if="auth.isAdmin" size="sm" variant="danger" @click="deleteTarget = row as Position">Xóa</AppButton>
+            <AppButton v-if="auth.isHR" size="sm" variant="secondary" @click="openEdit(asPosition(row))">Sửa</AppButton>
+            <AppButton v-if="auth.isAdmin" size="sm" variant="danger" @click="deleteTarget = asPosition(row)">Xóa</AppButton>
           </div>
         </td>
       </template>
     </AppTable>
+    </div>
 
     <!-- Form Modal -->
     <AppModal v-if="showForm" :title="editTarget ? 'Sửa chức vụ' : 'Thêm chức vụ'" @close="showForm = false">
-      <div class="space-y-4">
+      <div class="space-y-5">
         <AppInput id="pos-code" v-model="form.code" label="Mã" required :disabled="!!editTarget" :error="errors.code" />
         <AppInput id="pos-name" v-model="form.name" label="Tên chức vụ" required :error="errors.name" />
-        <div class="flex flex-col gap-1">
+        <div class="flex flex-col space-y-1.5">
           <label class="text-sm font-medium text-slate-700">Mô tả</label>
-          <textarea v-model="form.description" rows="2" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-500" />
+          <textarea v-model="form.description" rows="3" class="min-h-24 w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100" />
         </div>
-        <label v-if="editTarget" class="flex items-center gap-2 cursor-pointer">
-          <input v-model="form.isActive" type="checkbox" class="h-4 w-4 accent-emerald-600" />
+        <label v-if="editTarget" class="flex items-center gap-2 cursor-pointer pt-1">
+          <input v-model="form.isActive" type="checkbox" class="h-4 w-4 accent-blue-600" />
           <span class="text-sm">Kích hoạt</span>
         </label>
       </div>

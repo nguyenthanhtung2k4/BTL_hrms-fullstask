@@ -62,7 +62,7 @@ async function save() {
 
 <template>
   <AppModal :title="edit ? 'Sửa phòng ban' : 'Thêm phòng ban'" @close="emit('close')">
-    <div class="space-y-4">
+    <div class="space-y-5">
       <AppInput
         id="dept-code"
         v-model="form.code"
@@ -80,17 +80,17 @@ async function save() {
         required
         :error="errors.name"
       />
-      <div class="flex flex-col gap-1">
+      <div class="flex flex-col space-y-1.5">
         <label class="text-sm font-medium text-slate-700">Mô tả</label>
         <textarea
           v-model="form.description"
           rows="3"
           placeholder="Mô tả chức năng phòng ban..."
-          class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-400"
+          class="min-h-24 w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
         />
       </div>
-      <label v-if="edit" class="flex items-center gap-2 cursor-pointer">
-        <input v-model="form.isActive" type="checkbox" class="h-4 w-4 rounded accent-emerald-600" />
+      <label v-if="edit" class="flex items-center gap-2 cursor-pointer pt-1">
+        <input v-model="form.isActive" type="checkbox" class="h-4 w-4 rounded accent-blue-600" />
         <span class="text-sm text-slate-700">Kích hoạt</span>
       </label>
     </div>
