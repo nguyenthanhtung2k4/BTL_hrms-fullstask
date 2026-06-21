@@ -23,7 +23,6 @@ import {
   Clock,
   CreditCard,
   ArrowRight,
-  TrendingDown,
   RefreshCw
 } from '@lucide/vue'
 
@@ -63,15 +62,10 @@ const router = useRouter()
 const {
   loading,
   employees,
-  contracts,
-  allLeaves,
   pendingLeaves,
-  periods,
   allPayslips,
   myPayslips,
   myLeaves,
-  reportRows,
-  activeEmployees,
   newHires,
   expiringContracts,
   todayAttendance,
@@ -79,7 +73,6 @@ const {
   payrollTrend,
   statusDist,
   deptDist,
-  leaveTypeDist,
   periodsNeedAction,
   load
 } = useDashboard()
@@ -108,18 +101,13 @@ function fmtDate(d: string) {
 
 // Inline Leave Approval/Rejection for managers/admins
 async function handleLeave(id: string, status: 'Approved' | 'Rejected') {
-  if (!auth.user?.employeeId) {
-    toast.error('Không tìm thấy thông tin nhân viên duyệt')
-    return
-  }
-  
   actionLoading.value[id] = true
   try {
     if (status === 'Approved') {
-      await leaveService.approve(id, auth.user.employeeId)
+      await leaveService.approve(id)
       toast.success('Đã phê duyệt đơn nghỉ phép')
     } else {
-      await leaveService.reject(id, auth.user.employeeId)
+      await leaveService.reject(id)
       toast.success('Đã từ chối đơn nghỉ phép')
     }
     await load()
@@ -229,7 +217,7 @@ const myPayslipsChartData = computed<any>(() => ({
   ]
 }))
 
-const chartOptions: ChartOptions = {
+const chartOptions: any = {
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
@@ -254,7 +242,7 @@ const chartOptions: ChartOptions = {
   }
 }
 
-const doughnutOptions: ChartOptions = {
+const doughnutOptions: any = {
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
@@ -304,7 +292,7 @@ const doughnutOptions: ChartOptions = {
         <StatCard title="NV Mới Trong Tháng" :value="newHires.length" subtitle="Gia nhập tháng này" color="violet" :loading="loading">
           <template #icon><UserPlus class="w-5 h-5 text-violet-600" /></template>
         </StatCard>
-        <StatCard title="HĐ Sắp Hết Hạn" :value="expiringContracts.length" subtitle="Trong vòng 30 ngày tới" color="rose" :loading="loading">
+        <StatCard title="HĐ Sắp Hết Hạn" :value="expiringContracts.length" subtitle="Trong vòng 30 ngày tới" color="red" :loading="loading">
           <template #icon><AlertTriangle class="w-5 h-5 text-rose-600" /></template>
         </StatCard>
       </div>
@@ -425,7 +413,7 @@ const doughnutOptions: ChartOptions = {
         <StatCard title="Đang nghỉ phép" :value="employees.filter(e => e.status === 'OnLeave').length" subtitle="Nhân viên vắng phép" color="amber" :loading="loading">
           <template #icon><Calendar class="w-5 h-5 text-amber-600" /></template>
         </StatCard>
-        <StatCard title="Đơn nghỉ chờ duyệt" :value="pendingLeaves.length" subtitle="Cần phê duyệt" color="rose" :loading="loading">
+        <StatCard title="Đơn nghỉ chờ duyệt" :value="pendingLeaves.length" subtitle="Cần phê duyệt" color="red" :loading="loading">
           <template #icon><Clock class="w-5 h-5 text-rose-600" /></template>
         </StatCard>
       </div>

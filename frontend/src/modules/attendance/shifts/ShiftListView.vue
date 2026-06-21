@@ -1,5 +1,5 @@
-﻿<script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
 import { shiftService } from '../../../services/shift.service'
 import { useAuthStore } from '../../../stores/auth'
 import { useToastStore } from '../../../stores/toast'

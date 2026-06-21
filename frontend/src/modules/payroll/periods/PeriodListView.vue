@@ -2,7 +2,6 @@
 import { ref, onMounted } from 'vue'
 import { payrollPeriodService } from '../../../services/payrollPeriod.service'
 import { payrollRuleService } from '../../../services/payrollRule.service'
-import { useAuthStore } from '../../../stores/auth'
 import { useToastStore } from '../../../stores/toast'
 import type { PayrollPeriod, PayrollRule, CreatePayrollPeriodDto } from '../../../types/payroll.types'
 import PageHeader from '../../../components/layout/PageHeader.vue'
@@ -55,6 +54,19 @@ function openCreate() {
     payrollRuleId: rules.value[0]?.id ?? ''
   }
   errors.value = {}; showForm.value = true
+}
+
+function editPeriod(row: PayrollPeriod) {
+  editTarget.value = row
+  form.value = {
+    code: row.code,
+    name: row.name,
+    fromDate: row.fromDate.split('T')[0],
+    toDate: row.toDate.split('T')[0],
+    payrollRuleId: row.payrollRuleId
+  }
+  errors.value = {}
+  showForm.value = true
 }
 
 function validate() {
@@ -120,7 +132,7 @@ onMounted(load)
           <div class="flex justify-end gap-1.5">
             <AppButton size="sm" variant="ghost" @click="router.push(`/payroll/periods/${(row as PayrollPeriod).id}`)">Chi tiết</AppButton>
             <template v-if="(row as PayrollPeriod).status !== 'Closed'">
-              <AppButton size="sm" variant="secondary" @click="editTarget = row as PayrollPeriod; form.value = { code: (row as PayrollPeriod).code, name: (row as PayrollPeriod).name, fromDate: (row as PayrollPeriod).fromDate.split('T')[0], toDate: (row as PayrollPeriod).toDate.split('T')[0], payrollRuleId: (row as PayrollPeriod).payrollRuleId }; errors = {}; showForm = true">Sửa</AppButton>
+              <AppButton size="sm" variant="secondary" @click="editPeriod(row as PayrollPeriod)">Sửa</AppButton>
               <AppButton size="sm" variant="danger" @click="deleteTarget = row as PayrollPeriod">Xóa</AppButton>
             </template>
           </div>

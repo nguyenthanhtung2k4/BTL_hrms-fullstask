@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { payslipService } from '../../../services/payslip.service'
-import { useAuthStore } from '../../../stores/auth'
 import { useToastStore } from '../../../stores/toast'
 import type { Payslip } from '../../../types/payroll.types'
 import PageHeader from '../../../components/layout/PageHeader.vue'

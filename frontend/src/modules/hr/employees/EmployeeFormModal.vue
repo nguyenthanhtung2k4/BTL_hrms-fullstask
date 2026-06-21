@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { employeeService } from '../../../services/employee.service'
-import { useAuthStore } from '../../../stores/auth'
 import { useToastStore } from '../../../stores/toast'
 import type { Employee, CreateEmployeeDto, UpdateEmployeeDto, Department, Position } from '../../../types/hr.types'
 import AppModal from '../../../components/ui/AppModal.vue'

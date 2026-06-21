@@ -12,4 +12,4 @@ Về phía đề dự án này hoàn chỉnh cho  1 công ty chạy thật thì 
 
 =>>  Với những yêu cầu bên trên tôi cần bạn  cho tôi  biết những phân tích từng cái một thì cần làm và bổ sung những gì để nó có thể chạy mượt mà và vận hành tốt.  
 HÃY PHÂN TÍCH NÓ LẦN LƯỢT  NHỮNG YÊU CẦU VÀ TỪ ĐÓ CHO TÔI 1 PLAN CHI TIẾT VỀ NÓ VÀ TÔI CÓ THỂ NẮM ĐC VÀ TRIỂN KHAI THÊM VỀ NÓ ĐỂ CẢI THIỆN  DỰ ÁN NÀY HƠN
-VÀ PHẦN NÀY THÌ TÔI  CẦN   
+VÀ PHẦN NÀY THÌ TÔI  CẦN  
