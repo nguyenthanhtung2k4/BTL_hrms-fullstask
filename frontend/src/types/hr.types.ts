@@ -58,9 +58,12 @@ export interface Employee {
   fullName: string
   email: string
   phone?: string
+  phoneNumber?: string    // alias backend may return
   gender?: string
   dateOfBirth?: string
   hireDate: string
+  address?: string
+  baseSalary?: number
   departmentId: string
   departmentName: string
   positionId: string

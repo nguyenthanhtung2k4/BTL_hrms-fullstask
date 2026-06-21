@@ -4,7 +4,7 @@ import {
   CalendarCheck, Clock, Calendar, ClipboardList, UmbrellaOff,
   BadgeDollarSign, ScrollText, Settings2, PiggyBank, Wallet,
   BarChart3, LogOut, Menu, Network,
-  Sun, Moon, Monitor, ChevronDown,
+  Sun, Moon, Monitor, ChevronDown, ShieldCheck, UserCircle,
 } from '@lucide/vue'
 import { ref, computed } from 'vue'
 import { RouterLink, RouterView, useRouter } from 'vue-router'
@@ -112,6 +112,24 @@ const menuGroups = computed(() => {
   }
   groups.push({ label: t('nav.payroll'), items: payItems })
 
+  // Admin — chỉ Admin
+  if (auth.isAdmin) {
+    groups.push({
+      label: 'Admin',
+      items: [
+        { to: '/admin/users', name: 'admin-users', label: t('nav.userManagement'), icon: ShieldCheck },
+      ],
+    })
+  }
+
+  // Profile — tất cả (nằm cuối menu)
+  groups.push({
+    label: '',
+    items: [
+      { to: '/profile', name: 'profile', label: t('nav.profile'), icon: UserCircle },
+    ],
+  })
+
   return groups
 })
 
@@ -139,7 +157,7 @@ const currentLangFlag = computed(() => {
 })
 
 async function logout() {
-  auth.logout()
+  await auth.logout()
   toast.success(t('auth.loggedOut'))
   router.push({ name: 'login' })
 }

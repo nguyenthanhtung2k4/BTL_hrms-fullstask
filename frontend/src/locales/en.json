@@ -63,7 +63,57 @@
     "deductions": "Deductions",
     "allPayslips": "Payslips (All)",
     "myPayslip": "My Payslips",
-    "reports": "Reports"
+    "reports": "Reports",
+    "userManagement": "User Management",
+    "profile": "My Profile"
+  },
+
+  "user": {
+    "title": "User Management",
+    "list": "User Accounts",
+    "create": "Create Account",
+    "edit": "Edit",
+    "email": "Email",
+    "employee": "Linked Employee",
+    "roles": "Roles",
+    "status": "Status",
+    "lastLogin": "Last Login",
+    "active": "Active",
+    "inactive": "Locked",
+    "noAccount": "No account",
+    "resetPassword": "Reset Password",
+    "newPassword": "New Password",
+    "resetPasswordTitle": "Reset Password",
+    "resetPasswordConfirm": "Confirm reset password for this account?",
+    "activateConfirm": "Confirm activate this account?",
+    "deactivateConfirm": "Confirm lock this account?",
+    "createSuccess": "Account created successfully",
+    "updateSuccess": "Updated successfully",
+    "resetSuccess": "Password reset successfully",
+    "activateSuccess": "Account activated",
+    "deactivateSuccess": "Account locked",
+    "noEmployee": "No employee",
+    "selectEmployee": "Select employee",
+    "password": "Password",
+    "selectRoles": "Select roles",
+    "availableRoles": "Available roles",
+    "employeeAlreadyHasAccount": "This employee already has an account"
+  },
+
+  "profile": {
+    "title": "My Profile",
+    "myInfo": "My Information",
+    "changePassword": "Change Password",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm New Password",
+    "changePasswordSuccess": "Password changed successfully. Please log in again.",
+    "changePasswordBtn": "Update Password",
+    "accountInfo": "Account Information",
+    "employeeInfo": "Employee Information",
+    "rolesLabel": "My Roles",
+    "passwordMinLength": "Password must be at least 6 characters",
+    "passwordMismatch": "Passwords do not match"
   },
 
   "auth": {

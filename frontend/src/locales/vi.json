@@ -63,7 +63,57 @@
     "deductions": "Khấu trừ",
     "allPayslips": "Phiếu lương (tất cả)",
     "myPayslip": "Phiếu lương của tôi",
-    "reports": "Báo cáo"
+    "reports": "Báo cáo",
+    "userManagement": "Quản lý tài khoản",
+    "profile": "Hồ sơ của tôi"
+  },
+
+  "user": {
+    "title": "Quản lý tài khoản",
+    "list": "Danh sách tài khoản",
+    "create": "Tạo tài khoản",
+    "edit": "Chỉnh sửa",
+    "email": "Email",
+    "employee": "Nhân viên liên kết",
+    "roles": "Quyền hạn",
+    "status": "Trạng thái",
+    "lastLogin": "Đăng nhập lần cuối",
+    "active": "Hoạt động",
+    "inactive": "Đã khoá",
+    "noAccount": "Chưa có tài khoản",
+    "resetPassword": "Đặt lại mật khẩu",
+    "newPassword": "Mật khẩu mới",
+    "resetPasswordTitle": "Đặt lại mật khẩu",
+    "resetPasswordConfirm": "Xác nhận đặt lại mật khẩu cho tài khoản này?",
+    "activateConfirm": "Xác nhận kích hoạt tài khoản này?",
+    "deactivateConfirm": "Xác nhận khoá tài khoản này?",
+    "createSuccess": "Tạo tài khoản thành công",
+    "updateSuccess": "Cập nhật thành công",
+    "resetSuccess": "Đã đặt lại mật khẩu thành công",
+    "activateSuccess": "Đã kích hoạt tài khoản",
+    "deactivateSuccess": "Đã khoá tài khoản",
+    "noEmployee": "Không có nhân viên",
+    "selectEmployee": "Chọn nhân viên",
+    "password": "Mật khẩu",
+    "selectRoles": "Chọn quyền hạn",
+    "availableRoles": "Quyền hiện có",
+    "employeeAlreadyHasAccount": "Nhân viên này đã có tài khoản"
+  },
+
+  "profile": {
+    "title": "Hồ sơ cá nhân",
+    "myInfo": "Thông tin của tôi",
+    "changePassword": "Đổi mật khẩu",
+    "currentPassword": "Mật khẩu hiện tại",
+    "newPassword": "Mật khẩu mới",
+    "confirmPassword": "Xác nhận mật khẩu mới",
+    "changePasswordSuccess": "Đổi mật khẩu thành công. Vui lòng đăng nhập lại.",
+    "changePasswordBtn": "Cập nhật mật khẩu",
+    "accountInfo": "Thông tin tài khoản",
+    "employeeInfo": "Thông tin nhân viên",
+    "rolesLabel": "Quyền hạn của tôi",
+    "passwordMinLength": "Mật khẩu phải có ít nhất 6 ký tự",
+    "passwordMismatch": "Mật khẩu xác nhận không khớp"
   },
 
   "auth": {

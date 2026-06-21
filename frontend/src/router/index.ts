@@ -37,6 +37,12 @@ const PayslipDetailView = () => import('../modules/payroll/payslips/PayslipDetai
 const MyPayslipView    = () => import('../modules/payroll/payslips/MyPayslipView.vue')
 const ReportView       = () => import('../modules/payroll/reports/ReportView.vue')
 
+// ── Admin Module
+const UserManagementView = () => import('../modules/admin/UserManagementView.vue')
+
+// ── Profile
+const ProfileView = () => import('../modules/profile/ProfileView.vue')
+
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
@@ -179,6 +185,21 @@ export const router = createRouter({
           name: 'payroll-reports',
           component: ReportView,
           meta: { roles: ['Admin', 'HR', 'PayrollStaff', 'Manager'] },
+        },
+
+        // ── Admin
+        {
+          path: 'admin/users',
+          name: 'admin-users',
+          component: UserManagementView,
+          meta: { roles: ['Admin'] },
+        },
+
+        // ── Profile (tất cả roles)
+        {
+          path: 'profile',
+          name: 'profile',
+          component: ProfileView,
         },
       ],
     },
