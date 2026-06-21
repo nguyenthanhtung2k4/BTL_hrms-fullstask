@@ -1,4 +1,4 @@
-# 🔐 Module 1: Auth — Xác thực & Phân quyền
+﻿# 🔐 Module 1: Auth — Xác thực & Phân quyền
 
 > **Service:** HR Core (`/api/v1/hr/auth/`)  
 > **Files:** `src/modules/auth/`, `src/stores/auth.ts`, `src/services/auth.service.ts`
@@ -7,12 +7,12 @@
 
 ## Checklist thực hiện
 
-- [ ] **auth.service.ts** — API calls thật
-- [ ] **auth.ts store** — Pinia store với JWT thật
-- [ ] **LoginView.vue** — Form login gọi API
-- [ ] **apiClient.ts** — JWT interceptor
-- [ ] **router/index.ts** — Route guard theo role
-- [ ] **App.vue** — Tự động gọi `/auth/me` khi load app
+- [x] **auth.service.ts** — API calls thật
+- [x] **auth.ts store** — Pinia store với JWT thật
+- [x] **LoginView.vue** — Form login gọi API
+- [x] **apiClient.ts** — JWT interceptor
+- [x] **router/index.ts** — Route guard theo role
+- [x] **App.vue** — Tự động gọi `/auth/me` khi load app
 
 ---
 
@@ -222,3 +222,4 @@ router.beforeEach(async (to) => {
 /payroll/reports                → ReportView [Admin, HR, PayrollStaff, Manager]
 /forbidden                      → ForbiddenView
 ```
+

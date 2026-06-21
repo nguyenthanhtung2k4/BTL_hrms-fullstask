@@ -1,4 +1,4 @@
-# 📅 Module 3: Attendance — Chấm công & Nghỉ phép
+﻿# 📅 Module 3: Attendance — Chấm công & Nghỉ phép
 
 > **Service:** Attendance (`/api/v1/attendance/`)  
 > **Files:** `src/modules/attendance/`
@@ -8,34 +8,34 @@
 ## Checklist thực hiện
 
 ### Ca làm việc (Shifts)
-- [ ] `shift.service.ts`
-- [ ] `ShiftListView.vue`
-- [ ] `ShiftFormModal.vue`
-- [ ] `useShifts.ts`
+- [x] `shift.service.ts`
+- [x] `ShiftListView.vue`
+- [x] `ShiftFormModal.vue`
+- [x] `useShifts.ts`
 
 ### Lịch làm việc (Work Schedules)
-- [ ] `workSchedule.service.ts`
-- [ ] `WorkScheduleListView.vue`
-- [ ] `WorkScheduleFormModal.vue`
-- [ ] `useWorkSchedules.ts`
+- [x] `workSchedule.service.ts`
+- [x] `WorkScheduleListView.vue`
+- [x] `WorkScheduleFormModal.vue`
+- [x] `useWorkSchedules.ts`
 
 ### Chấm công (Attendance Records)
-- [ ] `attendance.service.ts`
-- [ ] `MyAttendanceView.vue` — Employee: check-in/out cá nhân
-- [ ] `AttendanceListView.vue` — Admin/HR/Manager: xem toàn bộ
-- [ ] `useAttendance.ts`
+- [x] `attendance.service.ts`
+- [x] `MyAttendanceView.vue` — Employee: check-in/out cá nhân
+- [x] `AttendanceListView.vue` — Admin/HR/Manager: xem toàn bộ
+- [x] `useAttendance.ts`
 
 ### Nghỉ phép (Leave Requests)
-- [ ] `leave.service.ts`
-- [ ] `LeaveListView.vue`
-- [ ] `LeaveFormModal.vue` — Employee tạo đơn
-- [ ] `LeaveApproveModal.vue` — Manager/HR duyệt/từ chối
-- [ ] `useLeaves.ts`
+- [x] `leave.service.ts`
+- [x] `LeaveListView.vue`
+- [x] `LeaveFormModal.vue` — Employee tạo đơn
+- [x] `LeaveApproveModal.vue` — Manager/HR duyệt/từ chối
+- [x] `useLeaves.ts`
 
 ### Bảng công (Timesheets)
-- [ ] `timesheet.service.ts`
-- [ ] `TimesheetView.vue`
-- [ ] `useTimesheets.ts`
+- [x] `timesheet.service.ts`
+- [x] `TimesheetView.vue`
+- [x] `useTimesheets.ts`
 
 ---
 
@@ -286,3 +286,4 @@ export interface Timesheet {
   totalOvertimeMinutes: number
 }
 ```
+

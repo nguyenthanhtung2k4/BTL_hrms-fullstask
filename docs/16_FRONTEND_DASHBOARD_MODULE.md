@@ -1,4 +1,4 @@
-
+﻿
 
 
 # 📊 Module 5: Dashboard — Thống kê tổng quan
@@ -10,10 +10,10 @@
 
 ## Checklist thực hiện
 
-- [ ] Dashboard cards thống kê (gọi API thật)
-- [ ] Bảng service map (giữ lại, update với real-time health)
-- [ ] Quick actions theo role
-- [ ] Pending items (đơn nghỉ phép chờ duyệt, kỳ lương chưa tính...)
+- [x] Dashboard cards thống kê (gọi API thật)
+- [x] Bảng service map (giữ lại, update với real-time health)
+- [x] Quick actions theo role
+- [x] Pending items (đơn nghỉ phép chờ duyệt, kỳ lương chưa tính...)
 
 ---
 
@@ -98,3 +98,4 @@ Health check: gọi /health của từng service mỗi 30s
 - Dùng `Promise.allSettled()` để gọi nhiều API song song
 - Nếu một API lỗi → chỉ ảnh hưởng card đó, card khác vẫn hiện
 - Loading skeleton cho từng card riêng biệt
+
