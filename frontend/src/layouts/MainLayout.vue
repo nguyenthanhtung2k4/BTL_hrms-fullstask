@@ -105,8 +105,16 @@ const menuGroups = computed(() => {
     payItems.push(
       { to: '/payroll/periods', name: 'payroll-periods', label: 'Kỳ lương', icon: BadgeDollarSign },
       { to: '/payroll/rules', name: 'payroll-rules', label: 'Quy tắc lương', icon: Settings2 },
+    )
+  }
+  if (auth.hasAnyRole(['Admin', 'PayrollStaff', 'HR', 'Manager'])) {
+    payItems.push(
       { to: '/payroll/allowances', name: 'payroll-allowances', label: 'Phụ cấp', icon: PiggyBank },
       { to: '/payroll/deductions', name: 'payroll-deductions', label: 'Khấu trừ', icon: Wallet },
+    )
+  }
+  if (auth.isPayrollStaff) {
+    payItems.push(
       { to: '/payroll/payslips', name: 'payroll-payslips', label: 'Phiếu lương (tất cả)', icon: ScrollText },
     )
   }

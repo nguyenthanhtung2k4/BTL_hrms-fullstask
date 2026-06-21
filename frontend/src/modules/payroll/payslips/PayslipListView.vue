@@ -13,6 +13,7 @@ import AppButton from '../../../components/ui/AppButton.vue'
 import { useRouter } from 'vue-router'
 import AppPagination from '../../../components/ui/AppPagination.vue'
 import { usePagination } from '../../../composables/usePagination'
+import { exportToExcel } from '../../../utils/excel'
 
 const toast = useToastStore()
 const router = useRouter()
@@ -51,6 +52,27 @@ function formatPeriod(name?: string) {
   return clean.charAt(0).toUpperCase() + clean.slice(1)
 }
 
+function handleExport() {
+  try {
+    const dataToExport = payslips.value.map(item => ({
+      'Kỳ lương': formatPeriod(item.periodName) || '',
+      'Mã Nhân viên': item.employeeCode || '',
+      'Họ tên Nhân viên': item.fullName || '',
+      'Lương cơ bản (VNĐ)': item.baseSalary,
+      'Ngày công': item.workedDays,
+      'Phép hưởng lương': item.paidLeaveDays,
+      'Thu nhập Gross (VNĐ)': item.grossSalary,
+      'Khấu trừ (VNĐ)': item.totalDeduction,
+      'Thực lĩnh Net (VNĐ)': item.netSalary,
+      'Trạng thái': item.status === 'Draft' ? 'Bản nháp' : item.status === 'Paid' ? 'Đã chi trả' : 'Đã chốt'
+    }))
+    exportToExcel(dataToExport, 'Danh_Sach_Phieu_Luong_Nhan_Vien', 'PhieuLuong')
+    toast.success('Đã xuất báo cáo phiếu lương ra Excel thành công')
+  } catch (err: any) {
+    toast.error(err?.message || 'Không thể xuất file Excel')
+  }
+}
+
 const { currentPage, perPage, paginatedData, total } = usePagination(payslips)
 
 onMounted(load)
@@ -58,7 +80,16 @@ onMounted(load)
 
 <template>
   <div>
-    <PageHeader title="Phiếu lương" subtitle="Toàn bộ phiếu lương trong hệ thống" :breadcrumbs="[{ label: 'Lương & Báo cáo' }, { label: 'Phiếu lương' }]" />
+    <PageHeader title="Phiếu lương" subtitle="Toàn bộ phiếu lương trong hệ thống" :breadcrumbs="[{ label: 'Lương & Báo cáo' }, { label: 'Phiếu lương' }]">
+      <template #actions>
+        <AppButton variant="secondary" @click="handleExport">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          <span>Xuất Excel</span>
+        </AppButton>
+      </template>
+    </PageHeader>
 
     <div class="mb-4 flex gap-3 flex-wrap">
       <select v-model="filterPeriod" class="h-9 rounded-lg border border-slate-300 px-3 text-sm bg-white outline-none focus:border-emerald-500">

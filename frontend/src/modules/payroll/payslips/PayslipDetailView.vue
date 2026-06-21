@@ -34,19 +34,6 @@ function formatPeriod(name?: string) {
   return clean.charAt(0).toUpperCase() + clean.slice(1)
 }
 
-function getStatusClass(status: string) {
-  switch (status) {
-    case 'Draft':
-      return 'bg-amber-50 text-amber-700 border-amber-200'
-    case 'Paid':
-      return 'bg-emerald-50 text-emerald-700 border-emerald-200'
-    case 'Closed':
-      return 'bg-blue-50 text-blue-700 border-blue-200'
-    default:
-      return 'bg-slate-50 text-slate-700 border-slate-200'
-  }
-}
-
 function getStatusText(status: string) {
   switch (status) {
     case 'Draft':

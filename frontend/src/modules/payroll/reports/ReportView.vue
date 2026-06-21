@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { reportService } from '../../../services/report.service'
 import { payrollPeriodService } from '../../../services/payrollPeriod.service'
@@ -10,6 +10,7 @@ import AppTable from '../../../components/ui/AppTable.vue'
 import AppButton from '../../../components/ui/AppButton.vue'
 import AppPagination from '../../../components/ui/AppPagination.vue'
 import { usePagination } from '../../../composables/usePagination'
+import { exportToExcel } from '../../../utils/excel'
 
 const toast = useToastStore()
 const reports = ref<PayrollSummaryReport[]>([])
@@ -38,8 +39,49 @@ async function loadReport() {
 const totalNet = () => reports.value.reduce((s, r) => s + r.totalNet, 0)
 const totalGross = () => reports.value.reduce((s, r) => s + r.totalGross, 0)
 const totalEmp = () => reports.value.reduce((s, r) => s + r.employeeCount, 0)
+const totalWorkDays = () => reports.value.reduce((s, r) => s + r.totalWorkDays, 0)
+const totalAllowances = () => reports.value.reduce((s, r) => s + r.totalAllowances, 0)
+const totalDeductions = () => reports.value.reduce((s, r) => s + r.totalDeductions, 0)
 
 function fmtMoney(n: number) { return n.toLocaleString('vi-VN') + ' ₫' }
+
+function handleExport() {
+  if (reports.value.length === 0) {
+    toast.warning('Chưa có dữ liệu báo cáo để xuất')
+    return
+  }
+  try {
+    const period = periods.value.find(p => p.id === filterPeriod.value)
+    const periodName = period ? period.name : 'Ky_Luong'
+
+    const dataToExport = reports.value.map(item => ({
+      'Phòng ban': item.departmentName,
+      'Số Nhân viên': item.employeeCount,
+      'Tổng ngày công': item.totalWorkDays,
+      'Tổng phụ cấp (VNĐ)': item.totalAllowances,
+      'Tổng khấu trừ (VNĐ)': item.totalDeductions,
+      'Tổng Gross (VNĐ)': item.totalGross,
+      'Tổng Net (VNĐ)': item.totalNet
+    }))
+
+    // Add Grand Total row at the bottom
+    dataToExport.push({
+      'Phòng ban': 'TỔNG CỘNG',
+      'Số Nhân viên': totalEmp(),
+      'Tổng ngày công': totalWorkDays(),
+      'Tổng phụ cấp (VNĐ)': totalAllowances(),
+      'Tổng khấu trừ (VNĐ)': totalDeductions(),
+      'Tổng Gross (VNĐ)': totalGross(),
+      'Tổng Net (VNĐ)': totalNet()
+    })
+
+    const fileName = `Bao_Cao_Tong_Hop_Luong_${periodName.replace(/\s+/g, '_')}`
+    exportToExcel(dataToExport, fileName, 'BaoCao')
+    toast.success('Đã xuất báo cáo tổng hợp lương ra Excel thành công')
+  } catch (err: any) {
+    toast.error(err?.message || 'Không thể xuất file Excel')
+  }
+}
 
 const { currentPage, perPage, paginatedData, total } = usePagination(reports)
 
@@ -48,7 +90,16 @@ onMounted(loadPeriods)
 
 <template>
   <div>
-    <PageHeader title="Báo cáo lương" subtitle="Tổng hợp chi phí lương theo phòng ban" :breadcrumbs="[{ label: 'Lương & Báo cáo' }, { label: 'Báo cáo' }]" />
+    <PageHeader title="Báo cáo lương" subtitle="Tổng hợp chi phí lương theo phòng ban" :breadcrumbs="[{ label: 'Lương & Báo cáo' }, { label: 'Báo cáo' }]">
+      <template #actions>
+        <AppButton v-if="reports.length > 0" variant="secondary" @click="handleExport">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          <span>Xuất Excel</span>
+        </AppButton>
+      </template>
+    </PageHeader>
 
     <!-- Filter -->
     <div class="mb-6 flex gap-3 items-end">
