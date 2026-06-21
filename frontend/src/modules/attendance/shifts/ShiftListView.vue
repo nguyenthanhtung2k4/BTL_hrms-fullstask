@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { shiftService } from '../../../services/shift.service'
 import { useAuthStore } from '../../../stores/auth'
@@ -11,6 +11,8 @@ import AppModal from '../../../components/ui/AppModal.vue'
 import AppInput from '../../../components/ui/AppInput.vue'
 import AppBadge from '../../../components/ui/AppBadge.vue'
 import AppConfirm from '../../../components/ui/AppConfirm.vue'
+import AppPagination from '../../../components/ui/AppPagination.vue'
+import { usePagination } from '../../../composables/usePagination'
 
 const auth = useAuthStore()
 const toast = useToastStore()
@@ -72,6 +74,8 @@ async function confirmDelete() {
   finally { deleteLoading.value = false }
 }
 
+const { currentPage, perPage, paginatedData, total } = usePagination(shifts)
+
 onMounted(load)
 </script>
 
@@ -86,7 +90,7 @@ onMounted(load)
       </template>
     </PageHeader>
 
-    <AppTable :columns="columns" :rows="shifts" :loading="loading" row-key="id" empty-text="Chưa có ca làm việc nào">
+    <AppTable :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Chưa có ca làm việc nào">
       <template #default="{ row }">
         <td class="px-4 py-3 text-sm font-mono">{{ (row as Shift).code }}</td>
         <td class="px-4 py-3 text-sm font-medium">{{ (row as Shift).name }}</td>
@@ -102,6 +106,7 @@ onMounted(load)
         </td>
       </template>
     </AppTable>
+    <AppPagination :total="total" :current="currentPage" :per-page="perPage" @change="currentPage = $event" @per-page-change="perPage = $event" />
 
     <AppModal v-if="showForm" :title="editTarget ? 'Sửa ca làm việc' : 'Thêm ca làm việc'" @close="showForm = false">
       <div class="space-y-4">
@@ -126,3 +131,4 @@ onMounted(load)
     <AppConfirm v-if="deleteTarget" title="Xóa ca làm việc" :message="`Xóa ca &quot;${deleteTarget.name}&quot;?`" confirm-text="Xóa" :danger="true" :loading="deleteLoading" @confirm="confirmDelete" @cancel="deleteTarget = null" />
   </div>
 </template>
+

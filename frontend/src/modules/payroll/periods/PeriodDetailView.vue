@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { payrollPeriodService } from '../../../services/payrollPeriod.service'
@@ -10,6 +10,8 @@ import AppTable from '../../../components/ui/AppTable.vue'
 import AppButton from '../../../components/ui/AppButton.vue'
 import AppBadge from '../../../components/ui/AppBadge.vue'
 import AppConfirm from '../../../components/ui/AppConfirm.vue'
+import AppPagination from '../../../components/ui/AppPagination.vue'
+import { usePagination } from '../../../composables/usePagination'
 
 const route = useRoute()
 const router = useRouter()
@@ -67,6 +69,8 @@ async function closePeriod() {
 function fmt(d: string) { return new Date(d).toLocaleDateString('vi-VN') }
 function fmtMoney(n: number) { return n.toLocaleString('vi-VN') + ' ₫' }
 
+const { currentPage, perPage, paginatedData, total } = usePagination(payslips)
+
 onMounted(load)
 </script>
 
@@ -102,7 +106,7 @@ onMounted(load)
     </div>
 
     <!-- Payslips table -->
-    <AppTable :columns="columns" :rows="payslips" :loading="loading" row-key="id" empty-text="Chưa có phiếu lương — hãy nhấn Tính lương">
+    <AppTable :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Chưa có phiếu lương — hãy nhấn Tính lương">
       <template #default="{ row }">
         <td class="px-4 py-3 text-sm font-medium">{{ (row as Payslip).fullName }}</td>
         <td class="px-4 py-3 text-sm text-slate-500">{{ (row as Payslip).employeeCode }}</td>
@@ -116,6 +120,7 @@ onMounted(load)
         </td>
       </template>
     </AppTable>
+    <AppPagination :total="total" :current="currentPage" :per-page="perPage" @change="currentPage = $event" @per-page-change="perPage = $event" />
 
     <AppConfirm
       v-if="showCloseConfirm"
@@ -128,3 +133,4 @@ onMounted(load)
     />
   </div>
 </template>
+

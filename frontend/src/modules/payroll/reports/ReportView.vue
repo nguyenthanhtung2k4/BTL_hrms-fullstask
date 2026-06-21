@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { reportService } from '../../../services/report.service'
 import { payrollPeriodService } from '../../../services/payrollPeriod.service'
@@ -8,6 +8,8 @@ import type { PayrollPeriod } from '../../../types/payroll.types'
 import PageHeader from '../../../components/layout/PageHeader.vue'
 import AppTable from '../../../components/ui/AppTable.vue'
 import AppButton from '../../../components/ui/AppButton.vue'
+import AppPagination from '../../../components/ui/AppPagination.vue'
+import { usePagination } from '../../../composables/usePagination'
 
 const toast = useToastStore()
 const reports = ref<PayrollSummaryReport[]>([])
@@ -38,6 +40,8 @@ const totalGross = () => reports.value.reduce((s, r) => s + r.totalGross, 0)
 const totalEmp = () => reports.value.reduce((s, r) => s + r.employeeCount, 0)
 
 function fmtMoney(n: number) { return n.toLocaleString('vi-VN') + ' ₫' }
+
+const { currentPage, perPage, paginatedData, total } = usePagination(reports)
 
 onMounted(loadPeriods)
 </script>
@@ -75,7 +79,7 @@ onMounted(loadPeriods)
     </div>
 
     <!-- Report table -->
-    <AppTable :columns="columns" :rows="reports" :loading="loading" row-key="departmentId" empty-text="Chọn kỳ lương và nhấn Xem báo cáo">
+    <AppTable :columns="columns" :rows="paginatedData" :loading="loading" row-key="departmentId" empty-text="Chọn kỳ lương và nhấn Xem báo cáo">
       <template #default="{ row }">
         <td class="px-4 py-3 text-sm font-medium">{{ (row as PayrollSummaryReport).departmentName }}</td>
         <td class="px-4 py-3 text-sm">{{ (row as PayrollSummaryReport).employeeCount }}</td>
@@ -86,5 +90,7 @@ onMounted(loadPeriods)
         <td class="px-4 py-3 text-sm font-bold text-emerald-700">{{ fmtMoney((row as PayrollSummaryReport).totalNet) }}</td>
       </template>
     </AppTable>
+    <AppPagination :total="total" :current="currentPage" :per-page="perPage" @change="currentPage = $event" @per-page-change="perPage = $event" />
   </div>
 </template>
+

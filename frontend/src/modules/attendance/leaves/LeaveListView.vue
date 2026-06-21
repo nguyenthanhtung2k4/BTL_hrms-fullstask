@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { leaveService } from '../../../services/leave.service'
 import { useAuthStore } from '../../../stores/auth'
@@ -8,6 +8,8 @@ import PageHeader from '../../../components/layout/PageHeader.vue'
 import AppTable from '../../../components/ui/AppTable.vue'
 import AppButton from '../../../components/ui/AppButton.vue'
 import AppBadge from '../../../components/ui/AppBadge.vue'
+import AppPagination from '../../../components/ui/AppPagination.vue'
+import { usePagination } from '../../../composables/usePagination'
 import AppModal from '../../../components/ui/AppModal.vue'
 import AppInput from '../../../components/ui/AppInput.vue'
 import AppConfirm from '../../../components/ui/AppConfirm.vue'
@@ -110,6 +112,8 @@ async function cancelLeave(l: LeaveRequest) {
 
 function fmt(d: string) { return new Date(d).toLocaleDateString('vi-VN') }
 
+const { currentPage, perPage, paginatedData, total } = usePagination(filtered)
+
 onMounted(load)
 </script>
 
@@ -135,7 +139,7 @@ onMounted(load)
       </select>
     </div>
 
-    <AppTable :columns="columns" :rows="filtered" :loading="loading" row-key="id" empty-text="Không có đơn nghỉ phép nào">
+    <AppTable :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Không có đơn nghỉ phép nào">
       <template #default="{ row }">
         <td class="px-4 py-3 text-sm font-medium">{{ (row as LeaveRequest).employeeName }}</td>
         <td class="px-4 py-3 text-sm">{{ (row as LeaveRequest).leaveTypeName }}</td>
@@ -162,6 +166,7 @@ onMounted(load)
         </td>
       </template>
     </AppTable>
+    <AppPagination :total="total" :current="currentPage" :per-page="perPage" @change="currentPage = $event" @per-page-change="perPage = $event" />
 
     <!-- Create form modal -->
     <AppModal v-if="showCreateForm" title="Tạo đơn xin nghỉ phép" @close="showCreateForm = false">
@@ -217,3 +222,4 @@ onMounted(load)
     />
   </div>
 </template>
+

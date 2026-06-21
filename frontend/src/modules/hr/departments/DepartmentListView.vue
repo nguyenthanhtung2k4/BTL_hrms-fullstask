@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { departmentService } from '../../../services/department.service'
 import { useAuthStore } from '../../../stores/auth'
@@ -9,6 +9,8 @@ import AppTable from '../../../components/ui/AppTable.vue'
 import AppButton from '../../../components/ui/AppButton.vue'
 import AppBadge from '../../../components/ui/AppBadge.vue'
 import AppConfirm from '../../../components/ui/AppConfirm.vue'
+import AppPagination from '../../../components/ui/AppPagination.vue'
+import { usePagination } from '../../../composables/usePagination'
 import DepartmentFormModal from './DepartmentFormModal.vue'
 
 const auth = useAuthStore()
@@ -78,6 +80,8 @@ function formatDate(d: string) {
   return new Date(d).toLocaleDateString('vi-VN')
 }
 
+const { currentPage, perPage, paginatedData, total } = usePagination(filtered)
+
 onMounted(load)
 </script>
 
@@ -109,7 +113,7 @@ onMounted(load)
     </div>
 
     <!-- Table -->
-    <AppTable :columns="columns" :rows="filtered" :loading="loading" row-key="id" empty-text="Chưa có phòng ban nào">
+    <AppTable :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Chưa có phòng ban nào">
       <template #default="{ row }">
         <td class="px-4 py-3 text-sm font-mono text-slate-600">{{ (row as Department).code }}</td>
         <td class="px-4 py-3 text-sm font-medium text-slate-900">{{ (row as Department).name }}</td>
@@ -125,6 +129,7 @@ onMounted(load)
         </td>
       </template>
     </AppTable>
+    <AppPagination :total="total" :current="currentPage" :per-page="perPage" @change="currentPage = $event" @per-page-change="perPage = $event" />
 
     <!-- Form modal -->
     <DepartmentFormModal
@@ -147,3 +152,4 @@ onMounted(load)
     />
   </div>
 </template>
+

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 // DeductionListView — tương tự AllowanceListView nhưng cho khấu trừ
 import { ref, onMounted } from 'vue'
 import { deductionService } from '../../../services/deduction.service'
@@ -14,6 +14,8 @@ import AppButton from '../../../components/ui/AppButton.vue'
 import AppModal from '../../../components/ui/AppModal.vue'
 import AppInput from '../../../components/ui/AppInput.vue'
 import AppConfirm from '../../../components/ui/AppConfirm.vue'
+import AppPagination from '../../../components/ui/AppPagination.vue'
+import { usePagination } from '../../../composables/usePagination'
 
 const toast = useToastStore()
 const deductions = ref<EmployeeDeduction[]>([])
@@ -73,6 +75,8 @@ async function confirmDelete() {
 }
 
 function fmtMoney(n: number) { return n.toLocaleString('vi-VN') + ' ₫' }
+const { currentPage, perPage, paginatedData, total } = usePagination(deductions)
+
 onMounted(load)
 </script>
 
@@ -87,7 +91,7 @@ onMounted(load)
       </template>
     </PageHeader>
 
-    <AppTable :columns="columns" :rows="deductions" :loading="loading" row-key="id" empty-text="Chưa có khấu trừ nào">
+    <AppTable :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Chưa có khấu trừ nào">
       <template #default="{ row }">
         <td class="px-4 py-3 text-sm">{{ (row as EmployeeDeduction).periodName ?? '—' }}</td>
         <td class="px-4 py-3 text-sm font-medium">{{ (row as EmployeeDeduction).employeeName ?? '—' }}</td>
@@ -98,6 +102,7 @@ onMounted(load)
         </td>
       </template>
     </AppTable>
+    <AppPagination :total="total" :current="currentPage" :per-page="perPage" @change="currentPage = $event" @per-page-change="perPage = $event" />
 
     <AppModal v-if="showForm" title="Thêm khấu trừ" @close="showForm = false">
       <div class="space-y-4">
@@ -137,3 +142,4 @@ onMounted(load)
     <AppConfirm v-if="deleteTarget" title="Xóa khấu trừ" message="Bạn chắc chắn muốn xóa khấu trừ này?" confirm-text="Xóa" :danger="true" :loading="deleteLoading" @confirm="confirmDelete" @cancel="deleteTarget = null" />
   </div>
 </template>
+

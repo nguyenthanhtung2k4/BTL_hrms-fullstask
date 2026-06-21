@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { payrollRuleService } from '../../../services/payrollRule.service'
 import { useToastStore } from '../../../stores/toast'
@@ -10,6 +10,8 @@ import AppBadge from '../../../components/ui/AppBadge.vue'
 import AppModal from '../../../components/ui/AppModal.vue'
 import AppInput from '../../../components/ui/AppInput.vue'
 import AppConfirm from '../../../components/ui/AppConfirm.vue'
+import AppPagination from '../../../components/ui/AppPagination.vue'
+import { usePagination } from '../../../composables/usePagination'
 
 const toast = useToastStore()
 const rules = ref<PayrollRule[]>([])
@@ -64,6 +66,8 @@ async function confirmDelete() {
   finally { deleteLoading.value = false }
 }
 
+const { currentPage, perPage, paginatedData, total } = usePagination(rules)
+
 onMounted(load)
 </script>
 
@@ -78,7 +82,7 @@ onMounted(load)
       </template>
     </PageHeader>
 
-    <AppTable :columns="columns" :rows="rules" :loading="loading" row-key="id" empty-text="Chưa có quy tắc tính lương">
+    <AppTable :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Chưa có quy tắc tính lương">
       <template #default="{ row }">
         <td class="px-4 py-3 text-sm font-mono">{{ (row as PayrollRule).code }}</td>
         <td class="px-4 py-3 text-sm font-medium">{{ (row as PayrollRule).name }}</td>
@@ -94,6 +98,7 @@ onMounted(load)
         </td>
       </template>
     </AppTable>
+    <AppPagination :total="total" :current="currentPage" :per-page="perPage" @change="currentPage = $event" @per-page-change="perPage = $event" />
 
     <AppModal v-if="showForm" :title="editTarget ? 'Sửa quy tắc' : 'Thêm quy tắc tính lương'" @close="showForm = false">
       <div class="space-y-4">
@@ -121,3 +126,4 @@ onMounted(load)
     <AppConfirm v-if="deleteTarget" title="Xóa quy tắc" :message="`Xóa quy tắc &quot;${deleteTarget.name}&quot;?`" confirm-text="Xóa" :danger="true" :loading="deleteLoading" @confirm="confirmDelete" @cancel="deleteTarget = null" />
   </div>
 </template>
+

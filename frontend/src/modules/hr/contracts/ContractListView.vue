@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { contractService } from '../../../services/contract.service'
 import { employeeService } from '../../../services/employee.service'
@@ -9,6 +9,8 @@ import PageHeader from '../../../components/layout/PageHeader.vue'
 import AppTable from '../../../components/ui/AppTable.vue'
 import AppButton from '../../../components/ui/AppButton.vue'
 import AppBadge from '../../../components/ui/AppBadge.vue'
+import AppPagination from '../../../components/ui/AppPagination.vue'
+import { usePagination } from '../../../composables/usePagination'
 import AppModal from '../../../components/ui/AppModal.vue'
 import AppInput from '../../../components/ui/AppInput.vue'
 import AppConfirm from '../../../components/ui/AppConfirm.vue'
@@ -91,6 +93,8 @@ async function confirmDelete() {
 function fmt(d?: string) { return d ? new Date(d).toLocaleDateString('vi-VN') : '—' }
 function fmtMoney(n: number) { return n.toLocaleString('vi-VN') + ' ₫' }
 
+const { currentPage, perPage, paginatedData, total } = usePagination(filtered)
+
 onMounted(load)
 </script>
 
@@ -118,7 +122,7 @@ onMounted(load)
       </select>
     </div>
 
-    <AppTable :columns="columns" :rows="filtered" :loading="loading" row-key="id" empty-text="Chưa có hợp đồng nào">
+    <AppTable :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Chưa có hợp đồng nào">
       <template #default="{ row }">
         <td class="px-4 py-3 text-sm font-mono">{{ (row as Contract).contractNumber }}</td>
         <td class="px-4 py-3 text-sm font-medium">{{ (row as Contract).employeeName }}</td>
@@ -135,6 +139,7 @@ onMounted(load)
         </td>
       </template>
     </AppTable>
+    <AppPagination :total="total" :current="currentPage" :per-page="perPage" @change="currentPage = $event" @per-page-change="perPage = $event" />
 
     <AppModal v-if="showForm" :title="editTarget ? 'Sửa hợp đồng' : 'Thêm hợp đồng'" size="lg" @close="showForm = false">
       <div class="grid grid-cols-2 gap-4">
@@ -176,3 +181,4 @@ onMounted(load)
     <AppConfirm v-if="deleteTarget" title="Xóa hợp đồng" :message="`Xóa hợp đồng &quot;${deleteTarget.contractNumber}&quot;?`" confirm-text="Xóa" :danger="true" :loading="deleteLoading" @confirm="confirmDelete" @cancel="deleteTarget = null" />
   </div>
 </template>
+

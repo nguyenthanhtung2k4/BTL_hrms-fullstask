@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { payrollPeriodService } from '../../../services/payrollPeriod.service'
 import { payrollRuleService } from '../../../services/payrollRule.service'
@@ -13,6 +13,8 @@ import AppModal from '../../../components/ui/AppModal.vue'
 import AppInput from '../../../components/ui/AppInput.vue'
 import AppConfirm from '../../../components/ui/AppConfirm.vue'
 import { useRouter } from 'vue-router'
+import AppPagination from '../../../components/ui/AppPagination.vue'
+import { usePagination } from '../../../composables/usePagination'
 
 const auth = useAuthStore()
 const toast = useToastStore()
@@ -92,6 +94,8 @@ async function confirmDelete() {
 
 function fmt(d: string) { return new Date(d).toLocaleDateString('vi-VN') }
 
+const { currentPage, perPage, paginatedData, total } = usePagination(periods)
+
 onMounted(load)
 </script>
 
@@ -106,7 +110,7 @@ onMounted(load)
       </template>
     </PageHeader>
 
-    <AppTable :columns="columns" :rows="periods" :loading="loading" row-key="id" empty-text="Chưa có kỳ lương nào">
+    <AppTable :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Chưa có kỳ lương nào">
       <template #default="{ row }">
         <td class="px-4 py-3 text-sm font-medium">{{ (row as PayrollPeriod).name }}</td>
         <td class="px-4 py-3 text-sm text-slate-600">{{ fmt((row as PayrollPeriod).fromDate) }}</td>
@@ -124,6 +128,7 @@ onMounted(load)
         </td>
       </template>
     </AppTable>
+    <AppPagination :total="total" :current="currentPage" :per-page="perPage" @change="currentPage = $event" @per-page-change="perPage = $event" />
 
     <AppModal v-if="showForm" :title="editTarget ? 'Sửa kỳ lương' : 'Tạo kỳ lương'" @close="showForm = false">
       <div class="space-y-4">
@@ -153,3 +158,4 @@ onMounted(load)
     <AppConfirm v-if="deleteTarget" title="Xóa kỳ lương" :message="`Xóa kỳ &quot;${deleteTarget.name}&quot;?`" confirm-text="Xóa" :danger="true" :loading="deleteLoading" @confirm="confirmDelete" @cancel="deleteTarget = null" />
   </div>
 </template>
+

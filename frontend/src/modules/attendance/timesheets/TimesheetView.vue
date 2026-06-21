@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { timesheetService } from '../../../services/timesheet.service'
 import { useAuthStore } from '../../../stores/auth'
@@ -8,6 +8,8 @@ import PageHeader from '../../../components/layout/PageHeader.vue'
 import AppTable from '../../../components/ui/AppTable.vue'
 import AppButton from '../../../components/ui/AppButton.vue'
 import AppBadge from '../../../components/ui/AppBadge.vue'
+import AppPagination from '../../../components/ui/AppPagination.vue'
+import { usePagination } from '../../../composables/usePagination'
 
 const auth = useAuthStore()
 const toast = useToastStore()
@@ -63,6 +65,8 @@ async function calculate() {
   finally { calculating.value = false }
 }
 
+const { currentPage, perPage, paginatedData, total } = usePagination(timesheets)
+
 onMounted(load)
 </script>
 
@@ -87,7 +91,7 @@ onMounted(load)
       <button class="h-9 rounded-lg bg-emerald-600 px-4 text-sm font-medium text-white hover:bg-emerald-700" @click="load">Xem</button>
     </div>
 
-    <AppTable :columns="columns" :rows="timesheets" :loading="loading" row-key="id" empty-text="Chưa có bảng công — hãy nhấn Tính bảng công">
+    <AppTable :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Chưa có bảng công — hãy nhấn Tính bảng công">
       <template #default="{ row }">
         <td class="px-4 py-3 text-sm font-medium">{{ (row as Timesheet).employeeName }}</td>
         <td class="px-4 py-3 text-sm font-semibold text-emerald-700">{{ workDays(row as Timesheet) }}</td>
@@ -97,5 +101,7 @@ onMounted(load)
         <td class="px-4 py-3"><AppBadge :status="(row as Timesheet).status" /></td>
       </template>
     </AppTable>
+    <AppPagination :total="total" :current="currentPage" :per-page="perPage" @change="currentPage = $event" @per-page-change="perPage = $event" />
   </div>
 </template>
+

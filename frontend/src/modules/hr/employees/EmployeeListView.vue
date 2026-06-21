@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { employeeService } from '../../../services/employee.service'
 import { departmentService } from '../../../services/department.service'
@@ -15,6 +15,9 @@ import AppSelect from '../../../components/ui/AppSelect.vue'
 import EmployeeFormModal from './EmployeeFormModal.vue'
 import EmployeeStatusModal from './EmployeeStatusModal.vue'
 import { useRouter } from 'vue-router'
+import AppPagination from '../../../components/ui/AppPagination.vue'
+import { usePagination } from '../../../composables/usePagination'
+
 
 const auth = useAuthStore()
 const toast = useToastStore()
@@ -57,6 +60,8 @@ const filtered = computed(() => {
   if (filterStatus.value) list = list.filter((e) => e.status === filterStatus.value)
   return list
 })
+
+const { currentPage, perPage, paginatedData, total } = usePagination(filtered)
 
 async function load() {
   loading.value = true
@@ -116,7 +121,7 @@ onMounted(load)
     </div>
 
     <!-- Table -->
-    <AppTable :columns="columns" :rows="filtered" :loading="loading" row-key="id" empty-text="Chưa có nhân viên nào">
+    <AppTable :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Chưa có nhân viên nào">
       <template #default="{ row }">
         <td class="px-4 py-3 text-sm font-mono text-slate-600">{{ (row as Employee).employeeCode }}</td>
         <td class="px-4 py-3">
@@ -137,9 +142,11 @@ onMounted(load)
         </td>
       </template>
     </AppTable>
+    <AppPagination :total="total" :current="currentPage" :per-page="perPage" @change="currentPage = $event" @per-page-change="perPage = $event" />
 
     <EmployeeFormModal v-if="showForm" :edit="editTarget" :departments="departments" :positions="positions" :employees="employees" @close="showForm = false" @saved="load(); showForm = false" />
     <EmployeeStatusModal v-if="statusTarget" :employee="statusTarget" @close="statusTarget = null" @saved="load(); statusTarget = null" />
     <AppConfirm v-if="deleteTarget" title="Xóa nhân viên" :message="`Xóa nhân viên &quot;${deleteTarget.fullName}&quot;?`" confirm-text="Xóa" :danger="true" :loading="deleteLoading" @confirm="confirmDelete" @cancel="deleteTarget = null" />
   </div>
 </template>
+

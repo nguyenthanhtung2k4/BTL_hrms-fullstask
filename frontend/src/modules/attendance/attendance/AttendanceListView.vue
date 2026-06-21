@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { attendanceService } from '../../../services/attendance.service'
 import { employeeService } from '../../../services/employee.service'
@@ -8,6 +8,8 @@ import type { AttendanceRecord } from '../../../types/attendance.types'
 import type { Employee, Department } from '../../../types/hr.types'
 import PageHeader from '../../../components/layout/PageHeader.vue'
 import AppTable from '../../../components/ui/AppTable.vue'
+import AppPagination from '../../../components/ui/AppPagination.vue'
+import { usePagination } from '../../../composables/usePagination'
 
 const toast = useToastStore()
 const records = ref<AttendanceRecord[]>([])
@@ -42,6 +44,8 @@ function fmtTime(d?: string) { return d ? new Date(d).toLocaleTimeString('vi-VN'
 function fmtDate(d: string) { return new Date(d).toLocaleDateString('vi-VN') }
 function fmtMin(m: number) { return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m` }
 
+const { currentPage, perPage, paginatedData, total } = usePagination(records)
+
 onMounted(load)
 </script>
 
@@ -61,7 +65,7 @@ onMounted(load)
       </select>
       <button class="h-9 rounded-lg bg-emerald-600 px-4 text-sm font-medium text-white hover:bg-emerald-700" @click="load">Xem</button>
     </div>
-    <AppTable :columns="columns" :rows="records" :loading="loading" row-key="id" empty-text="Không có dữ liệu chấm công">
+    <AppTable :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Không có dữ liệu chấm công">
       <template #default="{ row }">
         <td class="px-4 py-3 text-sm font-medium">{{ (row as AttendanceRecord).employeeName }}</td>
         <td class="px-4 py-3 text-sm text-slate-600">{{ fmtDate((row as AttendanceRecord).workDate) }}</td>
@@ -71,5 +75,7 @@ onMounted(load)
         <td class="px-4 py-3 text-sm font-medium">{{ (row as AttendanceRecord).workedMinutes > 0 ? fmtMin((row as AttendanceRecord).workedMinutes) : '—' }}</td>
       </template>
     </AppTable>
+    <AppPagination :total="total" :current="currentPage" :per-page="perPage" @change="currentPage = $event" @per-page-change="perPage = $event" />
   </div>
 </template>
+

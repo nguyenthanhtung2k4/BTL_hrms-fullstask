@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { workScheduleService } from '../../../services/workSchedule.service'
 import { employeeService } from '../../../services/employee.service'
@@ -10,6 +10,8 @@ import type { Employee } from '../../../types/hr.types'
 import PageHeader from '../../../components/layout/PageHeader.vue'
 import AppTable from '../../../components/ui/AppTable.vue'
 import AppButton from '../../../components/ui/AppButton.vue'
+import AppPagination from '../../../components/ui/AppPagination.vue'
+import { usePagination } from '../../../composables/usePagination'
 import AppModal from '../../../components/ui/AppModal.vue'
 import AppInput from '../../../components/ui/AppInput.vue'
 import AppConfirm from '../../../components/ui/AppConfirm.vue'
@@ -67,6 +69,8 @@ async function confirmDelete() {
 }
 
 function fmt(d: string) { return new Date(d).toLocaleDateString('vi-VN') }
+const { currentPage, perPage, paginatedData, total } = usePagination(schedules)
+
 onMounted(load)
 </script>
 
@@ -81,7 +85,7 @@ onMounted(load)
       </template>
     </PageHeader>
 
-    <AppTable :columns="columns" :rows="schedules" :loading="loading" row-key="id" empty-text="Chưa có lịch làm việc">
+    <AppTable :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Chưa có lịch làm việc">
       <template #default="{ row }">
         <td class="px-4 py-3 text-sm font-medium">{{ (row as WorkSchedule).employeeName }}</td>
         <td class="px-4 py-3 text-sm">{{ (row as WorkSchedule).shiftName }}</td>
@@ -92,6 +96,7 @@ onMounted(load)
         </td>
       </template>
     </AppTable>
+    <AppPagination :total="total" :current="currentPage" :per-page="perPage" @change="currentPage = $event" @per-page-change="perPage = $event" />
 
     <AppModal v-if="showForm" title="Phân lịch làm việc" @close="showForm = false">
       <div class="space-y-4">
@@ -125,3 +130,4 @@ onMounted(load)
     <AppConfirm v-if="deleteTarget" title="Xóa lịch làm việc" message="Bạn chắc chắn muốn xóa lịch này?" confirm-text="Xóa" :danger="true" :loading="deleteLoading" @confirm="confirmDelete" @cancel="deleteTarget = null" />
   </div>
 </template>
+

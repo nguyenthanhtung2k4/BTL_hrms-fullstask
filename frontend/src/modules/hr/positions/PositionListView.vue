@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { positionService } from '../../../services/position.service'
 import { useAuthStore } from '../../../stores/auth'
@@ -11,6 +11,8 @@ import AppBadge from '../../../components/ui/AppBadge.vue'
 import AppConfirm from '../../../components/ui/AppConfirm.vue'
 import AppModal from '../../../components/ui/AppModal.vue'
 import AppInput from '../../../components/ui/AppInput.vue'
+import AppPagination from '../../../components/ui/AppPagination.vue'
+import { usePagination } from '../../../composables/usePagination'
 
 const auth = useAuthStore()
 const toast = useToastStore()
@@ -85,6 +87,8 @@ async function confirmDelete() {
   finally { deleteLoading.value = false }
 }
 
+const { currentPage, perPage, paginatedData, total } = usePagination(filtered)
+
 onMounted(load)
 </script>
 
@@ -103,7 +107,7 @@ onMounted(load)
       <input v-model="search" type="text" placeholder="Tìm chức vụ..." class="h-9 w-full max-w-sm rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-500" />
     </div>
 
-    <AppTable :columns="columns" :rows="filtered" :loading="loading" row-key="id" empty-text="Chưa có chức vụ nào">
+    <AppTable :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Chưa có chức vụ nào">
       <template #default="{ row }">
         <td class="px-4 py-3 text-sm font-mono text-slate-600">{{ (row as Position).code }}</td>
         <td class="px-4 py-3 text-sm font-medium">{{ (row as Position).name }}</td>
@@ -117,6 +121,7 @@ onMounted(load)
         </td>
       </template>
     </AppTable>
+    <AppPagination :total="total" :current="currentPage" :per-page="perPage" @change="currentPage = $event" @per-page-change="perPage = $event" />
 
     <!-- Form Modal -->
     <AppModal v-if="showForm" :title="editTarget ? 'Sửa chức vụ' : 'Thêm chức vụ'" @close="showForm = false">
@@ -141,3 +146,4 @@ onMounted(load)
     <AppConfirm v-if="deleteTarget" title="Xóa chức vụ" :message="`Xóa chức vụ &quot;${deleteTarget.name}&quot;?`" confirm-text="Xóa" :danger="true" :loading="deleteLoading" @confirm="confirmDelete" @cancel="deleteTarget = null" />
   </div>
 </template>
+
