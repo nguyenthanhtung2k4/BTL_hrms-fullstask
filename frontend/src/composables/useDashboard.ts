@@ -5,13 +5,14 @@ import { leaveService } from '../services/leave.service'
 import { payrollPeriodService } from '../services/payrollPeriod.service'
 import { payslipService } from '../services/payslip.service'
 import { reportService } from '../services/report.service'
+import { attendanceService } from '../services/attendance.service'
 import { useAuthStore } from '../stores/auth'
 import type { Employee, Contract } from '../types/hr.types'
 import type { LeaveRequest } from '../types/attendance.types'
 import type { PayrollPeriod, Payslip, PayrollSummaryReport } from '../types/payroll.types'
 
 export function useDashboard() {
-  const auth = useAuthStore()
+  const authStore = useAuthStore()
   const loading = ref(true)
 
   const employees = ref<Employee[]>([])
@@ -125,7 +126,6 @@ export function useDashboard() {
   async function load() {
     loading.value = true
     try {
-      const authStore = useAuthStore()
       if (authStore.isHR || authStore.isAdmin) {
         await Promise.allSettled([
           employeeService.getAll().then(r => employees.value = r),
