@@ -64,13 +64,39 @@ const menuGroups = computed(() => {
   if (auth.isHR) {
     attItems.push({ to: '/attendance/shifts', name: 'attendance-shifts', label: 'Ca làm việc', icon: Clock })
   }
-  attItems.push({ to: '/attendance/work-schedules', name: 'attendance-work-schedules', label: 'Lịch làm việc', icon: Calendar })
+  attItems.push({
+    to: '/attendance/work-schedules',
+    name: 'attendance-work-schedules',
+    label: auth.isManager ? 'Lịch làm việc' : 'Lịch làm việc của tôi',
+    icon: Calendar
+  })
   if (auth.isManager) {
     attItems.push({ to: '/attendance/records', name: 'attendance-records', label: 'Chấm công (tất cả)', icon: ClipboardList })
   }
-  attItems.push({ to: '/attendance/checkin', name: 'attendance-checkin', label: 'Check-in / Check-out', icon: CalendarCheck })
-  attItems.push({ to: '/attendance/leaves', name: 'attendance-leaves', label: 'Nghỉ phép', icon: UmbrellaOff })
-  attItems.push({ to: '/attendance/timesheets', name: 'attendance-timesheets', label: 'Bảng công', icon: ScrollText })
+  attItems.push({
+    to: '/attendance/checkin',
+    name: 'attendance-checkin',
+    label: 'Check-in / Check-out',
+    icon: CalendarCheck
+  })
+  attItems.push({
+    to: '/attendance/my-attendance',
+    name: 'attendance-my-attendance',
+    label: 'Chấm công của tôi',
+    icon: ClipboardList
+  })
+  attItems.push({
+    to: '/attendance/leaves',
+    name: 'attendance-leaves',
+    label: auth.isManager ? 'Nghỉ phép' : 'Đơn nghỉ phép',
+    icon: UmbrellaOff
+  })
+  attItems.push({
+    to: '/attendance/timesheets',
+    name: 'attendance-timesheets',
+    label: auth.isManager ? 'Bảng công' : 'Bảng công của tôi',
+    icon: ScrollText
+  })
   groups.push({ label: 'Chấm công', items: attItems })
 
   // Payroll — Admin/PayrollStaff & Employee

@@ -1,9 +1,4 @@
-ADMIN them phien danng nhap hẹ thong phan doasboard 
-
-
-Admin cũg có quyền cấp tài khoản cá nhân cho quản lý đc thêm các quyền nữa ! 
-
-- CCheckxem 
+tHÊM ccheckkluongw 
 ==================================================
 - Hãy làm cho bài toán cụ thể cho  một công ty củ thể thì mới có thể  trực quan đc 
 

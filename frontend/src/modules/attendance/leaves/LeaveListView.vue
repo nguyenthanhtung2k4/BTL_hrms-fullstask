@@ -1,9 +1,12 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { leaveService } from '../../../services/leave.service'
+import { employeeService } from '../../../services/employee.service'
+import { departmentService } from '../../../services/department.service'
 import { useAuthStore } from '../../../stores/auth'
 import { useToastStore } from '../../../stores/toast'
 import type { LeaveRequest, LeaveType, CreateLeaveRequestDto } from '../../../types/attendance.types'
+import type { Employee, Department } from '../../../types/hr.types'
 import PageHeader from '../../../components/layout/PageHeader.vue'
 import AppTable from '../../../components/ui/AppTable.vue'
 import AppButton from '../../../components/ui/AppButton.vue'
@@ -19,6 +22,8 @@ const toast = useToastStore()
 
 const leaves = ref<LeaveRequest[]>([])
 const leaveTypes = ref<LeaveType[]>([])
+const employees = ref<Employee[]>([])
+const departments = ref<Department[]>([])
 const loading = ref(false)
 const showCreateForm = ref(false)
 const approveTarget = ref<LeaveRequest | null>(null)
@@ -26,17 +31,49 @@ const rejectTarget = ref<LeaveRequest | null>(null)
 const actionLoading = ref(false)
 const saving = ref(false)
 const filterStatus = ref('')
+const filterDept = ref('')
+const searchEmployee = ref('')
 
 const form = ref({ leaveTypeId: '', fromDate: '', toDate: '', reason: '' })
 const errors = ref<Record<string, string>>({})
 
 const columns = [
-  { key: 'employee', label: 'Nhân viên' }, { key: 'type', label: 'Loại nghỉ' },
-  { key: 'from', label: 'Từ ngày' }, { key: 'to', label: 'Đến ngày' }, { key: 'days', label: 'Số ngày' },
-  { key: 'reason', label: 'Lý do' }, { key: 'status', label: 'Trạng thái' }, { key: 'actions', label: '', class: 'text-right' },
+  { key: 'employee', label: 'Nhân viên' },
+  { key: 'leaveTypeName', label: 'Loại nghỉ' },
+  { key: 'fromDate', label: 'Từ ngày' },
+  { key: 'toDate', label: 'Đến ngày' },
+  { key: 'totalDays', label: 'Số ngày' },
+  { key: 'reason', label: 'Lý do' },
+  { key: 'status', label: 'Trạng thái' },
+  { key: 'actions', label: '', class: 'text-right' },
 ]
 
-const filtered = computed(() => filterStatus.value ? leaves.value.filter(l => l.status === filterStatus.value) : leaves.value)
+const filtered = computed(() => {
+  let result = leaves.value
+  
+  if (filterStatus.value) {
+    result = result.filter((l) => l.status === filterStatus.value)
+  }
+  
+  if (filterDept.value) {
+    result = result.filter((l) => {
+      const emp = employees.value.find((e) => e.id === l.employeeId)
+      return emp?.departmentId === filterDept.value
+    })
+  }
+  
+  if (searchEmployee.value) {
+    const q = searchEmployee.value.toLowerCase()
+    result = result.filter(
+      (l) =>
+        l.employeeName?.toLowerCase().includes(q) ||
+        l.leaveTypeName?.toLowerCase().includes(q) ||
+        l.reason?.toLowerCase().includes(q)
+    )
+  }
+  
+  return [...result].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+})
 
 const totalDays = computed(() => {
   if (!form.value.fromDate || !form.value.toDate) return 0
@@ -47,12 +84,25 @@ const totalDays = computed(() => {
 async function load() {
   loading.value = true
   try {
-    [leaves.value, leaveTypes.value] = await Promise.all([
+    const promises: Promise<any>[] = [
       leaveService.getAll(auth.isManager ? {} : { employeeId: auth.employeeId }),
       leaveService.getTypes(),
-    ])
-  } catch { toast.error('Không thể tải dữ liệu') }
-  finally { loading.value = false }
+    ]
+    if (auth.isManager) {
+      promises.push(employeeService.getAll(), departmentService.getAll())
+    }
+    const results = await Promise.all(promises)
+    leaves.value = results[0]
+    leaveTypes.value = results[1]
+    if (auth.isManager) {
+      employees.value = results[2]
+      departments.value = results[3]
+    }
+  } catch {
+    toast.error('Không thể tải dữ liệu')
+  } finally {
+    loading.value = false
+  }
 }
 
 function validate() {
@@ -128,15 +178,60 @@ onMounted(load)
       </template>
     </PageHeader>
 
-    <!-- Filter -->
-    <div class="mb-4 flex gap-3">
-      <select v-model="filterStatus" class="h-9 rounded-lg border border-slate-300 px-3 text-sm bg-white outline-none focus:border-emerald-500">
-        <option value="">Tất cả trạng thái</option>
-        <option value="Pending">Chờ duyệt</option>
-        <option value="Approved">Đã duyệt</option>
-        <option value="Rejected">Từ chối</option>
-        <option value="Cancelled">Đã hủy</option>
-      </select>
+    <!-- Thanh tìm kiếm & bộ lọc -->
+    <div class="flex flex-wrap items-center gap-4 mb-6 bg-slate-50 p-4 rounded-2xl border border-slate-150 shadow-sm">
+      <!-- Tìm kiếm -->
+      <div class="flex-1 min-w-[280px]">
+        <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">Tìm kiếm</label>
+        <div class="relative">
+          <input
+            v-model="searchEmployee"
+            type="text"
+            placeholder="Tìm kiếm theo nhân viên, lý do hoặc loại nghỉ..."
+            class="h-10 w-full rounded-xl border border-slate-300 bg-white px-3.5 pl-10 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+          />
+          <div class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lọc phòng ban (chỉ hiển thị cho vai trò quản lý/HR/admin) -->
+      <div v-if="auth.isManager" class="w-full sm:w-auto sm:min-w-[220px]">
+        <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">Phòng ban</label>
+        <div class="relative">
+          <select
+            v-model="filterDept"
+            class="h-10 w-full rounded-xl border border-slate-300 bg-white px-3.5 pr-10 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 appearance-none"
+          >
+            <option value="">-- Tất cả phòng ban --</option>
+            <option v-for="d in departments" :key="d.id" :value="d.id">{{ d.name }}</option>
+          </select>
+          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lọc trạng thái -->
+      <div class="w-full sm:w-auto sm:min-w-[180px]">
+        <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">Trạng thái</label>
+        <div class="relative">
+          <select
+            v-model="filterStatus"
+            class="h-10 w-full rounded-xl border border-slate-300 bg-white px-3.5 pr-10 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 appearance-none"
+          >
+            <option value="">-- Tất cả trạng thái --</option>
+            <option value="Pending">Chờ duyệt</option>
+            <option value="Approved">Đã duyệt</option>
+            <option value="Rejected">Từ chối</option>
+            <option value="Cancelled">Đã hủy</option>
+          </select>
+          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+          </div>
+        </div>
+      </div>
     </div>
 
     <AppTable :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Không có đơn nghỉ phép nào">

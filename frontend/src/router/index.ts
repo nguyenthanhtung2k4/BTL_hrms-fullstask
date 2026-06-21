@@ -21,6 +21,7 @@ const ContractListView   = () => import('../modules/hr/contracts/ContractListVie
 const ShiftListView        = () => import('../modules/attendance/shifts/ShiftListView.vue')
 const WorkScheduleListView = () => import('../modules/attendance/work-schedules/WorkScheduleListView.vue')
 const MyAttendanceView     = () => import('../modules/attendance/attendance/MyAttendanceView.vue')
+const MyAttendanceListView = () => import('../modules/attendance/attendance/MyAttendanceListView.vue')
 const AttendanceListView   = () => import('../modules/attendance/attendance/AttendanceListView.vue')
 const LeaveListView        = () => import('../modules/attendance/leaves/LeaveListView.vue')
 const TimesheetView        = () => import('../modules/attendance/timesheets/TimesheetView.vue')
@@ -100,6 +101,12 @@ export const router = createRouter({
           path: 'attendance/checkin',
           name: 'attendance-checkin',
           component: MyAttendanceView,
+          // Tất cả roles được phép
+        },
+        {
+          path: 'attendance/my-attendance',
+          name: 'attendance-my-attendance',
+          component: MyAttendanceListView,
           // Tất cả roles được phép
         },
         {

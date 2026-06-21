@@ -3,10 +3,11 @@ import { ref, computed, onMounted } from 'vue'
 import { workScheduleService } from '../../../services/workSchedule.service'
 import { employeeService } from '../../../services/employee.service'
 import { shiftService } from '../../../services/shift.service'
+import { departmentService } from '../../../services/department.service'
 import { useAuthStore } from '../../../stores/auth'
 import { useToastStore } from '../../../stores/toast'
 import type { WorkSchedule, Shift } from '../../../types/attendance.types'
-import type { Employee } from '../../../types/hr.types'
+import type { Employee, Department } from '../../../types/hr.types'
 import PageHeader from '../../../components/layout/PageHeader.vue'
 import AppTable from '../../../components/ui/AppTable.vue'
 import AppButton from '../../../components/ui/AppButton.vue'
@@ -21,12 +22,15 @@ const toast = useToastStore()
 const schedules = ref<WorkSchedule[]>([])
 const employees = ref<Employee[]>([])
 const shifts = ref<Shift[]>([])
+const departments = ref<Department[]>([])
 const loading = ref(false)
 const showForm = ref(false)
 const deleteTarget = ref<WorkSchedule | null>(null)
 const deleteLoading = ref(false)
 const saving = ref(false)
 const search = ref('')
+const selectedDeptId = ref('')
+const selectedStatus = ref('')
 const form = ref({ employeeId: '', shiftId: '', startDate: '', endDate: '' })
 const errors = ref<Record<string, string>>({})
 
@@ -40,6 +44,20 @@ const columns = [
 
 const filtered = computed(() => {
   let result = schedules.value
+
+  // Lọc theo phòng ban
+  if (selectedDeptId.value) {
+    result = result.filter((s) => {
+      const emp = employees.value.find((e) => e.id === s.employeeId)
+      return emp?.departmentId === selectedDeptId.value
+    })
+  }
+
+  // Lọc theo trạng thái
+  if (selectedStatus.value) {
+    result = result.filter((s) => s.status === selectedStatus.value)
+  }
+
   if (search.value) {
     const q = search.value.toLowerCase()
     result = result.filter(
@@ -60,14 +78,15 @@ async function load() {
     const resSchedules = await workScheduleService.getAll(params || {})
     schedules.value = resSchedules
     
-    if (auth.isManager) {
-      const [resEmployees, resShifts] = await Promise.all([
-        employeeService.getAll(),
-        shiftService.getAll()
-      ])
-      employees.value = resEmployees
-      shifts.value = resShifts
-    }
+    // Luôn tải danh sách nhân viên & phòng ban để phục vụ mapping lọc
+    const [resEmployees, resShifts, resDepts] = await Promise.all([
+      employeeService.getAll(),
+      shiftService.getAll(),
+      departmentService.getAll()
+    ])
+    employees.value = resEmployees
+    shifts.value = resShifts
+    departments.value = resDepts
   } catch {
     toast.error('Không thể tải dữ liệu lịch làm việc')
   } finally {
@@ -158,13 +177,57 @@ onMounted(load)
     </PageHeader>
 
     <!-- Thanh tìm kiếm & bộ lọc -->
-    <div class="mb-4">
-      <input
-        v-model="search"
-        type="text"
-        placeholder="Tìm kiếm theo nhân viên, ca làm hoặc ngày..."
-        class="h-9 w-full max-w-sm rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-400"
-      />
+    <div class="flex flex-wrap items-center gap-4 mb-6 bg-slate-50 p-4 rounded-2xl border border-slate-150 shadow-sm">
+      <div class="flex-1 min-w-[280px]">
+        <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">Tìm kiếm</label>
+        <div class="relative">
+          <input
+            v-model="search"
+            type="text"
+            placeholder="Tìm kiếm theo nhân viên, ca làm hoặc ngày..."
+            class="h-10 w-full rounded-xl border border-slate-300 bg-white px-3.5 pl-10 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+          />
+          <div class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lọc phòng ban (chỉ hiển thị cho vai trò quản lý/HR/admin) -->
+      <div v-if="auth.isManager" class="w-full sm:w-auto sm:min-w-[220px]">
+        <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">Phòng ban</label>
+        <div class="relative">
+          <select
+            v-model="selectedDeptId"
+            class="h-10 w-full rounded-xl border border-slate-300 bg-white px-3.5 pr-10 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 appearance-none"
+          >
+            <option value="">-- Tất cả phòng ban --</option>
+            <option v-for="d in departments" :key="d.id" :value="d.id">{{ d.name }}</option>
+          </select>
+          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lọc trạng thái -->
+      <div class="w-full sm:w-auto sm:min-w-[180px]">
+        <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">Trạng thái</label>
+        <div class="relative">
+          <select
+            v-model="selectedStatus"
+            class="h-10 w-full rounded-xl border border-slate-300 bg-white px-3.5 pr-10 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 appearance-none"
+          >
+            <option value="">-- Tất cả trạng thái --</option>
+            <option value="Planned">Planned</option>
+            <option value="Completed">Completed</option>
+            <option value="Absent">Absent</option>
+          </select>
+          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Bảng hiển thị -->

@@ -7,6 +7,7 @@ import { useAuthStore } from '../../../stores/auth'
 import { useToastStore } from '../../../stores/toast'
 import type { AttendanceRecord, Shift } from '../../../types/attendance.types'
 import AppButton from '../../../components/ui/AppButton.vue'
+import AppTable from '../../../components/ui/AppTable.vue'
 
 const auth = useAuthStore()
 const toast = useToastStore()
@@ -18,6 +19,15 @@ const selectedShiftCode = ref('')
 const todaySchedule = ref<any>(null)
 const loading = ref(true)
 const actionLoading = ref(false)
+
+const historyColumns = [
+  { key: 'workDate', label: 'Ngày làm việc' },
+  { key: 'shiftName', label: 'Ca làm việc' },
+  { key: 'checkInAt', label: 'Giờ Check-in' },
+  { key: 'checkOutAt', label: 'Giờ Check-out' },
+  { key: 'workedMinutes', label: 'Tổng giờ làm' },
+  { key: 'status', label: 'Trạng thái' },
+]
 
 // Live running clock
 const currentTime = ref(new Date())
@@ -79,7 +89,7 @@ async function load() {
     ])
 
     todayRecord.value = Array.isArray(myRecords) && myRecords.length > 0 ? myRecords[myRecords.length - 1] : null
-    history.value = Array.isArray(myRecords) ? myRecords.slice(0, 30) : []
+    history.value = Array.isArray(myRecords) ? myRecords.slice(0, 10) : []
     shifts.value = allShifts.filter((s) => s.isActive)
 
     // Load schedule for today to auto-select shift
@@ -154,6 +164,10 @@ function fmtDate(d: string) {
 function fmtMinutes(m: number) {
   return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`
 }
+
+const sortedHistory = computed(() => {
+  return [...history.value].sort((a, b) => new Date(b.workDate).getTime() - new Date(a.workDate).getTime())
+})
 
 onMounted(() => {
   load()
@@ -313,48 +327,35 @@ onUnmounted(() => {
     <!-- History list table -->
     <div class="space-y-3">
       <h2 class="text-lg font-bold text-slate-800">Lịch sử chấm công gần đây</h2>
-      <div class="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
-        <table class="w-full text-sm border-collapse text-left">
-          <thead>
-            <tr class="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              <th class="px-5 py-3.5">Ngày làm việc</th>
-              <th class="px-5 py-3.5">Ca làm việc</th>
-              <th class="px-5 py-3.5">Giờ Check-in</th>
-              <th class="px-5 py-3.5">Giờ Check-out</th>
-              <th class="px-5 py-3.5">Tổng giờ làm</th>
-              <th class="px-5 py-3.5">Trạng thái</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100">
-            <tr v-if="history.length === 0">
-              <td colspan="6" class="px-5 py-10 text-center text-slate-400">
-                Chưa ghi nhận lịch sử chấm công nào trong tháng này.
-              </td>
-            </tr>
-            <tr v-for="r in history" :key="r.id" class="hover:bg-slate-50/50 transition-colors">
-              <td class="px-5 py-4 font-medium text-slate-900">{{ fmtDate(r.workDate) }}</td>
-              <td class="px-5 py-4 text-slate-700 font-medium">{{ r.shiftName || '—' }}</td>
-              <td class="px-5 py-4 text-emerald-700 font-mono font-semibold">{{ fmtTime(r.checkInAt) }}</td>
-              <td class="px-5 py-4 text-blue-700 font-mono font-semibold">{{ fmtTime(r.checkOutAt) }}</td>
-              <td class="px-5 py-4 text-slate-800 font-semibold">
-                {{ r.workedMinutes > 0 ? fmtMinutes(r.workedMinutes) : '—' }}
-              </td>
-              <td class="px-5 py-4">
-                <span
-                  class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border"
-                  :class="[
-                    r.status === 'Completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
-                    r.status === 'CheckedIn' ? 'bg-amber-50 text-amber-700 border-amber-100' :
-                    'bg-slate-50 text-slate-600 border-slate-100'
-                  ]"
-                >
-                  {{ r.status === 'Completed' ? 'Hoàn thành' : r.status === 'CheckedIn' ? 'Đang làm' : r.status }}
-                </span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <AppTable
+        :columns="historyColumns"
+        :rows="sortedHistory"
+        :loading="loading"
+        row-key="id"
+        empty-text="Chưa ghi nhận lịch sử chấm công nào trong tháng này."
+      >
+        <template #default="{ row: r }">
+          <td class="px-5 py-4 font-medium text-slate-900">{{ fmtDate(r.workDate) }}</td>
+          <td class="px-5 py-4 text-slate-700 font-medium">{{ r.shiftName || '—' }}</td>
+          <td class="px-5 py-4 text-emerald-700 font-mono font-semibold">{{ fmtTime(r.checkInAt) }}</td>
+          <td class="px-5 py-4 text-blue-700 font-mono font-semibold">{{ fmtTime(r.checkOutAt) }}</td>
+          <td class="px-5 py-4 text-slate-800 font-semibold">
+            {{ r.workedMinutes > 0 ? fmtMinutes(r.workedMinutes) : '—' }}
+          </td>
+          <td class="px-5 py-4">
+            <span
+              class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border"
+              :class="[
+                r.status === 'Completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                r.status === 'CheckedIn' ? 'bg-amber-50 text-amber-700 border-amber-100' :
+                'bg-slate-50 text-slate-600 border-slate-100'
+              ]"
+            >
+              {{ r.status === 'Completed' ? 'Hoàn thành' : r.status === 'CheckedIn' ? 'Đang làm' : r.status }}
+            </span>
+          </td>
+        </template>
+      </AppTable>
     </div>
   </div>
 </template>
