@@ -1,0 +1,325 @@
+{
+  "common": {
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "delete": "Xóa",
+    "edit": "Chỉnh sửa",
+    "create": "Tạo mới",
+    "add": "Thêm",
+    "search": "Tìm kiếm",
+    "filter": "Lọc",
+    "export": "Xuất Excel",
+    "import": "Nhập Excel",
+    "print": "In",
+    "download": "Tải xuống",
+    "loading": "Đang tải...",
+    "saving": "Đang lưu...",
+    "noData": "Chưa có dữ liệu",
+    "confirm": "Xác nhận",
+    "close": "Đóng",
+    "back": "Quay lại",
+    "detail": "Chi tiết",
+    "view": "Xem",
+    "status": "Trạng thái",
+    "actions": "Hành động",
+    "all": "Tất cả",
+    "yes": "Có",
+    "no": "Không",
+    "from": "Từ",
+    "to": "Đến",
+    "date": "Ngày",
+    "total": "Tổng",
+    "notes": "Ghi chú",
+    "optional": "Tùy chọn",
+    "required_field": "Trường bắt buộc",
+    "rows_per_page": "Hàng mỗi trang",
+    "page": "Trang",
+    "of": "của",
+    "results": "kết quả"
+  },
+
+  "nav": {
+    "dashboard": "Tổng quan",
+    "hr": "Nhân sự",
+    "departments": "Phòng ban",
+    "positions": "Chức vụ",
+    "employees": "Nhân viên",
+    "contracts": "Hợp đồng",
+    "attendance": "Chấm công",
+    "shifts": "Ca làm việc",
+    "workSchedules": "Lịch làm việc",
+    "myWorkSchedule": "Lịch của tôi",
+    "attendanceRecords": "Chấm công (tất cả)",
+    "checkin": "Check-in / Check-out",
+    "myAttendance": "Chấm công của tôi",
+    "leaves": "Nghỉ phép",
+    "myLeaves": "Đơn nghỉ phép",
+    "timesheets": "Bảng công",
+    "myTimesheets": "Bảng công của tôi",
+    "payroll": "Lương & Báo cáo",
+    "periods": "Kỳ lương",
+    "rules": "Quy tắc lương",
+    "allowances": "Phụ cấp",
+    "deductions": "Khấu trừ",
+    "allPayslips": "Phiếu lương (tất cả)",
+    "myPayslip": "Phiếu lương của tôi",
+    "reports": "Báo cáo"
+  },
+
+  "auth": {
+    "login": "Đăng nhập",
+    "logout": "Đăng xuất",
+    "email": "Email",
+    "password": "Mật khẩu",
+    "loginButton": "Đăng nhập",
+    "loginLoading": "Đang đăng nhập...",
+    "loginError": "Email hoặc mật khẩu không đúng",
+    "logoutConfirm": "Bạn có chắc muốn đăng xuất?",
+    "loggedOut": "Đã đăng xuất",
+    "welcomeBack": "Chào mừng trở lại",
+    "emailPlaceholder": "admin@hrms.com",
+    "passwordPlaceholder": "••••••••"
+  },
+
+  "dashboard": {
+    "title": "Tổng quan hệ thống",
+    "greeting_morning": "Chào buổi sáng",
+    "greeting_afternoon": "Chào buổi chiều",
+    "greeting_evening": "Chào buổi tối",
+    "totalEmployees": "Tổng nhân viên",
+    "presentToday": "Có mặt hôm nay",
+    "onLeave": "Đang nghỉ phép",
+    "pendingLeaves": "Đơn nghỉ chờ duyệt",
+    "totalDepartments": "Phòng ban",
+    "activeContracts": "Hợp đồng hiệu lực",
+    "monthlyPayroll": "Quỹ lương tháng",
+    "quickActions": "Thao tác nhanh",
+    "recentActivity": "Hoạt động gần đây"
+  },
+
+  "employee": {
+    "title": "Nhân viên",
+    "list": "Danh sách nhân viên",
+    "detail": "Chi tiết nhân viên",
+    "create": "Thêm nhân viên",
+    "edit": "Chỉnh sửa nhân viên",
+    "code": "Mã NV",
+    "fullName": "Họ và tên",
+    "email": "Email",
+    "phone": "Số điện thoại",
+    "department": "Phòng ban",
+    "position": "Chức vụ",
+    "status": "Trạng thái",
+    "hireDate": "Ngày vào làm",
+    "gender": "Giới tính",
+    "address": "Địa chỉ",
+    "baseSalary": "Lương cơ bản",
+    "activeStatus": "Đang làm việc",
+    "inactiveStatus": "Đã nghỉ việc",
+    "onLeaveStatus": "Đang nghỉ phép",
+    "confirmDelete": "Xác nhận xóa nhân viên này?",
+    "createSuccess": "Đã thêm nhân viên thành công",
+    "updateSuccess": "Đã cập nhật thông tin thành công",
+    "deleteSuccess": "Đã xóa nhân viên"
+  },
+
+  "department": {
+    "title": "Phòng ban",
+    "create": "Thêm phòng ban",
+    "name": "Tên phòng ban",
+    "manager": "Trưởng phòng",
+    "employeeCount": "Số nhân viên"
+  },
+
+  "position": {
+    "title": "Chức vụ",
+    "create": "Thêm chức vụ",
+    "name": "Tên chức vụ",
+    "department": "Phòng ban"
+  },
+
+  "contract": {
+    "title": "Hợp đồng",
+    "create": "Tạo hợp đồng",
+    "type": "Loại hợp đồng",
+    "startDate": "Ngày bắt đầu",
+    "endDate": "Ngày kết thúc",
+    "baseSalary": "Lương cơ bản",
+    "status": "Trạng thái",
+    "active": "Hiệu lực",
+    "expired": "Hết hạn",
+    "terminated": "Đã chấm dứt"
+  },
+
+  "attendance": {
+    "title": "Chấm công",
+    "checkin": "Check-in",
+    "checkout": "Check-out",
+    "checkInSuccess": "Check-in thành công!",
+    "checkOutSuccess": "Check-out thành công!",
+    "alreadyCheckedIn": "Đã check-in hôm nay",
+    "notCheckedIn": "Chưa check-in",
+    "workDate": "Ngày làm việc",
+    "checkInTime": "Giờ vào",
+    "checkOutTime": "Giờ ra",
+    "totalHours": "Tổng giờ",
+    "status": {
+      "present": "Có mặt",
+      "absent": "Vắng mặt",
+      "late": "Đi trễ",
+      "halfDay": "Nửa ngày"
+    },
+    "todayStatus": "Trạng thái hôm nay",
+    "recentHistory": "Lịch sử gần đây"
+  },
+
+  "leave": {
+    "title": "Nghỉ phép",
+    "myRequests": "Đơn nghỉ của tôi",
+    "create": "Tạo đơn nghỉ phép",
+    "type": "Loại nghỉ phép",
+    "startDate": "Ngày bắt đầu",
+    "endDate": "Ngày kết thúc",
+    "reason": "Lý do",
+    "status": {
+      "pending": "Chờ duyệt",
+      "approved": "Đã duyệt",
+      "rejected": "Từ chối",
+      "cancelled": "Đã hủy"
+    },
+    "approve": "Duyệt",
+    "reject": "Từ chối",
+    "cancel": "Hủy đơn",
+    "approveConfirm": "Xác nhận duyệt đơn nghỉ phép này?",
+    "rejectConfirm": "Xác nhận từ chối đơn nghỉ phép này?",
+    "cancelConfirm": "Bạn có chắc muốn hủy đơn nghỉ này?"
+  },
+
+  "timesheet": {
+    "title": "Bảng công",
+    "month": "Tháng",
+    "year": "Năm",
+    "workedDays": "Ngày công",
+    "totalHours": "Tổng giờ",
+    "absences": "Vắng mặt",
+    "generate": "Tạo bảng công",
+    "status": {
+      "draft": "Bản nháp",
+      "approved": "Đã duyệt",
+      "closed": "Đã chốt"
+    }
+  },
+
+  "shift": {
+    "title": "Ca làm việc",
+    "create": "Thêm ca",
+    "name": "Tên ca",
+    "startTime": "Giờ bắt đầu",
+    "endTime": "Giờ kết thúc"
+  },
+
+  "payroll": {
+    "title": "Lương & Báo cáo",
+    "period": "Kỳ lương",
+    "periods": "Kỳ lương",
+    "periodName": "Tên kỳ",
+    "rules": "Quy tắc lương",
+    "allowances": "Phụ cấp",
+    "deductions": "Khấu trừ",
+    "payslips": "Phiếu lương",
+    "myPayslip": "Phiếu lương của tôi",
+    "reports": "Báo cáo",
+    "baseSalary": "Lương cơ bản (HĐ)",
+    "grossSalary": "Tổng thu nhập (Gross)",
+    "netSalary": "Thực lĩnh (Net)",
+    "totalDeduction": "Tổng khấu trừ",
+    "workedDays": "Ngày công",
+    "paidLeaveDays": "Phép hưởng lương",
+    "allowanceType": "Loại phụ cấp",
+    "deductionType": "Loại khấu trừ",
+    "amount": "Số tiền",
+    "calculatePayroll": "Tính lương",
+    "exportPayroll": "Xuất bảng lương",
+    "status": {
+      "draft": "Bản nháp",
+      "paid": "Đã chi trả",
+      "closed": "Đã chốt",
+      "open": "Đang mở"
+    },
+    "period_status": {
+      "open": "Đang mở",
+      "calculating": "Đang tính",
+      "closed": "Đã đóng"
+    },
+    "report": {
+      "title": "Báo cáo lương",
+      "subtitle": "Tổng hợp chi phí lương theo phòng ban",
+      "selectPeriod": "Chọn kỳ lương",
+      "viewReport": "Xem báo cáo",
+      "totalEmployees": "Tổng nhân viên",
+      "totalGross": "Tổng lương Gross",
+      "totalNet": "Tổng quỹ lương (Net)",
+      "totalWorkDays": "Tổng ngày công",
+      "grandTotal": "TỔNG CỘNG"
+    }
+  },
+
+  "validation": {
+    "required": "Trường này là bắt buộc",
+    "email": "Email không hợp lệ",
+    "minLength": "Tối thiểu {n} ký tự",
+    "maxLength": "Tối đa {n} ký tự",
+    "min": "Giá trị tối thiểu là {n}",
+    "positiveNumber": "Phải là số lớn hơn 0",
+    "invalidDate": "Ngày không hợp lệ",
+    "endAfterStart": "Ngày kết thúc phải sau ngày bắt đầu"
+  },
+
+  "toast": {
+    "saveSuccess": "Lưu thành công",
+    "saveFailed": "Lưu thất bại",
+    "deleteSuccess": "Đã xóa thành công",
+    "deleteFailed": "Xóa thất bại",
+    "loadFailed": "Không thể tải dữ liệu",
+    "exportSuccess": "Xuất file Excel thành công",
+    "exportFailed": "Không thể xuất file Excel",
+    "importSuccess": "Nhập dữ liệu thành công",
+    "importFailed": "Nhập dữ liệu thất bại",
+    "networkError": "Lỗi kết nối. Vui lòng thử lại.",
+    "unauthorized": "Bạn không có quyền thực hiện thao tác này",
+    "sessionExpired": "Phiên đăng nhập đã hết hạn"
+  },
+
+  "theme": {
+    "light": "Chế độ sáng",
+    "dark": "Chế độ tối",
+    "system": "Theo hệ thống",
+    "toggle": "Đổi giao diện"
+  },
+
+  "language": {
+    "vi": "Tiếng Việt",
+    "en": "English",
+    "switch": "Đổi ngôn ngữ"
+  },
+
+  "excel": {
+    "importTitle": "Nhập dữ liệu từ Excel",
+    "dragDrop": "Kéo thả file Excel hoặc click để tải lên",
+    "maxSize": "Dung lượng tối đa: 10MB",
+    "downloadTemplate": "Tải file mẫu",
+    "noTemplate": "Bạn chưa có file mẫu?",
+    "templateDesc": "Tải xuống file Excel mẫu có chứa sẵn cấu trúc cột và dữ liệu nháp chuẩn.",
+    "validRows": "dòng hợp lệ",
+    "hasErrors": "Không thể nhập dữ liệu!",
+    "hasErrorsDesc": "Vui lòng kiểm tra và sửa lại các lỗi được đánh dấu màu đỏ.",
+    "allValid": "Kiểm tra hợp lệ thành công!",
+    "allValidDesc": "Tất cả các dòng dữ liệu đều hợp lệ. Nhấp \"Xác nhận nhập\" để lưu.",
+    "confirmImport": "Xác nhận nhập",
+    "changeFile": "Chọn file khác",
+    "valid": "Hợp lệ",
+    "periodCode": "Kỳ lương",
+    "employeeCode": "Nhân viên",
+    "typeCode": "Phân loại"
+  }
+}

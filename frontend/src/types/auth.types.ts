@@ -1,4 +1,5 @@
-// Auth Types
+// ─── Auth Types ───────────────────────────────────────────────────────────────
+
 export interface LoginRequest {
   email: string
   password: string
@@ -14,7 +15,15 @@ export interface UserInfo {
 
 export interface AuthResponse {
   accessToken: string
+  refreshToken: string
+  refreshTokenExpiry: string
   user: UserInfo
+}
+
+export interface ChangePasswordPayload {
+  currentPassword: string
+  newPassword: string
+  confirmPassword: string
 }
 
 export type UserRole = 'Admin' | 'HR' | 'Manager' | 'Employee' | 'PayrollStaff'

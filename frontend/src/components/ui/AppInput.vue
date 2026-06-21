@@ -1,4 +1,6 @@
 <script setup lang="ts">
+// AppInput — Form input with label, error state, and Dark Mode support
+
 defineProps<{
   label?: string
   modelValue?: string | number | null
@@ -18,10 +20,10 @@ defineEmits<{
 </script>
 
 <template>
-  <div class="flex flex-col gap-1">
-    <label v-if="label" :for="id" class="text-sm font-medium text-slate-700">
+  <div class="app-input-wrap">
+    <label v-if="label" :for="id" class="app-input-label">
       {{ label }}
-      <span v-if="required" class="text-red-500 ml-0.5">*</span>
+      <span v-if="required" class="app-input-required">*</span>
     </label>
     <input
       :id="id"
@@ -31,17 +33,76 @@ defineEmits<{
       :required="required"
       :disabled="disabled"
       :readonly="readonly"
-      :class="[
-        'h-9 w-full rounded border px-3 text-sm outline-none transition-colors',
-        'placeholder:text-slate-400',
-        error
-          ? 'border-red-400 bg-red-50 focus:border-red-500 focus:ring-1 focus:ring-red-500'
-          : 'border-slate-300 bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500',
-        (disabled || readonly) ? 'cursor-not-allowed bg-slate-50 text-slate-500' : '',
-      ]"
+      :class="['app-input', error ? 'app-input--error' : '', (disabled || readonly) ? 'app-input--disabled' : '']"
       @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
     />
-    <p v-if="error" class="text-xs text-red-500">{{ error }}</p>
-    <p v-else-if="hint" class="text-xs text-slate-500">{{ hint }}</p>
+    <p v-if="error" class="app-input-hint app-input-hint--error">{{ error }}</p>
+    <p v-else-if="hint" class="app-input-hint">{{ hint }}</p>
   </div>
 </template>
+
+<style scoped>
+.app-input-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.app-input-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.app-input-required {
+  color: var(--color-danger);
+  margin-left: 2px;
+}
+
+.app-input {
+  height: 2.25rem;
+  width: 100%;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  padding: 0 0.75rem;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast),
+    background-color var(--transition-base);
+}
+
+.app-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.app-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent);
+}
+
+.app-input--error {
+  border-color: var(--color-danger) !important;
+  background-color: var(--color-danger-light);
+}
+
+.app-input--error:focus {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-danger) 15%, transparent) !important;
+}
+
+.app-input--disabled {
+  background-color: var(--bg-muted);
+  color: var(--text-tertiary);
+  cursor: not-allowed;
+}
+
+.app-input-hint {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+}
+
+.app-input-hint--error {
+  color: var(--color-danger);
+}
+</style>

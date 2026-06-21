@@ -1,0 +1,325 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "add": "Add",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export Excel",
+    "import": "Import Excel",
+    "print": "Print",
+    "download": "Download",
+    "loading": "Loading...",
+    "saving": "Saving...",
+    "noData": "No data available",
+    "confirm": "Confirm",
+    "close": "Close",
+    "back": "Back",
+    "detail": "Detail",
+    "view": "View",
+    "status": "Status",
+    "actions": "Actions",
+    "all": "All",
+    "yes": "Yes",
+    "no": "No",
+    "from": "From",
+    "to": "To",
+    "date": "Date",
+    "total": "Total",
+    "notes": "Notes",
+    "optional": "Optional",
+    "required_field": "Required field",
+    "rows_per_page": "Rows per page",
+    "page": "Page",
+    "of": "of",
+    "results": "results"
+  },
+
+  "nav": {
+    "dashboard": "Dashboard",
+    "hr": "Human Resources",
+    "departments": "Departments",
+    "positions": "Positions",
+    "employees": "Employees",
+    "contracts": "Contracts",
+    "attendance": "Attendance",
+    "shifts": "Work Shifts",
+    "workSchedules": "Work Schedules",
+    "myWorkSchedule": "My Schedule",
+    "attendanceRecords": "Attendance (All)",
+    "checkin": "Check-in / Check-out",
+    "myAttendance": "My Attendance",
+    "leaves": "Leave Management",
+    "myLeaves": "My Leave Requests",
+    "timesheets": "Timesheets",
+    "myTimesheets": "My Timesheets",
+    "payroll": "Payroll & Reports",
+    "periods": "Payroll Periods",
+    "rules": "Payroll Rules",
+    "allowances": "Allowances",
+    "deductions": "Deductions",
+    "allPayslips": "Payslips (All)",
+    "myPayslip": "My Payslips",
+    "reports": "Reports"
+  },
+
+  "auth": {
+    "login": "Sign In",
+    "logout": "Sign Out",
+    "email": "Email",
+    "password": "Password",
+    "loginButton": "Sign In",
+    "loginLoading": "Signing in...",
+    "loginError": "Invalid email or password",
+    "logoutConfirm": "Are you sure you want to sign out?",
+    "loggedOut": "Signed out successfully",
+    "welcomeBack": "Welcome back",
+    "emailPlaceholder": "admin@hrms.com",
+    "passwordPlaceholder": "••••••••"
+  },
+
+  "dashboard": {
+    "title": "System Overview",
+    "greeting_morning": "Good morning",
+    "greeting_afternoon": "Good afternoon",
+    "greeting_evening": "Good evening",
+    "totalEmployees": "Total Employees",
+    "presentToday": "Present Today",
+    "onLeave": "On Leave",
+    "pendingLeaves": "Pending Leave Requests",
+    "totalDepartments": "Departments",
+    "activeContracts": "Active Contracts",
+    "monthlyPayroll": "Monthly Payroll",
+    "quickActions": "Quick Actions",
+    "recentActivity": "Recent Activity"
+  },
+
+  "employee": {
+    "title": "Employees",
+    "list": "Employee List",
+    "detail": "Employee Detail",
+    "create": "Add Employee",
+    "edit": "Edit Employee",
+    "code": "Emp. Code",
+    "fullName": "Full Name",
+    "email": "Email",
+    "phone": "Phone",
+    "department": "Department",
+    "position": "Position",
+    "status": "Status",
+    "hireDate": "Hire Date",
+    "gender": "Gender",
+    "address": "Address",
+    "baseSalary": "Base Salary",
+    "activeStatus": "Active",
+    "inactiveStatus": "Inactive",
+    "onLeaveStatus": "On Leave",
+    "confirmDelete": "Confirm delete this employee?",
+    "createSuccess": "Employee added successfully",
+    "updateSuccess": "Employee updated successfully",
+    "deleteSuccess": "Employee deleted"
+  },
+
+  "department": {
+    "title": "Departments",
+    "create": "Add Department",
+    "name": "Department Name",
+    "manager": "Manager",
+    "employeeCount": "Employees"
+  },
+
+  "position": {
+    "title": "Positions",
+    "create": "Add Position",
+    "name": "Position Name",
+    "department": "Department"
+  },
+
+  "contract": {
+    "title": "Contracts",
+    "create": "Create Contract",
+    "type": "Contract Type",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "baseSalary": "Base Salary",
+    "status": "Status",
+    "active": "Active",
+    "expired": "Expired",
+    "terminated": "Terminated"
+  },
+
+  "attendance": {
+    "title": "Attendance",
+    "checkin": "Check In",
+    "checkout": "Check Out",
+    "checkInSuccess": "Checked in successfully!",
+    "checkOutSuccess": "Checked out successfully!",
+    "alreadyCheckedIn": "Already checked in today",
+    "notCheckedIn": "Not checked in",
+    "workDate": "Work Date",
+    "checkInTime": "Check-in Time",
+    "checkOutTime": "Check-out Time",
+    "totalHours": "Total Hours",
+    "status": {
+      "present": "Present",
+      "absent": "Absent",
+      "late": "Late",
+      "halfDay": "Half Day"
+    },
+    "todayStatus": "Today's Status",
+    "recentHistory": "Recent History"
+  },
+
+  "leave": {
+    "title": "Leave Management",
+    "myRequests": "My Leave Requests",
+    "create": "Request Leave",
+    "type": "Leave Type",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "reason": "Reason",
+    "status": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled"
+    },
+    "approve": "Approve",
+    "reject": "Reject",
+    "cancel": "Cancel Request",
+    "approveConfirm": "Confirm approve this leave request?",
+    "rejectConfirm": "Confirm reject this leave request?",
+    "cancelConfirm": "Are you sure you want to cancel this request?"
+  },
+
+  "timesheet": {
+    "title": "Timesheets",
+    "month": "Month",
+    "year": "Year",
+    "workedDays": "Worked Days",
+    "totalHours": "Total Hours",
+    "absences": "Absences",
+    "generate": "Generate Timesheet",
+    "status": {
+      "draft": "Draft",
+      "approved": "Approved",
+      "closed": "Closed"
+    }
+  },
+
+  "shift": {
+    "title": "Work Shifts",
+    "create": "Add Shift",
+    "name": "Shift Name",
+    "startTime": "Start Time",
+    "endTime": "End Time"
+  },
+
+  "payroll": {
+    "title": "Payroll & Reports",
+    "period": "Payroll Period",
+    "periods": "Payroll Periods",
+    "periodName": "Period Name",
+    "rules": "Payroll Rules",
+    "allowances": "Allowances",
+    "deductions": "Deductions",
+    "payslips": "Payslips",
+    "myPayslip": "My Payslips",
+    "reports": "Reports",
+    "baseSalary": "Contract Base Salary",
+    "grossSalary": "Gross Salary",
+    "netSalary": "Net Salary",
+    "totalDeduction": "Total Deductions",
+    "workedDays": "Worked Days",
+    "paidLeaveDays": "Paid Leave Days",
+    "allowanceType": "Allowance Type",
+    "deductionType": "Deduction Type",
+    "amount": "Amount",
+    "calculatePayroll": "Calculate Payroll",
+    "exportPayroll": "Export Payroll",
+    "status": {
+      "draft": "Draft",
+      "paid": "Paid",
+      "closed": "Closed",
+      "open": "Open"
+    },
+    "period_status": {
+      "open": "Open",
+      "calculating": "Calculating",
+      "closed": "Closed"
+    },
+    "report": {
+      "title": "Payroll Report",
+      "subtitle": "Payroll summary by department",
+      "selectPeriod": "Select Period",
+      "viewReport": "View Report",
+      "totalEmployees": "Total Employees",
+      "totalGross": "Total Gross",
+      "totalNet": "Total Net Payroll",
+      "totalWorkDays": "Total Work Days",
+      "grandTotal": "GRAND TOTAL"
+    }
+  },
+
+  "validation": {
+    "required": "This field is required",
+    "email": "Invalid email address",
+    "minLength": "Minimum {n} characters",
+    "maxLength": "Maximum {n} characters",
+    "min": "Minimum value is {n}",
+    "positiveNumber": "Must be a positive number",
+    "invalidDate": "Invalid date",
+    "endAfterStart": "End date must be after start date"
+  },
+
+  "toast": {
+    "saveSuccess": "Saved successfully",
+    "saveFailed": "Save failed",
+    "deleteSuccess": "Deleted successfully",
+    "deleteFailed": "Delete failed",
+    "loadFailed": "Failed to load data",
+    "exportSuccess": "Excel file exported successfully",
+    "exportFailed": "Failed to export Excel file",
+    "importSuccess": "Data imported successfully",
+    "importFailed": "Data import failed",
+    "networkError": "Connection error. Please try again.",
+    "unauthorized": "You do not have permission to perform this action",
+    "sessionExpired": "Your session has expired"
+  },
+
+  "theme": {
+    "light": "Light mode",
+    "dark": "Dark mode",
+    "system": "System default",
+    "toggle": "Toggle theme"
+  },
+
+  "language": {
+    "vi": "Tiếng Việt",
+    "en": "English",
+    "switch": "Switch language"
+  },
+
+  "excel": {
+    "importTitle": "Import from Excel",
+    "dragDrop": "Drag & drop Excel file or click to upload",
+    "maxSize": "Maximum size: 10MB",
+    "downloadTemplate": "Download Template",
+    "noTemplate": "Don't have a template yet?",
+    "templateDesc": "Download a sample Excel file with the correct column structure and sample data.",
+    "validRows": "valid rows",
+    "hasErrors": "Cannot import data!",
+    "hasErrorsDesc": "Please check and fix the errors highlighted in red.",
+    "allValid": "Validation successful!",
+    "allValidDesc": "All rows are valid. Click \"Confirm Import\" to save.",
+    "confirmImport": "Confirm Import",
+    "changeFile": "Choose Another File",
+    "valid": "Valid",
+    "periodCode": "Period",
+    "employeeCode": "Employee",
+    "typeCode": "Type"
+  }
+}

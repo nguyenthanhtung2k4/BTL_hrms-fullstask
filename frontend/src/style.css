@@ -1,30 +1,144 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
+
+/* ─────────────────────────────────────────────────────────
+   CSS Design Tokens — Light Mode (default)
+───────────────────────────────────────────────────────── */
 :root {
-  font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
-  color: #172026;
-  background: #f6f8fb;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* Backgrounds */
+  --bg-page:       hsl(210, 20%, 98%);
+  --bg-surface:    hsl(0, 0%, 100%);
+  --bg-subtle:     hsl(210, 17%, 96%);
+  --bg-muted:      hsl(210, 14%, 93%);
+
+  /* Borders */
+  --border:        hsl(214, 32%, 91%);
+  --border-strong: hsl(214, 25%, 83%);
+
+  /* Text */
+  --text-primary:   hsl(222, 47%, 11%);
+  --text-secondary: hsl(215, 16%, 47%);
+  --text-tertiary:  hsl(215, 13%, 65%);
+  --text-inverse:   hsl(0, 0%, 100%);
+
+  /* Brand — Emerald */
+  --color-primary:       hsl(158, 64%, 42%);
+  --color-primary-hover: hsl(158, 64%, 36%);
+  --color-primary-light: hsl(158, 64%, 95%);
+  --color-primary-text:  hsl(158, 64%, 30%);
+
+  /* Semantic */
+  --color-success:       hsl(142, 71%, 45%);
+  --color-success-light: hsl(142, 71%, 94%);
+  --color-warning:       hsl(45, 93%, 47%);
+  --color-warning-light: hsl(45, 93%, 94%);
+  --color-danger:        hsl(351, 83%, 53%);
+  --color-danger-light:  hsl(351, 83%, 95%);
+  --color-info:          hsl(213, 94%, 60%);
+  --color-info-light:    hsl(213, 94%, 94%);
+
+  /* Shadows */
+  --shadow-sm:   0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md:   0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-lg:   0 4px 16px rgba(0, 0, 0, 0.10);
+  --shadow-xl:   0 20px 60px rgba(0, 0, 0, 0.12);
+
+  /* Sidebar */
+  --sidebar-bg:     hsl(0, 0%, 100%);
+  --sidebar-border: hsl(214, 32%, 91%);
+  --sidebar-hover:  hsl(158, 64%, 96%);
+  --sidebar-active: hsl(158, 64%, 94%);
+  --sidebar-active-text: hsl(158, 64%, 30%);
+
+  /* Transitions */
+  --transition-fast:   150ms ease-out;
+  --transition-base:   200ms ease-out;
+  --transition-slow:   300ms ease-out;
+
+  /* Border Radius */
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  14px;
+  --radius-xl:  18px;
+  --radius-full: 9999px;
 }
 
+/* ─────────────────────────────────────────────────────────
+   Dark Mode — [data-theme="dark"]
+───────────────────────────────────────────────────────── */
+[data-theme="dark"] {
+  --bg-page:       hsl(222, 47%, 8%);
+  --bg-surface:    hsl(222, 47%, 11%);
+  --bg-subtle:     hsl(222, 40%, 14%);
+  --bg-muted:      hsl(222, 35%, 17%);
+
+  --border:        hsl(217, 33%, 20%);
+  --border-strong: hsl(217, 28%, 28%);
+
+  --text-primary:   hsl(210, 40%, 96%);
+  --text-secondary: hsl(215, 20%, 65%);
+  --text-tertiary:  hsl(215, 16%, 48%);
+  --text-inverse:   hsl(222, 47%, 8%);
+
+  --color-primary-light: hsl(158, 64%, 12%);
+  --color-primary-text:  hsl(158, 60%, 60%);
+
+  --color-success-light: hsl(142, 40%, 12%);
+  --color-warning-light: hsl(45, 50%, 12%);
+  --color-danger-light:  hsl(351, 40%, 12%);
+  --color-info-light:    hsl(213, 50%, 12%);
+
+  --shadow-sm:   0 1px 2px rgba(0, 0, 0, 0.30);
+  --shadow-md:   0 2px 6px rgba(0, 0, 0, 0.35);
+  --shadow-lg:   0 8px 24px rgba(0, 0, 0, 0.40);
+  --shadow-xl:   0 20px 60px rgba(0, 0, 0, 0.50);
+
+  --sidebar-bg:     hsl(222, 47%, 11%);
+  --sidebar-border: hsl(217, 33%, 20%);
+  --sidebar-hover:  hsl(158, 30%, 13%);
+  --sidebar-active: hsl(158, 30%, 15%);
+  --sidebar-active-text: hsl(158, 60%, 60%);
+}
+
+/* ─────────────────────────────────────────────────────────
+   Base Styles
+───────────────────────────────────────────────────────── */
 * {
   box-sizing: border-box;
 }
 
+html {
+  color-scheme: light;
+  scroll-behavior: smooth;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+
 body {
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-feature-settings: 'cv11', 'ss01';
+  font-variation-settings: 'opsz' 32;
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
+  color: var(--text-primary);
+  background-color: var(--bg-page);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  transition: background-color var(--transition-base), color var(--transition-base);
 }
 
-button,
-input,
-select {
+/* Monospace for money/codes */
+.font-mono,
+[data-mono] {
+  font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+}
+
+button, input, select, textarea {
   font: inherit;
 }
 
@@ -32,3 +146,45 @@ select {
   min-height: 100vh;
 }
 
+/* ─────────────────────────────────────────────────────────
+   Scrollbar Styling (subtle)
+───────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+}
+
+/* ─────────────────────────────────────────────────────────
+   Focus Ring — Accessible & Consistent
+───────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ─────────────────────────────────────────────────────────
+   Page Transition
+───────────────────────────────────────────────────────── */
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(4px);
+}
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}

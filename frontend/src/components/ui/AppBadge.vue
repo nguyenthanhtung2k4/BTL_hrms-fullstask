@@ -1,48 +1,79 @@
 <script setup lang="ts">
-// AppBadge — Status badges với màu sắc chuẩn theo đề tài
+// AppBadge — Status badges using CSS variables for full Dark Mode support
 
 defineProps<{
   status: string
 }>()
 
-type BadgeConfig = { bg: string; text: string; label?: string }
+type BadgeConfig = { type: string; label: string }
 
 const map: Record<string, BadgeConfig> = {
   // Employee status
-  Active:     { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Đang làm' },
-  Inactive:   { bg: 'bg-slate-100',   text: 'text-slate-600',   label: 'Ngưng' },
-  OnLeave:    { bg: 'bg-amber-100',   text: 'text-amber-700',   label: 'Nghỉ phép' },
-  Resigned:   { bg: 'bg-red-100',     text: 'text-red-700',     label: 'Đã nghỉ' },
-
+  Active:      { type: 'success', label: 'Đang làm' },
+  Inactive:    { type: 'neutral', label: 'Ngưng' },
+  OnLeave:     { type: 'warning', label: 'Nghỉ phép' },
+  Resigned:    { type: 'danger',  label: 'Đã nghỉ' },
   // Contract status
-  Expired:    { bg: 'bg-orange-100',  text: 'text-orange-700',  label: 'Hết hạn' },
-  Terminated: { bg: 'bg-red-100',     text: 'text-red-700',     label: 'Chấm dứt' },
-
-  // Leave status
-  Pending:    { bg: 'bg-amber-100',   text: 'text-amber-700',   label: 'Chờ duyệt' },
-  Approved:   { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Đã duyệt' },
-  Rejected:   { bg: 'bg-red-100',     text: 'text-red-700',     label: 'Từ chối' },
-  Cancelled:  { bg: 'bg-slate-100',   text: 'text-slate-600',   label: 'Đã hủy' },
-
-  // Payroll period status
-  Draft:      { bg: 'bg-blue-100',    text: 'text-blue-700',    label: 'Nháp' },
-  Calculated: { bg: 'bg-amber-100',   text: 'text-amber-700',   label: 'Đã tính' },
-  Closed:     { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Đã đóng' },
-
-  // Shift / generic
-  true:       { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Kích hoạt' },
-  false:      { bg: 'bg-slate-100',   text: 'text-slate-500',   label: 'Tắt' },
+  Expired:     { type: 'warning', label: 'Hết hạn' },
+  Terminated:  { type: 'danger',  label: 'Chấm dứt' },
+  // Leave & Approval status
+  Pending:     { type: 'warning', label: 'Chờ duyệt' },
+  Approved:    { type: 'success', label: 'Đã duyệt' },
+  Rejected:    { type: 'danger',  label: 'Từ chối' },
+  Cancelled:   { type: 'neutral', label: 'Đã hủy' },
+  // Payroll
+  Draft:       { type: 'info',    label: 'Nháp' },
+  Calculated:  { type: 'warning', label: 'Đã tính' },
+  Closed:      { type: 'success', label: 'Đã đóng' },
+  Open:        { type: 'info',    label: 'Đang mở' },
+  Paid:        { type: 'success', label: 'Đã thanh toán' },
+  // Timesheet
+  Submitted:   { type: 'info',    label: 'Đã gửi' },
+  // Generic boolean
+  true:        { type: 'success', label: 'Kích hoạt' },
+  false:       { type: 'neutral', label: 'Tắt' },
 }
 </script>
 
 <template>
-  <span
-    :class="[
-      'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-      map[status]?.bg ?? 'bg-slate-100',
-      map[status]?.text ?? 'text-slate-600',
-    ]"
-  >
+  <span :class="['badge', `badge--${map[status]?.type ?? 'neutral'}`]">
     {{ map[status]?.label ?? status }}
   </span>
 </template>
+
+<style scoped>
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-full);
+  padding: 0.125rem 0.625rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.badge--success {
+  background-color: var(--color-success-light);
+  color: var(--color-success);
+}
+.badge--warning {
+  background-color: var(--color-warning-light);
+  color: hsl(36, 80%, 30%);
+}
+[data-theme="dark"] .badge--warning {
+  color: hsl(45, 93%, 65%);
+}
+.badge--danger {
+  background-color: var(--color-danger-light);
+  color: var(--color-danger);
+}
+.badge--info {
+  background-color: var(--color-info-light);
+  color: var(--color-info);
+}
+.badge--neutral {
+  background-color: var(--bg-muted);
+  color: var(--text-secondary);
+}
+</style>

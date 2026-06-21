@@ -1,13 +1,14 @@
-<script setup lang="ts" generic="T">
-// AppTable — Generic table với loading skeleton, empty state và sắp xếp cột thông minh
+<script setup lang="ts">
+// AppTable — Sortable, generic table with skeleton loading, empty state, and Dark Mode support
+
 import { ref, computed } from 'vue'
 
 const props = defineProps<{
   loading?: boolean
   columns: { key: string; label: string; class?: string }[]
-  rows: T[]
+  rows: any[]
   emptyText?: string
-  rowKey?: keyof T
+  rowKey?: string
 }>()
 
 const sortKey = ref<string | null>(null)
@@ -15,16 +16,10 @@ const sortOrder = ref<'asc' | 'desc' | null>(null)
 
 function handleSort(key: string) {
   if (key === 'actions' || !key) return
-  
   if (sortKey.value === key) {
-    if (sortOrder.value === 'asc') {
-      sortOrder.value = 'desc'
-    } else if (sortOrder.value === 'desc') {
-      sortOrder.value = null
-      sortKey.value = null
-    } else {
-      sortOrder.value = 'asc'
-    }
+    if (sortOrder.value === 'asc') sortOrder.value = 'desc'
+    else if (sortOrder.value === 'desc') { sortOrder.value = null; sortKey.value = null }
+    else sortOrder.value = 'asc'
   } else {
     sortKey.value = key
     sortOrder.value = 'asc'
@@ -33,100 +28,82 @@ function handleSort(key: string) {
 
 const sortedRows = computed(() => {
   if (!sortKey.value || !sortOrder.value) return props.rows
-  
   const key = sortKey.value
   const order = sortOrder.value === 'asc' ? 1 : -1
-  
   return [...props.rows].sort((a: any, b: any) => {
-    let valA = a[key]
-    let valB = b[key]
-    
-    // Giải quyết các trường lồng nhau hoặc quy chuẩn hóa dữ liệu
+    let valA = a[key], valB = b[key]
+    // Handle common virtual column mappings
     if (key === 'employee' && a.employeeName) { valA = a.employeeName; valB = b.employeeName }
+    else if (key === 'dept' && a.departmentName) { valA = a.departmentName; valB = b.departmentName }
     else if (key === 'shift' && a.shiftName) { valA = a.shiftName; valB = b.shiftName }
     else if (key === 'department' && a.departmentName) { valA = a.departmentName; valB = b.departmentName }
     else if (key === 'position' && a.positionName) { valA = a.positionName; valB = b.positionName }
-    
     if (valA === undefined || valA === null) valA = ''
     if (valB === undefined || valB === null) valB = ''
-    
-    // Nếu là chuỗi, dùng localeCompare hỗ trợ tiếng Việt
-    if (typeof valA === 'string' && typeof valB === 'string') {
+    if (typeof valA === 'string' && typeof valB === 'string')
       return valA.localeCompare(valB, 'vi', { numeric: true }) * order
-    }
-    
-    if (valA < valB) return -1 * order
-    if (valA > valB) return 1 * order
-    return 0
+    return (valA < valB ? -1 : valA > valB ? 1 : 0) * order
   })
 })
 </script>
 
 <template>
-  <div class="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300">
-    <table class="w-full min-w-max text-left text-sm border-collapse">
-      <thead class="bg-slate-50 border-b border-slate-150 text-xs uppercase tracking-wider text-slate-500 font-semibold select-none">
+  <div class="app-table-wrap">
+    <table class="app-table">
+      <!-- Header -->
+      <thead class="app-table__head">
         <tr>
           <th
             v-for="col in columns"
             :key="col.key"
             :class="[
-              'px-5 py-3.5 transition-colors duration-250',
-              col.key !== 'actions' && col.key ? 'cursor-pointer hover:bg-slate-100 hover:text-slate-800' : '',
-              col.class ?? ''
+              'app-table__th',
+              col.key !== 'actions' && col.key ? 'app-table__th--sortable' : '',
+              col.class ?? '',
             ]"
             @click="handleSort(col.key)"
           >
-            <div class="flex items-center gap-1.5">
+            <div class="app-table__th-inner">
               <span>{{ col.label }}</span>
-              
-              <!-- Icon Sắp xếp -->
-              <span v-if="col.key !== 'actions' && col.key" class="inline-flex flex-col text-[10px] text-slate-400">
+              <!-- Sort icons -->
+              <span v-if="col.key !== 'actions' && col.key" class="app-table__sort-icons">
                 <svg
-                  v-if="sortKey !== col.key || sortOrder === 'asc'"
-                  class="h-2 w-2"
-                  :class="{ 'text-emerald-600': sortKey === col.key && sortOrder === 'asc' }"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M12 4l-8 8h16z" />
-                </svg>
+                  class="app-table__sort-icon"
+                  :class="{ 'app-table__sort-icon--active': sortKey === col.key && sortOrder === 'asc' }"
+                  fill="currentColor" viewBox="0 0 24 24"
+                ><path d="M12 4l-8 8h16z" /></svg>
                 <svg
-                  v-if="sortKey !== col.key || sortOrder === 'desc'"
-                  class="h-2 w-2 mt-0.5"
-                  :class="{ 'text-emerald-600': sortKey === col.key && sortOrder === 'desc' }"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M12 20l-8-8h16z" />
-                </svg>
+                  class="app-table__sort-icon"
+                  :class="{ 'app-table__sort-icon--active': sortKey === col.key && sortOrder === 'desc' }"
+                  fill="currentColor" viewBox="0 0 24 24"
+                ><path d="M12 20l-8-8h16z" /></svg>
               </span>
             </div>
           </th>
         </tr>
       </thead>
 
-      <tbody class="divide-y divide-slate-100">
+      <tbody class="app-table__body">
         <!-- Loading skeleton -->
         <template v-if="loading">
-          <tr v-for="n in 5" :key="n" class="animate-pulse">
-            <td v-for="col in columns" :key="col.key" class="px-5 py-4">
-              <div class="h-4 w-3/4 rounded bg-slate-100"></div>
+          <tr v-for="n in 5" :key="n" class="app-table__skeleton-row">
+            <td v-for="col in columns" :key="col.key" class="app-table__td">
+              <div class="app-table__skeleton-cell" :style="{ width: n % 2 === 0 ? '60%' : '80%' }"></div>
             </td>
           </tr>
         </template>
 
         <!-- Empty state -->
         <tr v-else-if="sortedRows.length === 0">
-          <td :colspan="columns.length" class="px-5 py-14 text-center text-slate-400">
-            <div class="flex flex-col items-center gap-2">
-              <div class="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center mb-1 text-slate-350">
+          <td :colspan="columns.length" class="app-table__empty">
+            <div class="app-table__empty-inner">
+              <div class="app-table__empty-icon">
                 <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                     d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                 </svg>
               </div>
-              <span class="text-sm font-medium">{{ emptyText ?? 'Không có dữ liệu' }}</span>
+              <span class="app-table__empty-text">{{ emptyText ?? 'Không có dữ liệu' }}</span>
             </div>
           </td>
         </tr>
@@ -135,8 +112,8 @@ const sortedRows = computed(() => {
         <template v-else>
           <tr
             v-for="(row, i) in sortedRows"
-            :key="rowKey ? String(row[rowKey]) : i"
-            class="hover:bg-slate-50/70 transition-colors duration-150"
+            :key="rowKey ? row[rowKey] : i"
+            class="app-table__row"
           >
             <slot :row="row" :index="i" />
           </tr>
@@ -145,3 +122,142 @@ const sortedRows = computed(() => {
     </table>
   </div>
 </template>
+
+<style scoped>
+.app-table-wrap {
+  overflow-x: auto;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background-color: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
+  transition: background-color var(--transition-base), border-color var(--transition-base);
+}
+
+.app-table {
+  width: 100%;
+  min-width: max-content;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  text-align: left;
+}
+
+/* Head */
+.app-table__head {
+  border-bottom: 1px solid var(--border);
+}
+
+.app-table__th {
+  padding: 0.75rem 1.25rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  background-color: var(--bg-subtle);
+  white-space: nowrap;
+  user-select: none;
+  transition: color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.app-table__th--sortable {
+  cursor: pointer;
+}
+.app-table__th--sortable:hover {
+  background-color: var(--bg-muted);
+  color: var(--text-secondary);
+}
+
+.app-table__th-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.app-table__sort-icons {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 1px;
+  opacity: 0.4;
+}
+
+.app-table__sort-icon {
+  width: 0.5rem;
+  height: 0.5rem;
+  color: var(--text-tertiary);
+}
+
+.app-table__sort-icon--active {
+  color: var(--color-primary);
+  opacity: 1;
+}
+
+/* Body */
+.app-table__body {
+  /* divide-y equivalent via row border */
+}
+
+.app-table__td {
+  padding: 0.875rem 1.25rem;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border);
+  transition: background-color var(--transition-fast);
+}
+
+/* Data rows */
+.app-table__row {
+  transition: background-color var(--transition-fast);
+}
+.app-table__row:hover :deep(td) {
+  background-color: var(--bg-subtle);
+}
+.app-table__row:last-child :deep(td) {
+  border-bottom: none;
+}
+
+/* Skeleton */
+.app-table__skeleton-row {
+  animation: pulse 1.5s linear infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.app-table__skeleton-cell {
+  height: 1rem;
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-muted);
+}
+
+/* Empty state */
+.app-table__empty {
+  padding: 3.5rem 1rem;
+  text-align: center;
+  border-bottom: none;
+}
+
+.app-table__empty-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.app-table__empty-icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  background-color: var(--bg-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+}
+
+.app-table__empty-text {
+  font-size: 0.875rem;
+  color: var(--text-tertiary);
+  font-weight: 500;
+}
+</style>
