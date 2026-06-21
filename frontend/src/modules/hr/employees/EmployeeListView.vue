@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { employeeService } from '../../../services/employee.service'
 import { departmentService } from '../../../services/department.service'
@@ -11,7 +11,6 @@ import AppTable from '../../../components/ui/AppTable.vue'
 import AppButton from '../../../components/ui/AppButton.vue'
 import AppBadge from '../../../components/ui/AppBadge.vue'
 import AppConfirm from '../../../components/ui/AppConfirm.vue'
-import AppSelect from '../../../components/ui/AppSelect.vue'
 import EmployeeFormModal from './EmployeeFormModal.vue'
 import EmployeeStatusModal from './EmployeeStatusModal.vue'
 import { useRouter } from 'vue-router'

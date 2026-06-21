@@ -5,10 +5,8 @@ import { useAuthStore } from '../../../stores/auth'
 import { useToastStore } from '../../../stores/toast'
 import type { Payslip } from '../../../types/payroll.types'
 import PageHeader from '../../../components/layout/PageHeader.vue'
-import AppButton from '../../../components/ui/AppButton.vue'
 import { useRouter } from 'vue-router'
 
-const auth = useAuthStore()
 const toast = useToastStore()
 const router = useRouter()
 const payslips = ref<Payslip[]>([])

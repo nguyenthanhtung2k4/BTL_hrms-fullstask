@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { payrollPeriodService } from '../../../services/payrollPeriod.service'
 import { payrollRuleService } from '../../../services/payrollRule.service'
@@ -16,7 +16,6 @@ import { useRouter } from 'vue-router'
 import AppPagination from '../../../components/ui/AppPagination.vue'
 import { usePagination } from '../../../composables/usePagination'
 
-const auth = useAuthStore()
 const toast = useToastStore()
 const router = useRouter()
 
@@ -121,7 +120,7 @@ onMounted(load)
           <div class="flex justify-end gap-1.5">
             <AppButton size="sm" variant="ghost" @click="router.push(`/payroll/periods/${(row as PayrollPeriod).id}`)">Chi tiết</AppButton>
             <template v-if="(row as PayrollPeriod).status !== 'Closed'">
-              <AppButton size="sm" variant="secondary" @click="editTarget = row as PayrollPeriod; form = { name: (row as PayrollPeriod).name, fromDate: (row as PayrollPeriod).fromDate.split('T')[0], toDate: (row as PayrollPeriod).toDate.split('T')[0], payrollRuleId: (row as PayrollPeriod).payrollRuleId }; errors = {}; showForm = true">Sửa</AppButton>
+              <AppButton size="sm" variant="secondary" @click="editTarget = row as PayrollPeriod; form.value = { code: (row as PayrollPeriod).code, name: (row as PayrollPeriod).name, fromDate: (row as PayrollPeriod).fromDate.split('T')[0], toDate: (row as PayrollPeriod).toDate.split('T')[0], payrollRuleId: (row as PayrollPeriod).payrollRuleId }; errors = {}; showForm = true">Sửa</AppButton>
               <AppButton size="sm" variant="danger" @click="deleteTarget = row as PayrollPeriod">Xóa</AppButton>
             </template>
           </div>

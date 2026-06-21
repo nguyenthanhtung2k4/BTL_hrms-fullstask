@@ -8,11 +8,9 @@ import { useToastStore } from '../../../stores/toast'
 import type { Employee, Contract } from '../../../types/hr.types'
 import PageHeader from '../../../components/layout/PageHeader.vue'
 import AppBadge from '../../../components/ui/AppBadge.vue'
-import AppButton from '../../../components/ui/AppButton.vue'
 
 const route = useRoute()
 const router = useRouter()
-const auth = useAuthStore()
 const toast = useToastStore()
 
 const employee = ref<Employee | null>(null)

@@ -16,7 +16,6 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{ close: []; saved: [] }>()
 
-const auth = useAuthStore()
 const toast = useToastStore()
 const saving = ref(false)
 
