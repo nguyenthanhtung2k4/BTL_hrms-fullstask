@@ -6,10 +6,12 @@ import { payrollPeriodService } from '../services/payrollPeriod.service'
 import { payslipService } from '../services/payslip.service'
 import { reportService } from '../services/report.service'
 import { attendanceService } from '../services/attendance.service'
+import { userService } from '../services/user.service'
 import { useAuthStore } from '../stores/auth'
 import type { Employee, Contract } from '../types/hr.types'
 import type { LeaveRequest } from '../types/attendance.types'
 import type { PayrollPeriod, Payslip, PayrollSummaryReport } from '../types/payroll.types'
+import type { UserAccount } from '../types/user.types'
 
 export function useDashboard() {
   const authStore = useAuthStore()
@@ -24,6 +26,7 @@ export function useDashboard() {
   const myLeaves = ref<LeaveRequest[]>([])
   const reportRows = ref<PayrollSummaryReport[]>([])
   const attendanceRecords = ref<any[]>([])
+  const userAccounts = ref<UserAccount[]>([])
 
   // ── computed helpers ──────────────────────────────────────────
   const now = new Date()
@@ -53,7 +56,7 @@ export function useDashboard() {
 
   // Today attendance status
   const todayAttendance = computed(() => {
-    const todayRecs = attendanceRecords.value.filter(r => r.date?.startsWith(todayStr.value))
+    const todayRecs = attendanceRecords.value.filter(r => r.workDate?.startsWith(todayStr.value))
     const checkedInCount = todayRecs.length
     const activeCount = activeEmployees.value.length || 1
     const rate = Math.round((checkedInCount / activeCount) * 100)
@@ -75,10 +78,52 @@ export function useDashboard() {
     }).reverse()
 
     return dates.map(dateStr => {
-      const count = attendanceRecords.value.filter(r => r.date?.startsWith(dateStr)).length
+      const count = attendanceRecords.value.filter(r => r.workDate?.startsWith(dateStr)).length
       // Get weekday name
       const dayName = new Date(dateStr).toLocaleDateString('vi-VN', { weekday: 'short' })
       return { date: dayName, count }
+    })
+  })
+
+  // Weekly attendance history (last 4 weeks)
+  const weeklyAttendanceHistory = computed(() => {
+    const weeks = Array.from({ length: 4 }, (_, i) => {
+      const start = new Date()
+      start.setDate(now.getDate() - (i + 1) * 7 + 1)
+      const end = new Date()
+      end.setDate(now.getDate() - i * 7)
+      return { start, end, label: `Tuần ${4 - i}` }
+    }).reverse()
+
+    return weeks.map(w => {
+      const count = attendanceRecords.value.filter(r => {
+        if (!r.workDate) return false
+        const d = new Date(r.workDate)
+        const recDate = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+        const startDate = new Date(w.start.getFullYear(), w.start.getMonth(), w.start.getDate())
+        const endDate = new Date(w.end.getFullYear(), w.end.getMonth(), w.end.getDate())
+        return recDate >= startDate && recDate <= endDate
+      }).length
+      return { name: w.label, count }
+    })
+  })
+
+  // Monthly attendance history (last 6 months)
+  const monthlyAttendanceHistory = computed(() => {
+    const months = Array.from({ length: 6 }, (_, i) => {
+      const d = new Date()
+      d.setMonth(now.getMonth() - i)
+      return { month: d.getMonth(), year: d.getFullYear() }
+    }).reverse()
+
+    return months.map(m => {
+      const count = attendanceRecords.value.filter(r => {
+        if (!r.workDate) return false
+        const d = new Date(r.workDate)
+        return d.getMonth() === m.month && d.getFullYear() === m.year
+      }).length
+      const label = `Tháng ${m.month + 1}/${m.year.toString().slice(-2)}`
+      return { name: label, count }
     })
   })
 
@@ -134,6 +179,7 @@ export function useDashboard() {
           payrollPeriodService.getAll().then(r => periods.value = r),
           payslipService.getAll({}).then(r => allPayslips.value = r),
           attendanceService.getAll({}).then(r => attendanceRecords.value = r),
+          userService.getAll().then(r => userAccounts.value = r),
         ])
       } else if (authStore.isPayrollStaff) {
         const ps = await payrollPeriodService.getAll()
@@ -169,8 +215,9 @@ export function useDashboard() {
 
   return {
     loading, employees, contracts, allLeaves, pendingLeaves, periods,
-    allPayslips, myPayslips, myLeaves, reportRows, attendanceRecords,
+    allPayslips, myPayslips, myLeaves, reportRows, attendanceRecords, userAccounts,
     activeEmployees, newHires, expiringContracts, todayAttendance, attendanceHistory,
+    weeklyAttendanceHistory, monthlyAttendanceHistory,
     payrollTrend, statusDist, deptDist, leaveTypeDist, periodsNeedAction,
     load,
   }

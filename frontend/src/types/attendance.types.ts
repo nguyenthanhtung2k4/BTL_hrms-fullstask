@@ -36,17 +36,16 @@ export interface WorkSchedule {
   employeeName: string
   shiftId: string
   shiftName: string
-  startDate: string
-  endDate: string
-  isActive: boolean
+  workDate: string
+  status: string
   createdAt: string
+  updatedAt?: string
 }
 
 export interface CreateWorkScheduleDto {
   employeeId: string
   shiftId: string
-  startDate: string
-  endDate: string
+  workDate: string
 }
 
 // ---

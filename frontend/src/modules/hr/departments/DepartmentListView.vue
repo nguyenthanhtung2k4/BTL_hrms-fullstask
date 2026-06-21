@@ -1,6 +1,7 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { departmentService } from '../../../services/department.service'
+import { employeeService } from '../../../services/employee.service'
 import { useAuthStore } from '../../../stores/auth'
 import { useToastStore } from '../../../stores/toast'
 import type { Department } from '../../../types/hr.types'
@@ -12,6 +13,7 @@ import AppConfirm from '../../../components/ui/AppConfirm.vue'
 import AppPagination from '../../../components/ui/AppPagination.vue'
 import { usePagination } from '../../../composables/usePagination'
 import DepartmentFormModal from './DepartmentFormModal.vue'
+import DepartmentEmployeesModal from './DepartmentEmployeesModal.vue'
 
 const auth = useAuthStore()
 const toast = useToastStore()
@@ -23,6 +25,9 @@ const showForm = ref(false)
 const editTarget = ref<Department | null>(null)
 const deleteTarget = ref<Department | null>(null)
 const deleteLoading = ref(false)
+
+const showEmployeesModal = ref(false)
+const selectedDepartment = ref<Department | null>(null)
 
 const columns = [
   { key: 'code', label: 'Mã' },
@@ -43,7 +48,13 @@ const filtered = computed(() =>
 async function load() {
   loading.value = true
   try {
-    departments.value = await departmentService.getAll()
+    if (!auth.isHR && auth.employeeId) {
+      const emp = await employeeService.getById(auth.employeeId)
+      const allDepts = await departmentService.getAll()
+      departments.value = allDepts.filter(d => d.id === emp.departmentId)
+    } else {
+      departments.value = await departmentService.getAll()
+    }
   } catch {
     toast.error('Không thể tải danh sách phòng ban')
   } finally {
@@ -59,6 +70,11 @@ function openCreate() {
 function openEdit(dept: Department) {
   editTarget.value = dept
   showForm.value = true
+}
+
+function openViewEmployees(dept: Department) {
+  selectedDepartment.value = dept
+  showEmployeesModal.value = true
 }
 
 async function confirmDelete() {
@@ -123,6 +139,7 @@ onMounted(load)
         <td class="px-4 py-3 text-sm text-slate-500">{{ formatDate((row as Department).createdAt) }}</td>
         <td class="px-4 py-3 text-right">
           <div class="flex justify-end gap-2">
+            <AppButton size="sm" variant="secondary" @click="openViewEmployees(row as Department)">Xem</AppButton>
             <AppButton v-if="auth.isHR" size="sm" variant="secondary" @click="openEdit(row as Department)">Sửa</AppButton>
             <AppButton v-if="auth.isAdmin" size="sm" variant="danger" @click="deleteTarget = row as Department">Xóa</AppButton>
           </div>
@@ -139,6 +156,14 @@ onMounted(load)
       @saved="load(); showForm = false"
     />
 
+    <!-- Employees List Modal -->
+    <DepartmentEmployeesModal
+      v-if="showEmployeesModal && selectedDepartment"
+      :department-id="selectedDepartment.id"
+      :department-name="selectedDepartment.name"
+      @close="showEmployeesModal = false"
+    />
+
     <!-- Delete confirm -->
     <AppConfirm
       v-if="deleteTarget"
@@ -152,4 +177,5 @@ onMounted(load)
     />
   </div>
 </template>
+
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { employeeService } from '../../../services/employee.service'
+import { userService } from '../../../services/user.service'
 import { useToastStore } from '../../../stores/toast'
 import type { Employee, CreateEmployeeDto, UpdateEmployeeDto, Department, Position } from '../../../types/hr.types'
 import AppModal from '../../../components/ui/AppModal.vue'
@@ -22,6 +23,38 @@ const form = ref({
   employeeCode: '', fullName: '', email: '', phone: '', gender: '',
   dateOfBirth: '', hireDate: '', departmentId: '', positionId: '', managerEmployeeId: '', status: 'Active',
 })
+
+const createAccount = ref(false)
+const accountEmail = ref('')
+const accountPassword = ref('')
+const accountRoles = ref<string[]>(['Employee'])
+const autoPassword = ref(true)
+
+const roleOptions = [
+  { value: 'Admin', label: 'Admin' },
+  { value: 'HR', label: 'HR' },
+  { value: 'Manager', label: 'Manager' },
+  { value: 'PayrollStaff', label: 'PayrollStaff' },
+  { value: 'Employee', label: 'Employee' },
+]
+
+function generateRandomPassword() {
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*'
+  let pass = ''
+  for (let i = 0; i < 10; i++) {
+    pass += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return pass
+}
+
+function toggleAutoPassword() {
+  if (autoPassword.value) {
+    accountPassword.value = generateRandomPassword()
+  } else {
+    accountPassword.value = ''
+  }
+}
+
 const errors = ref<Record<string, string>>({})
 
 watch(() => props.edit, (e) => {
@@ -34,9 +67,26 @@ watch(() => props.edit, (e) => {
     }
   } else {
     form.value = { employeeCode: '', fullName: '', email: '', phone: '', gender: '', dateOfBirth: '', hireDate: new Date().toISOString().split('T')[0], departmentId: '', positionId: '', managerEmployeeId: '', status: 'Active' }
+    createAccount.value = false
+    accountEmail.value = ''
+    accountPassword.value = ''
+    accountRoles.value = ['Employee']
+    autoPassword.value = true
   }
   errors.value = {}
 }, { immediate: true })
+
+watch(() => form.value.email, (newVal) => {
+  if (!props.edit) {
+    accountEmail.value = newVal
+  }
+})
+
+watch(createAccount, (val) => {
+  if (val && autoPassword.value && !accountPassword.value) {
+    accountPassword.value = generateRandomPassword()
+  }
+})
 
 function validate() {
   errors.value = {}
@@ -51,6 +101,22 @@ function validate() {
 
 async function save() {
   if (!validate()) return
+
+  if (!props.edit && createAccount.value) {
+    if (!accountEmail.value.trim()) {
+      toast.error('Email đăng nhập tài khoản không được để trống')
+      return
+    }
+    if (!accountPassword.value || accountPassword.value.length < 6) {
+      toast.error('Mật khẩu tài khoản phải từ 6 ký tự')
+      return
+    }
+    if (accountRoles.value.length === 0) {
+      toast.error('Chọn ít nhất một vai trò cho tài khoản')
+      return
+    }
+  }
+
   saving.value = true
   try {
     if (props.edit) {
@@ -59,8 +125,22 @@ async function save() {
       toast.success('Cập nhật nhân viên thành công')
     } else {
       const dto: CreateEmployeeDto = { employeeCode: form.value.employeeCode, fullName: form.value.fullName, email: form.value.email, phone: form.value.phone || undefined, gender: form.value.gender || undefined, dateOfBirth: form.value.dateOfBirth || undefined, hireDate: form.value.hireDate, departmentId: form.value.departmentId, positionId: form.value.positionId, managerEmployeeId: form.value.managerEmployeeId || undefined }
-      await employeeService.create(dto)
+      const newEmp = await employeeService.create(dto)
       toast.success('Tạo nhân viên thành công')
+
+      if (createAccount.value) {
+        try {
+          await userService.create({
+            employeeId: newEmp.id,
+            email: accountEmail.value,
+            password: accountPassword.value,
+            roles: accountRoles.value,
+          })
+          toast.success(`Đã cấp tài khoản truy cập cho ${form.value.fullName}`)
+        } catch (err: any) {
+          toast.error(`Nhân viên đã tạo nhưng lỗi khi cấp tài khoản: ${err?.response?.data?.message ?? 'Lỗi không xác định'}`)
+        }
+      }
     }
     emit('saved')
   } catch (err: any) { toast.error(err?.response?.data?.message ?? 'Lưu thất bại') }
@@ -117,6 +197,76 @@ async function save() {
           <option value="OnLeave">Nghỉ phép</option>
           <option value="Resigned">Đã nghỉ</option>
         </select>
+      </div>
+
+      <!-- Option to create system login account (Only when creating new employee) -->
+      <div v-if="!edit" class="col-span-2 border-t border-slate-200 pt-4 mt-2 space-y-4">
+        <label class="flex items-center gap-2.5 cursor-pointer">
+          <input
+            v-model="createAccount"
+            type="checkbox"
+            class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+          />
+          <span class="text-sm font-semibold text-slate-800">Cấp tài khoản đăng nhập hệ thống ngay lập tức</span>
+        </label>
+
+        <div v-if="createAccount" class="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+          <!-- Account Email -->
+          <div class="flex flex-col gap-1">
+            <label class="text-xs font-medium text-slate-600">Email đăng nhập</label>
+            <input
+              v-model="accountEmail"
+              type="email"
+              placeholder="email@hrms.com"
+              class="h-9 w-full rounded-lg border border-slate-300 px-3 text-xs outline-none bg-white focus:border-emerald-500"
+            />
+          </div>
+
+          <!-- Account Roles -->
+          <div class="flex flex-col gap-1">
+            <label class="text-xs font-medium text-slate-600 mb-1">Vai trò quyền hạn</label>
+            <div class="flex flex-wrap gap-2">
+              <label
+                v-for="role in roleOptions"
+                :key="role.value"
+                class="flex items-center gap-1.5 px-2 py-1 rounded bg-white border border-slate-200 text-[11px] font-medium text-slate-700 cursor-pointer hover:bg-slate-50"
+                :class="{ 'border-emerald-500 bg-emerald-50/10': accountRoles.includes(role.value) }"
+              >
+                <input
+                  v-model="accountRoles"
+                  type="checkbox"
+                  :value="role.value"
+                  class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 scale-90"
+                />
+                {{ role.label }}
+              </label>
+            </div>
+          </div>
+
+          <!-- Password Setup -->
+          <div class="col-span-2 space-y-1.5 mt-1">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-medium text-slate-600">Mật khẩu</label>
+              <label class="flex items-center gap-1.5 text-[10px] text-slate-500 cursor-pointer">
+                <input
+                  v-model="autoPassword"
+                  type="checkbox"
+                  class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 scale-90"
+                  @change="toggleAutoPassword"
+                />
+                Tự động tạo mật khẩu mạnh
+              </label>
+            </div>
+            <input
+              v-model="accountPassword"
+              :type="autoPassword ? 'text' : 'password'"
+              :readonly="autoPassword"
+              placeholder="Nhập mật khẩu (tối thiểu 6 ký tự)"
+              class="h-9 w-full rounded-lg border border-slate-300 px-3 text-xs outline-none bg-white focus:border-emerald-500"
+              :class="{ 'bg-slate-100 border-slate-200 font-mono text-slate-600': autoPassword }"
+            />
+          </div>
+        </div>
       </div>
     </div>
     <template #footer>

@@ -56,7 +56,7 @@ export const router = createRouter({
           path: 'hr/departments',
           name: 'hr-departments',
           component: DepartmentListView,
-          meta: { roles: ['Admin', 'HR', 'Manager'] },
+          meta: { roles: ['Admin', 'HR', 'Manager', 'Employee'] },
         },
         {
           path: 'hr/positions',
@@ -94,7 +94,7 @@ export const router = createRouter({
           path: 'attendance/work-schedules',
           name: 'attendance-work-schedules',
           component: WorkScheduleListView,
-          meta: { roles: ['Admin', 'HR', 'Manager'] },
+          meta: { roles: ['Admin', 'HR', 'Manager', 'Employee'] },
         },
         {
           path: 'attendance/checkin',

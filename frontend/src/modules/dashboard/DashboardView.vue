@@ -70,12 +70,17 @@ const {
   expiringContracts,
   todayAttendance,
   attendanceHistory,
+  weeklyAttendanceHistory,
+  monthlyAttendanceHistory,
   payrollTrend,
   statusDist,
   deptDist,
   periodsNeedAction,
+  userAccounts,
   load
 } = useDashboard()
+
+const attendanceInterval = ref<'day' | 'week' | 'month'>('day')
 
 onMounted(load)
 
@@ -90,6 +95,12 @@ const greeting = computed(() => {
 })
 
 // Formatting helpers
+function getEmployeeName(employeeId: string | null) {
+  if (!employeeId) return 'Quản trị viên Hệ thống'
+  const emp = employees.value.find(e => e.id === employeeId)
+  return emp ? emp.fullName : 'Tài khoản liên kết'
+}
+
 function fmtMoney(n: number) {
   return n.toLocaleString('vi-VN') + ' ₫'
 }
@@ -190,19 +201,36 @@ const payrollChartData = computed<any>(() => ({
   ]
 }))
 
-const attendanceHistoryChartData = computed<any>(() => ({
-  labels: attendanceHistory.value.map(a => a.date),
-  datasets: [
-    {
-      label: 'Lượt chấm công',
-      data: attendanceHistory.value.map(a => a.count),
-      backgroundColor: 'rgba(16, 185, 129, 0.75)',
-      hoverBackgroundColor: 'rgba(16, 185, 129, 0.95)',
-      borderRadius: 4,
-      barThickness: 20
-    }
-  ]
-}))
+const attendanceHistoryChartData = computed<any>(() => {
+  let labels: string[] = []
+  let data: number[] = []
+  const label = 'Lượt chấm công'
+
+  if (attendanceInterval.value === 'day') {
+    labels = attendanceHistory.value.map(a => a.date)
+    data = attendanceHistory.value.map(a => a.count)
+  } else if (attendanceInterval.value === 'week') {
+    labels = weeklyAttendanceHistory.value.map(a => a.name)
+    data = weeklyAttendanceHistory.value.map(a => a.count)
+  } else if (attendanceInterval.value === 'month') {
+    labels = monthlyAttendanceHistory.value.map(a => a.name)
+    data = monthlyAttendanceHistory.value.map(a => a.count)
+  }
+
+  return {
+    labels,
+    datasets: [
+      {
+        label,
+        data,
+        backgroundColor: 'rgba(16, 185, 129, 0.75)',
+        hoverBackgroundColor: 'rgba(16, 185, 129, 0.95)',
+        borderRadius: 4,
+        barThickness: attendanceInterval.value === 'day' ? 20 : (attendanceInterval.value === 'week' ? 30 : 40)
+      }
+    ]
+  }
+})
 
 const myPayslipsChartData = computed<any>(() => ({
   labels: myPayslips.value.slice(-6).map(p => p.fullName.split(' ')[0]),
@@ -337,9 +365,34 @@ const doughnutOptions: any = {
 
         <!-- Attendance Trends -->
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
-          <h3 class="text-sm font-semibold text-slate-800 mb-4 flex items-center gap-2">
-            <Clock class="w-4 h-4 text-emerald-500" /> Lượt chấm công 7 ngày gần nhất
-          </h3>
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold text-slate-800 flex items-center gap-2">
+              <Clock class="w-4 h-4 text-emerald-500" /> Tần suất chấm công
+            </h3>
+            <div class="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+              <button
+                class="px-2 py-0.5 text-[10px] font-semibold rounded transition-all cursor-pointer"
+                :class="attendanceInterval === 'day' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
+                @click="attendanceInterval = 'day'"
+              >
+                Ngày
+              </button>
+              <button
+                class="px-2 py-0.5 text-[10px] font-semibold rounded transition-all cursor-pointer"
+                :class="attendanceInterval === 'week' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
+                @click="attendanceInterval = 'week'"
+              >
+                Tuần
+              </button>
+              <button
+                class="px-2 py-0.5 text-[10px] font-semibold rounded transition-all cursor-pointer"
+                :class="attendanceInterval === 'month' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
+                @click="attendanceInterval = 'month'"
+              >
+                Tháng
+              </button>
+            </div>
+          </div>
           <div class="h-64 relative">
             <Bar v-if="!loading" :data="attendanceHistoryChartData" :options="chartOptions" />
           </div>
@@ -400,6 +453,70 @@ const doughnutOptions: any = {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Row 5: System Login sessions / accounts (Only for ADMIN role) -->
+      <div v-if="auth.isAdmin" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm mt-6">
+        <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+          <h3 class="text-sm font-semibold text-slate-800 flex items-center gap-2">
+            <Activity class="w-4 h-4 text-emerald-500" /> Hoạt động đăng nhập hệ thống (Mới nhất)
+          </h3>
+          <div class="flex items-center gap-4 text-xs font-medium text-slate-500">
+            <span>Đang hoạt động: <strong class="text-emerald-600">{{ userAccounts.filter(u => u.isActive).length }}</strong></span>
+            <span>Khóa: <strong class="text-rose-600">{{ userAccounts.filter(u => !u.isActive).length }}</strong></span>
+          </div>
+        </div>
+        <div v-if="userAccounts.length === 0" class="py-12 text-center text-slate-400 text-sm">
+          Không có dữ liệu tài khoản hệ thống nào được tìm thấy.
+        </div>
+        <div v-else class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="border-b border-slate-100 text-slate-400 uppercase font-semibold">
+                <th class="py-2.5 font-medium">Nhân viên</th>
+                <th class="py-2.5 font-medium">Email tài khoản</th>
+                <th class="py-2.5 font-medium">Quyền hạn</th>
+                <th class="py-2.5 font-medium">Trạng thái</th>
+                <th class="py-2.5 font-medium text-right">Lần đăng nhập cuối</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="u in [...userAccounts].sort((a,b) => new Date(b.lastLoginAt || 0).getTime() - new Date(a.lastLoginAt || 0).getTime()).slice(0, 5)"
+                :key="u.id"
+                class="border-b border-slate-50 hover:bg-slate-50/50 transition-colors last:border-0"
+              >
+                <td class="py-3 font-semibold text-slate-800">
+                  {{ getEmployeeName(u.employeeId) }}
+                </td>
+                <td class="py-3 text-slate-600 font-mono">{{ u.email }}</td>
+                <td class="py-3">
+                  <div class="flex flex-wrap gap-1">
+                    <span
+                      v-for="role in u.roles"
+                      :key="role"
+                      class="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 text-[10px] font-medium text-slate-600"
+                    >
+                      {{ role }}
+                    </span>
+                  </div>
+                </td>
+                <td class="py-3">
+                  <span
+                    class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium"
+                    :class="u.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'"
+                  >
+                    <span class="w-1.5 h-1.5 rounded-full" :class="u.isActive ? 'bg-emerald-500' : 'bg-rose-500'"></span>
+                    {{ u.isActive ? 'Hoạt động' : 'Bị khóa' }}
+                  </span>
+                </td>
+                <td class="py-3 text-right text-slate-500 font-medium">
+                  {{ u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString('vi-VN') : 'Chưa từng đăng nhập' }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

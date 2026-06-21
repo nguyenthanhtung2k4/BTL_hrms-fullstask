@@ -44,29 +44,28 @@ const menuGroups = computed(() => {
     ],
   })
 
-  // HR Core — Admin, HR, Manager
-  if (auth.isManager) {
-    const hrItems: any[] = []
-    if (auth.isHR) {
-      hrItems.push(
-        { to: '/hr/departments', name: 'hr-departments', label: 'Phòng ban', icon: Building2 },
-        { to: '/hr/positions', name: 'hr-positions', label: 'Chức vụ', icon: Briefcase },
-      )
-    }
-    hrItems.push({ to: '/hr/employees', name: 'hr-employees', label: 'Nhân viên', icon: Users })
-    if (auth.isHR) {
-      hrItems.push({ to: '/hr/contracts', name: 'hr-contracts', label: 'Hợp đồng', icon: FileText })
-    }
-    groups.push({ label: 'Nhân sự', items: hrItems })
+  // HR Core — Admin, HR, Manager, Employee
+  const hrItems: any[] = []
+  hrItems.push({ to: '/hr/departments', name: 'hr-departments', label: 'Phòng ban', icon: Building2 })
+  
+  if (auth.isHR) {
+    hrItems.push({ to: '/hr/positions', name: 'hr-positions', label: 'Chức vụ', icon: Briefcase })
   }
+  if (auth.isManager) {
+    hrItems.push({ to: '/hr/employees', name: 'hr-employees', label: 'Nhân viên', icon: Users })
+  }
+  if (auth.isHR) {
+    hrItems.push({ to: '/hr/contracts', name: 'hr-contracts', label: 'Hợp đồng', icon: FileText })
+  }
+  groups.push({ label: 'Nhân sự', items: hrItems })
 
   // Attendance — all logged in
   const attItems: any[] = []
   if (auth.isHR) {
     attItems.push({ to: '/attendance/shifts', name: 'attendance-shifts', label: 'Ca làm việc', icon: Clock })
   }
+  attItems.push({ to: '/attendance/work-schedules', name: 'attendance-work-schedules', label: 'Lịch làm việc', icon: Calendar })
   if (auth.isManager) {
-    attItems.push({ to: '/attendance/work-schedules', name: 'attendance-work-schedules', label: 'Lịch làm việc', icon: Calendar })
     attItems.push({ to: '/attendance/records', name: 'attendance-records', label: 'Chấm công (tất cả)', icon: ClipboardList })
   }
   attItems.push({ to: '/attendance/checkin', name: 'attendance-checkin', label: 'Check-in / Check-out', icon: CalendarCheck })
