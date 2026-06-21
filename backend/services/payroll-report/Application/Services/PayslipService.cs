@@ -24,6 +24,7 @@ public class PayslipService : IPayslipService
     {
         var query = _dbContext.Payslips
             .Include(p => p.Employee)
+            .Include(p => p.PayrollPeriod)
             .Include(p => p.Items)
             .AsQueryable();
 
@@ -56,7 +57,9 @@ public class PayslipService : IPayslipService
                 p.TotalDeduction,
                 p.NetSalary,
                 p.Status,
-                p.Items.Select(i => new PayslipItemDto(i.Id, i.ItemType, i.Code, i.Name, i.Amount, i.SourceType)).ToList()
+                p.Items.Select(i => new PayslipItemDto(i.Id, i.ItemType, i.Code, i.Name, i.Amount, i.SourceType)).ToList(),
+                p.PayrollPeriod != null ? p.PayrollPeriod.Name : string.Empty,
+                p.PayrollPeriod != null ? p.PayrollPeriod.Code : string.Empty
             ))
             .ToListAsync();
 
@@ -67,6 +70,7 @@ public class PayslipService : IPayslipService
     {
         var p = await _dbContext.Payslips
             .Include(x => x.Employee)
+            .Include(x => x.PayrollPeriod)
             .Include(x => x.Items)
             .FirstOrDefaultAsync(x => x.Id == id);
 
@@ -88,7 +92,9 @@ public class PayslipService : IPayslipService
             p.TotalDeduction,
             p.NetSalary,
             p.Status,
-            p.Items.Select(i => new PayslipItemDto(i.Id, i.ItemType, i.Code, i.Name, i.Amount, i.SourceType)).ToList()
+            p.Items.Select(i => new PayslipItemDto(i.Id, i.ItemType, i.Code, i.Name, i.Amount, i.SourceType)).ToList(),
+            p.PayrollPeriod != null ? p.PayrollPeriod.Name : string.Empty,
+            p.PayrollPeriod != null ? p.PayrollPeriod.Code : string.Empty
         );
 
         return Result<PayslipDto>.Success(dto, "Successfully retrieved payslip.");
@@ -98,6 +104,7 @@ public class PayslipService : IPayslipService
     {
         var p = await _dbContext.Payslips
             .Include(x => x.Employee)
+            .Include(x => x.PayrollPeriod)
             .Include(x => x.Items)
             .FirstOrDefaultAsync(x => x.EmployeeId == employeeId && x.PayrollPeriodId == periodId);
 
@@ -119,7 +126,9 @@ public class PayslipService : IPayslipService
             p.TotalDeduction,
             p.NetSalary,
             p.Status,
-            p.Items.Select(i => new PayslipItemDto(i.Id, i.ItemType, i.Code, i.Name, i.Amount, i.SourceType)).ToList()
+            p.Items.Select(i => new PayslipItemDto(i.Id, i.ItemType, i.Code, i.Name, i.Amount, i.SourceType)).ToList(),
+            p.PayrollPeriod != null ? p.PayrollPeriod.Name : string.Empty,
+            p.PayrollPeriod != null ? p.PayrollPeriod.Code : string.Empty
         );
 
         return Result<PayslipDto>.Success(dto, "Successfully retrieved your payslip.");
@@ -261,6 +270,20 @@ public class PayslipService : IPayslipService
             var empAllowances = periodAllowances.Where(a => a.EmployeeId == employee.Id).ToList();
             decimal totalAllowance = empAllowances.Sum(a => a.Amount);
 
+            // Automatically calculate Seniority Allowance (200,000 VND / year of service)
+            decimal seniorityAllowanceAmt = 0;
+            int seniorityYears = 0;
+            if (employee.HireDate < period.ToDate.ToDateTime(TimeOnly.MinValue))
+            {
+                var seniorityDays = (period.ToDate.ToDateTime(TimeOnly.MinValue) - employee.HireDate).TotalDays;
+                seniorityYears = (int)Math.Floor(seniorityDays / 365.25);
+                if (seniorityYears >= 1)
+                {
+                    seniorityAllowanceAmt = seniorityYears * 200000m;
+                }
+            }
+            totalAllowance += seniorityAllowanceAmt;
+
             // 6. Gather deductions
             var empDeductions = periodDeductions.Where(d => d.EmployeeId == employee.Id).ToList();
             decimal totalDeduction = empDeductions.Sum(d => d.Amount);
@@ -311,6 +334,22 @@ public class PayslipService : IPayslipService
                     Name = allowance.AllowanceType?.Name ?? "Phụ cấp",
                     Amount = allowance.Amount,
                     SourceType = "Allowance",
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+
+            // Seniority allowance item
+            if (seniorityAllowanceAmt > 0)
+            {
+                payslip.Items.Add(new PayslipItem
+                {
+                    Id = Guid.NewGuid(),
+                    PayslipId = payslip.Id,
+                    ItemType = "Allowance",
+                    Code = "ALLOWANCE_SENIORITY",
+                    Name = $"Phụ cấp thâm niên ({seniorityYears} năm)",
+                    Amount = seniorityAllowanceAmt,
+                    SourceType = "Seniority",
                     CreatedAt = DateTime.UtcNow
                 });
             }

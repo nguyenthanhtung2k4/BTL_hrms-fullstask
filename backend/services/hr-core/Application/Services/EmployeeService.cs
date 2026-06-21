@@ -115,7 +115,8 @@ public class EmployeeService : IEmployeeService
             PositionId: employee.PositionId,
             PositionName: position.Name,
             ManagerEmployeeId: employee.ManagerEmployeeId,
-            Status: employee.Status
+            Status: employee.Status,
+            HireDate: employee.HireDate
         );
 
         var integrationEvent = new IntegrationEvent<EmployeeProjectionPayload>(
@@ -193,7 +194,8 @@ public class EmployeeService : IEmployeeService
             PositionId: employee.PositionId,
             PositionName: position.Name,
             ManagerEmployeeId: employee.ManagerEmployeeId,
-            Status: employee.Status
+            Status: employee.Status,
+            HireDate: employee.HireDate
         );
 
         var integrationEvent = new IntegrationEvent<EmployeeProjectionPayload>(

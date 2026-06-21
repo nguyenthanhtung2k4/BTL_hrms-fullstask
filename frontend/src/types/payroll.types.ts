@@ -136,6 +136,8 @@ export interface Payslip {
   netSalary: number
   status: string
   items?: PayslipItem[]
+  periodName?: string
+  periodCode?: string
 }
 
 // ---

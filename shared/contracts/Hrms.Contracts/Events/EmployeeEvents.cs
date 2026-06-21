@@ -10,7 +10,8 @@ public sealed record EmployeeProjectionPayload(
     Guid? PositionId,
     string? PositionName,
     Guid? ManagerEmployeeId,
-    string Status);
+    string Status,
+    DateTime HireDate);
 
 public sealed record EmployeeStatusChangedPayload(
     Guid EmployeeId,

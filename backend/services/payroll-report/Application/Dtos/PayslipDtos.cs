@@ -16,7 +16,9 @@ public record PayslipDto(
     decimal TotalDeduction,
     decimal NetSalary,
     string Status,
-    List<PayslipItemDto> Items
+    List<PayslipItemDto> Items,
+    string? PeriodName = null,
+    string? PeriodCode = null
 );
 
 public record PayslipItemDto(

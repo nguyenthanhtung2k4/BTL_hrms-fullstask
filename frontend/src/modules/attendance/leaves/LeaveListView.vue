@@ -39,6 +39,7 @@ const errors = ref<Record<string, string>>({})
 
 const columns = [
   { key: 'employee', label: 'Nhân viên' },
+  { key: 'createdAt', label: 'Ngày gửi' },
   { key: 'leaveTypeName', label: 'Loại nghỉ' },
   { key: 'fromDate', label: 'Từ ngày' },
   { key: 'toDate', label: 'Đến ngày' },
@@ -85,7 +86,7 @@ async function load() {
   loading.value = true
   try {
     const promises: Promise<any>[] = [
-      leaveService.getAll(auth.isManager ? {} : { employeeId: auth.employeeId }),
+      auth.isManager ? leaveService.getAll() : leaveService.getMyRequests(),
       leaveService.getTypes(),
     ]
     if (auth.isManager) {
@@ -237,6 +238,7 @@ onMounted(load)
     <AppTable :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Không có đơn nghỉ phép nào">
       <template #default="{ row }">
         <td class="px-4 py-3 text-sm font-medium">{{ (row as LeaveRequest).employeeName }}</td>
+        <td class="px-4 py-3 text-sm text-slate-600 font-mono">{{ fmt((row as LeaveRequest).createdAt) }}</td>
         <td class="px-4 py-3 text-sm">{{ (row as LeaveRequest).leaveTypeName }}</td>
         <td class="px-4 py-3 text-sm text-slate-600">{{ fmt((row as LeaveRequest).fromDate) }}</td>
         <td class="px-4 py-3 text-sm text-slate-600">{{ fmt((row as LeaveRequest).toDate) }}</td>

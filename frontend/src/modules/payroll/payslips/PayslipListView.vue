@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { payslipService } from '../../../services/payslip.service'
 import { payrollPeriodService } from '../../../services/payrollPeriod.service'
@@ -24,8 +24,13 @@ const filterPeriod = ref('')
 const filterEmployee = ref('')
 
 const columns = [
-  { key: 'employee', label: 'Nhân viên' }, { key: 'code', label: 'Mã NV' },
-  { key: 'work', label: 'Ngày công' }, { key: 'gross', label: 'Gross' }, { key: 'net', label: 'Net lương' }, { key: 'actions', label: '' },
+  { key: 'period', label: 'Kỳ lương' },
+  { key: 'employee', label: 'Nhân viên' },
+  { key: 'code', label: 'Mã NV' },
+  { key: 'work', label: 'Ngày công' },
+  { key: 'gross', label: 'Gross' },
+  { key: 'net', label: 'Net lương' },
+  { key: 'actions', label: '' },
 ]
 
 async function load() {
@@ -40,6 +45,12 @@ async function load() {
 }
 
 function fmtMoney(n: number) { return n.toLocaleString('vi-VN') + ' ₫' }
+function formatPeriod(name?: string) {
+  if (!name) return 'Kỳ lương không rõ'
+  const clean = name.replace(/Luong\s+thang/gi, 'Tháng').replace(/Ky\s+luong/gi, 'Kỳ lương')
+  return clean.charAt(0).toUpperCase() + clean.slice(1)
+}
+
 const { currentPage, perPage, paginatedData, total } = usePagination(payslips)
 
 onMounted(load)
@@ -63,6 +74,7 @@ onMounted(load)
 
     <AppTable :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Chưa có phiếu lương nào">
       <template #default="{ row }">
+        <td class="px-4 py-3 text-sm text-slate-500">{{ formatPeriod((row as Payslip).periodName) }}</td>
         <td class="px-4 py-3 text-sm font-medium">{{ (row as Payslip).fullName }}</td>
         <td class="px-4 py-3 text-sm text-slate-500">{{ (row as Payslip).employeeCode }}</td>
         <td class="px-4 py-3 text-sm font-semibold text-emerald-700">{{ (row as Payslip).workedDays?.toFixed(1) }}</td>

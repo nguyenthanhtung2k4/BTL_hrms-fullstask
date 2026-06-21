@@ -13,6 +13,12 @@ public static class DbInitializer
         // Ensure database tables exist
         await context.Database.EnsureCreatedAsync();
 
+        // Migrate HireDate column if it does not exist
+        await context.Database.ExecuteSqlRawAsync(
+            "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.EmployeeProjections') AND name = 'HireDate') " +
+            "ALTER TABLE dbo.EmployeeProjections ADD HireDate DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME();"
+        );
+
         // 1. Seed Allowance Types
         var allowanceTypes = new[]
         {

@@ -74,6 +74,24 @@ async function load() {
   finally { loading.value = false }
 }
 
+function formatSeniority(hireDateStr: string) {
+  if (!hireDateStr) return ''
+  const hireDate = new Date(hireDateStr)
+  if (isNaN(hireDate.getTime())) return ''
+  const now = new Date()
+  let years = now.getFullYear() - hireDate.getFullYear()
+  let months = now.getMonth() - hireDate.getMonth()
+  if (months < 0) {
+    years--
+    months += 12
+  }
+  const dateStr = hireDate.toLocaleDateString('vi-VN')
+  if (years === 0 && months === 0) return `${dateStr} (Mới vào)`
+  const parts: string[] = []
+  if (years > 0) parts.push(`${years} năm`)
+  if (months > 0) parts.push(`${months} tháng`)
+  return `${dateStr} (${parts.join(' ')})`
+}
 function openCreate() { editTarget.value = null; showForm.value = true }
 function openEdit(e: Employee) { editTarget.value = e; showForm.value = true }
 
@@ -129,7 +147,7 @@ onMounted(load)
         </td>
         <td class="px-4 py-3 text-sm text-slate-600">{{ (row as Employee).departmentName }}</td>
         <td class="px-4 py-3 text-sm text-slate-600">{{ (row as Employee).positionName }}</td>
-        <td class="px-4 py-3 text-sm text-slate-500">{{ new Date((row as Employee).hireDate).toLocaleDateString('vi-VN') }}</td>
+        <td class="px-4 py-3 text-sm text-slate-500">{{ formatSeniority((row as Employee).hireDate) }}</td>
         <td class="px-4 py-3"><AppBadge :status="(row as Employee).status" /></td>
         <td class="px-4 py-3 text-right">
           <div class="flex justify-end gap-2">

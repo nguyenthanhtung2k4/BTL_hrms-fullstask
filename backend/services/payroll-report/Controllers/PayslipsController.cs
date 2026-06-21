@@ -28,26 +28,37 @@ public class PayslipsController : ControllerBase
         [FromQuery] Guid? employeeId,
         [FromQuery] Guid? departmentId)
     {
+        // Enforce role permission: regular employee can only query their own payslips
+        if (!User.IsInRole("Admin") && !User.IsInRole("PayrollStaff") && !User.IsInRole("HR") && !User.IsInRole("Manager"))
+        {
+            var currentEmployeeId = GetCurrentEmployeeId();
+            if (currentEmployeeId == Guid.Empty)
+            {
+                return Forbid();
+            }
+            if (employeeId.HasValue && employeeId.Value != currentEmployeeId)
+            {
+                return Forbid();
+            }
+            employeeId = currentEmployeeId;
+        }
+
         var result = await _payslipService.GetPayslipsAsync(periodId, employeeId, departmentId);
         return Ok(ApiResponse<IEnumerable<PayslipDto>>.Ok(result.Value!, result.Message));
     }
 
     [HttpGet("me")]
-    public async Task<ActionResult<ApiResponse<PayslipDto>>> GetMyPayslip([FromQuery] Guid periodId)
+    public async Task<ActionResult<ApiResponse<IEnumerable<PayslipDto>>>> GetMyPayslips()
     {
         var employeeId = GetCurrentEmployeeId();
         if (employeeId == Guid.Empty)
         {
-            return BadRequest(ApiResponse<PayslipDto>.Fail("InvalidUser", "User must be associated with an active Employee account."));
+            // Return empty list instead of failing with 400 Bad Request to handle non-employee accounts (like admin) gracefully
+            return Ok(ApiResponse<IEnumerable<PayslipDto>>.Ok(Array.Empty<PayslipDto>(), "User is not associated with an Employee account."));
         }
 
-        var result = await _payslipService.GetMyPayslipAsync(employeeId, periodId);
-        if (result.IsFailure)
-        {
-            return NotFound(ApiResponse<PayslipDto>.Fail(result.Errors, result.Message));
-        }
-
-        return Ok(ApiResponse<PayslipDto>.Ok(result.Value!, result.Message));
+        var result = await _payslipService.GetPayslipsAsync(null, employeeId, null);
+        return Ok(ApiResponse<IEnumerable<PayslipDto>>.Ok(result.Value ?? Array.Empty<PayslipDto>(), result.Message));
     }
 
     [HttpGet("{id}")]
@@ -58,6 +69,17 @@ public class PayslipsController : ControllerBase
         {
             return NotFound(ApiResponse<PayslipDto>.Fail(result.Errors, result.Message));
         }
+
+        // Enforce role permission: regular employee can only view their own payslip
+        if (!User.IsInRole("Admin") && !User.IsInRole("PayrollStaff") && !User.IsInRole("HR") && !User.IsInRole("Manager"))
+        {
+            var currentEmployeeId = GetCurrentEmployeeId();
+            if (result.Value!.EmployeeId != currentEmployeeId)
+            {
+                return Forbid();
+            }
+        }
+
         return Ok(ApiResponse<PayslipDto>.Ok(result.Value!, result.Message));
     }
 

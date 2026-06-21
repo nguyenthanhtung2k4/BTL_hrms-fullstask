@@ -5,6 +5,7 @@ using Hrms.Attendance.Infrastructure;
 using Hrms.Shared.Middleware;
 using Hrms.Shared.Security;
 using Microsoft.OpenApi.Models;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -50,6 +51,16 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddHealthChecks();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<Hrms.Attendance.Infrastructure.Persistence.AttendanceDbContext>();
+    await context.Database.EnsureCreatedAsync();
+    await context.Database.ExecuteSqlRawAsync(
+        "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.EmployeeProjections') AND name = 'HireDate') " +
+        "ALTER TABLE dbo.EmployeeProjections ADD HireDate DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME();"
+    );
+}
 
 app.UseMiddleware<ExceptionMiddleware>();
 
