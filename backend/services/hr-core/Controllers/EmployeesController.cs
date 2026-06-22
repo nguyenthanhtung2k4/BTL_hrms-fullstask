@@ -22,7 +22,7 @@ public class EmployeesController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = "Admin,HR,Manager,PayrollStaff")]
+    [Authorize(Roles = "Admin,HR,Manager,PayrollStaff,Employee")]
     public async Task<ActionResult<ApiResponse<IEnumerable<EmployeeDto>>>> GetAll()
     {
         var result = await _employeeService.GetAllAsync();

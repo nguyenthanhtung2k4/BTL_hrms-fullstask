@@ -82,7 +82,7 @@ onMounted(load)
       </template>
     </PageHeader>
 
-    <AppTable :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Chưa có quy tắc tính lương">
+    <AppTable :page-size="10" :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Chưa có quy tắc tính lương">
       <template #default="{ row }">
         <td class="px-4 py-3 text-sm font-mono">{{ (row as PayrollRule).code }}</td>
         <td class="px-4 py-3 text-sm font-medium">{{ (row as PayrollRule).name }}</td>

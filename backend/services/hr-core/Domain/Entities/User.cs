@@ -11,6 +11,7 @@ public class User : AuditableEntity
     public string PasswordHash { get; set; } = string.Empty;
     public bool IsActive { get; set; } = true;
     public DateTime? LastLoginAt { get; set; }
+    public string? AvatarUrl { get; set; }
 
     // Navigation properties
     public Employee? Employee { get; set; }

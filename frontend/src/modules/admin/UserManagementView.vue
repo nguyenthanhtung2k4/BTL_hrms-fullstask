@@ -280,7 +280,7 @@ onMounted(loadData)
     </div>
 
     <!-- Table -->
-    <AppTable :loading="loading" :columns="columns" :rows="filteredUsers" row-key="id">
+    <AppTable :page-size="10" :loading="loading" :columns="columns" :rows="filteredUsers" row-key="id">
       <template #default="{ row }">
         <!-- Email -->
         <td class="app-table__td">

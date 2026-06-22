@@ -122,7 +122,7 @@ onMounted(load)
       </select>
     </div>
 
-    <AppTable :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Chưa có hợp đồng nào">
+    <AppTable :page-size="10" :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Chưa có hợp đồng nào">
       <template #default="{ row }">
         <td class="px-4 py-3 text-sm font-mono">{{ (row as Contract).contractNumber }}</td>
         <td class="px-4 py-3 text-sm font-medium">{{ (row as Contract).employeeName }}</td>

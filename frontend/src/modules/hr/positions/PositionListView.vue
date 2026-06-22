@@ -107,7 +107,7 @@ onMounted(load)
       <input v-model="search" type="text" placeholder="Tìm chức vụ..." class="h-9 w-full max-w-sm rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-500" />
     </div>
 
-    <AppTable :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Chưa có chức vụ nào">
+    <AppTable :page-size="10" :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Chưa có chức vụ nào">
       <template #default="{ row }">
         <td class="px-4 py-3 text-sm font-mono text-slate-600">{{ (row as Position).code }}</td>
         <td class="px-4 py-3 text-sm font-medium">{{ (row as Position).name }}</td>

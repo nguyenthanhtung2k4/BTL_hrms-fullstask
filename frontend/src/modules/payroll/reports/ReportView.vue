@@ -156,7 +156,7 @@ onMounted(loadPeriods)
     </div>
 
     <!-- Report table -->
-    <AppTable :columns="columns" :rows="paginatedData" :loading="loading" row-key="departmentId" empty-text="Chọn kỳ lương và nhấn Xem báo cáo">
+    <AppTable :page-size="10" :columns="columns" :rows="paginatedData" :loading="loading" row-key="departmentId" empty-text="Chọn kỳ lương và nhấn Xem báo cáo">
       <template #default="{ row }">
         <td class="px-4 py-3 text-sm font-medium">{{ (row as PayrollSummaryReport).departmentName }}</td>
         <td class="px-4 py-3 text-sm">{{ (row as PayrollSummaryReport).employeeCount }}</td>

@@ -11,7 +11,8 @@ import { employeeService } from '../../services/employee.service'
 import PageHeader from '../../components/layout/PageHeader.vue'
 import AppButton from '../../components/ui/AppButton.vue'
 import AppInput from '../../components/ui/AppInput.vue'
-import type { Employee } from '../../types/hr.types'
+import type { Employee, Contract } from '../../types/hr.types'
+import { contractService } from '../../services/contract.service'
 import { useFormGuard } from '../../composables/useFormGuard'
 
 const { t } = useI18n()
@@ -20,13 +21,22 @@ const toast = useToastStore()
 
 // ─── Employee data ─────────────────────────────────────────────────────────────
 const employee = ref<Employee | null>(null)
+const baseSalary = ref<number | null>(null)
 const loadingEmployee = ref(false)
 
 async function loadEmployee() {
   if (!auth.employeeId) return
   loadingEmployee.value = true
   try {
-    employee.value = await employeeService.getById(auth.employeeId)
+    const emp = await employeeService.getById(auth.employeeId)
+    employee.value = emp
+
+    // Load active contract for base salary
+    const contracts = await contractService.getAll()
+    const activeContract = contracts.find(c => c.employeeId === emp.id && c.status === 'Active')
+    if (activeContract) {
+      baseSalary.value = activeContract.baseSalary
+    }
   } catch {
     // silently fail if no employee linked
   } finally {
@@ -76,7 +86,7 @@ async function submitChangePassword() {
   }
 }
 
-// ─── Avatar initials ──────────────────────────────────────────────────────────
+// ─── Avatar logic ─────────────────────────────────────────────────────────────
 const initials = computed(() => {
   const name = auth.displayName
   if (!name) return 'U'
@@ -84,6 +94,29 @@ const initials = computed(() => {
   if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
   return name.slice(0, 2).toUpperCase()
 })
+
+const fileInput = ref<HTMLInputElement | null>(null)
+function triggerUpload() {
+  fileInput.value?.click()
+}
+
+function onFileChange(e: Event) {
+  const target = e.target as HTMLInputElement
+  if (!target.files || target.files.length === 0) return
+  const file = target.files[0]
+  if (!file.type.startsWith('image/')) {
+    toast.error('Vui lòng chọn file hình ảnh')
+    return
+  }
+  
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    const base64 = e.target?.result as string
+    auth.updateAvatar(base64)
+    toast.success('Cập nhật ảnh đại diện thành công')
+  }
+  reader.readAsDataURL(file)
+}
 
 // ─── Role display ─────────────────────────────────────────────────────────────
 function getRoleColor(role: string): string {
@@ -121,8 +154,23 @@ onMounted(loadEmployee)
       <!-- ── Left: Account Info Card ────────────────────────────────────────── -->
       <div class="lg:col-span-1">
         <!-- Avatar + Name -->
-        <div class="profile-card mb-6 text-center">
-          <div class="profile-avatar">{{ initials }}</div>
+        <div class="profile-card mb-6 text-center relative">
+          <div class="profile-avatar cursor-pointer relative group" @click="triggerUpload">
+            <template v-if="auth.avatarUrl">
+              <img :src="auth.avatarUrl" alt="Avatar" class="w-full h-full object-cover rounded-full" />
+            </template>
+            <template v-else>{{ initials }}</template>
+            
+            <!-- Hover overlay -->
+            <div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </div>
+          </div>
+          <input type="file" ref="fileInput" accept="image/*" class="hidden" @change="onFileChange" />
+          
           <h2 class="mt-3 text-lg font-bold" style="color: var(--text-primary);">{{ auth.displayName }}</h2>
           <p class="text-sm" style="color: var(--text-secondary);">{{ auth.user?.email }}</p>
 
@@ -191,7 +239,7 @@ onMounted(loadEmployee)
             </div>
             <div class="profile-info-field">
               <span class="profile-info-label">{{ t('employee.phone') }}</span>
-              <span class="profile-info-value">{{ employee.phoneNumber || '—' }}</span>
+              <span class="profile-info-value">{{ employee.phone || '—' }}</span>
             </div>
             <div class="profile-info-field">
               <span class="profile-info-label">{{ t('employee.department') }}</span>
@@ -207,7 +255,7 @@ onMounted(loadEmployee)
             </div>
             <div class="profile-info-field">
               <span class="profile-info-label">{{ t('employee.baseSalary') }}</span>
-              <span class="profile-info-value font-mono">{{ formatCurrency(employee.baseSalary) }}</span>
+              <span class="profile-info-value font-mono">{{ formatCurrency(baseSalary) }}</span>
             </div>
             <div class="profile-info-field sm:col-span-2">
               <span class="profile-info-label">{{ t('employee.address') }}</span>

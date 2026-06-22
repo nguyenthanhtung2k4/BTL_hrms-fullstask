@@ -273,7 +273,7 @@ onMounted(load)
     <!-- TABLE VIEW                                                              -->
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
     <template v-if="viewMode === 'table'">
-      <AppTable :columns="columns" :rows="paginatedData" :loading="loading" row-key="id"
+      <AppTable :page-size="10" :columns="columns" :rows="paginatedData" :loading="loading" row-key="id"
         empty-text="Chưa có bảng công — hãy nhấn Tính bảng công">
         <template #default="{ row }">
           <td class="ts-td">{{ (row as Timesheet).employeeName }}</td>

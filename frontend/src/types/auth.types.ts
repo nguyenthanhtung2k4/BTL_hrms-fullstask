@@ -11,6 +11,7 @@ export interface UserInfo {
   fullName: string
   employeeId: string | null
   roles: string[]
+  avatarUrl?: string
 }
 
 export interface AuthResponse {

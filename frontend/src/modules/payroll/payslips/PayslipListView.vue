@@ -103,7 +103,7 @@ onMounted(load)
       <button class="h-9 rounded-lg bg-emerald-600 px-4 text-sm font-medium text-white hover:bg-emerald-700" @click="load">Tìm</button>
     </div>
 
-    <AppTable :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Chưa có phiếu lương nào">
+    <AppTable :page-size="10" :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Chưa có phiếu lương nào">
       <template #default="{ row }">
         <td class="px-4 py-3 text-sm text-slate-500">{{ formatPeriod((row as Payslip).periodName) }}</td>
         <td class="px-4 py-3 text-sm font-medium">{{ (row as Payslip).fullName }}</td>

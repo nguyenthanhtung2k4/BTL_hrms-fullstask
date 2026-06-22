@@ -237,8 +237,9 @@ async function logout() {
       <!-- User info & logout -->
       <div class="p-3" style="border-top: 1px solid var(--sidebar-border);">
         <div class="flex items-center gap-2 rounded-xl p-2.5" style="background: var(--bg-subtle);">
-          <div class="grid h-8 w-8 flex-shrink-0 place-items-center rounded-full text-sm font-bold" style="background: var(--color-primary-light); color: var(--color-primary-text);">
-            {{ auth.displayName?.charAt(0)?.toUpperCase() ?? 'U' }}
+          <div class="grid h-8 w-8 flex-shrink-0 place-items-center rounded-full text-sm font-bold overflow-hidden" style="background: var(--color-primary-light); color: var(--color-primary-text);">
+            <img v-if="auth.avatarUrl" :src="auth.avatarUrl" alt="Avatar" class="h-full w-full object-cover" />
+            <span v-else>{{ auth.displayName?.charAt(0)?.toUpperCase() ?? 'U' }}</span>
           </div>
           <div class="min-w-0 flex-1">
             <div class="truncate text-xs font-semibold" style="color: var(--text-primary);">{{ auth.displayName }}</div>

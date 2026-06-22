@@ -9,10 +9,12 @@ const props = defineProps<{
   rows: any[]
   emptyText?: string
   rowKey?: string
+  pageSize?: number
 }>()
 
 const sortKey = ref<string | null>(null)
 const sortOrder = ref<'asc' | 'desc' | null>(null)
+const currentPage = ref(1)
 
 function handleSort(key: string) {
   if (key === 'actions' || !key) return
@@ -24,6 +26,7 @@ function handleSort(key: string) {
     sortKey.value = key
     sortOrder.value = 'asc'
   }
+  currentPage.value = 1 // reset page on sort
 }
 
 const sortedRows = computed(() => {
@@ -45,6 +48,32 @@ const sortedRows = computed(() => {
     return (valA < valB ? -1 : valA > valB ? 1 : 0) * order
   })
 })
+
+const totalPages = computed(() => {
+  if (!props.pageSize || props.pageSize <= 0) return 1
+  return Math.max(1, Math.ceil(sortedRows.value.length / props.pageSize))
+})
+
+const paginatedRows = computed(() => {
+  if (!props.pageSize || props.pageSize <= 0) return sortedRows.value
+  // Auto-correct out-of-bounds page
+  if (currentPage.value > totalPages.value) currentPage.value = totalPages.value
+  
+  const start = (currentPage.value - 1) * props.pageSize
+  return sortedRows.value.slice(start, start + props.pageSize)
+})
+
+function prevPage() {
+  if (currentPage.value > 1) currentPage.value--
+}
+
+function nextPage() {
+  if (currentPage.value < totalPages.value) currentPage.value++
+}
+
+function goToPage(p: number) {
+  if (p >= 1 && p <= totalPages.value) currentPage.value = p
+}
 </script>
 
 <template>
@@ -111,7 +140,7 @@ const sortedRows = computed(() => {
         <!-- Data rows -->
         <template v-else>
           <tr
-            v-for="(row, i) in sortedRows"
+            v-for="(row, i) in paginatedRows"
             :key="rowKey ? row[rowKey] : i"
             class="app-table__row"
           >
@@ -120,6 +149,30 @@ const sortedRows = computed(() => {
         </template>
       </tbody>
     </table>
+    
+    <!-- Pagination controls -->
+    <div v-if="pageSize && totalPages > 1" class="app-table__pagination">
+      <span class="app-table__pagination-info">
+        Hiển thị {{ (currentPage - 1) * pageSize + 1 }} - {{ Math.min(currentPage * pageSize, sortedRows.length) }} trong số {{ sortedRows.length }} kết quả
+      </span>
+      <div class="app-table__pagination-actions">
+        <button class="app-table__page-btn" :disabled="currentPage === 1" @click="prevPage">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+        </button>
+        <button 
+          v-for="p in totalPages" 
+          :key="p" 
+          class="app-table__page-btn" 
+          :class="{ 'app-table__page-btn--active': p === currentPage }"
+          @click="goToPage(p)"
+        >
+          {{ p }}
+        </button>
+        <button class="app-table__page-btn" :disabled="currentPage === totalPages" @click="nextPage">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -259,5 +312,61 @@ const sortedRows = computed(() => {
   font-size: 0.875rem;
   color: var(--text-tertiary);
   font-weight: 500;
+}
+
+/* Pagination */
+.app-table__pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid var(--border);
+  background-color: var(--bg-surface);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.app-table__pagination-info {
+  font-size: 0.8125rem;
+  color: var(--text-tertiary);
+}
+
+.app-table__pagination-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.app-table__page-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 2rem;
+  padding: 0 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-surface);
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.app-table__page-btn:hover:not(:disabled) {
+  background-color: var(--bg-subtle);
+  border-color: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.app-table__page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.app-table__page-btn--active {
+  background-color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  color: white !important;
 }
 </style>

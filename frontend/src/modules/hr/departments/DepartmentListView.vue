@@ -129,7 +129,7 @@ onMounted(load)
     </div>
 
     <!-- Table -->
-    <AppTable :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Chưa có phòng ban nào">
+    <AppTable :page-size="10" :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Chưa có phòng ban nào">
       <template #default="{ row }">
         <td class="px-4 py-3 text-sm font-mono text-slate-600">{{ (row as Department).code }}</td>
         <td class="px-4 py-3 text-sm font-medium text-slate-900">{{ (row as Department).name }}</td>

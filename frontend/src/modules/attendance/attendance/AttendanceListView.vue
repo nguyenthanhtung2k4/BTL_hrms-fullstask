@@ -187,7 +187,7 @@ onMounted(load)
       </div>
     </div>
 
-    <AppTable :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Không có dữ liệu chấm công">
+    <AppTable :page-size="10" :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Không có dữ liệu chấm công">
       <template #default="{ row }">
         <td class="px-5 py-4 text-sm font-medium text-slate-900">{{ (row as AttendanceRecord).employeeName }}</td>
         <td class="px-5 py-4 text-sm text-slate-650 font-medium">{{ fmtDate((row as AttendanceRecord).workDate) }}</td>
