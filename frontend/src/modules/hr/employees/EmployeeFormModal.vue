@@ -24,27 +24,33 @@ const form = ref({
   dateOfBirth: '', hireDate: '', departmentId: '', positionId: '', managerEmployeeId: '', status: 'Active',
 })
 
-const createAccount = ref(false)
+const createAccount = ref(true)
 const accountEmail = ref('')
 const accountPassword = ref('')
 const accountRoles = ref<string[]>(['Employee'])
 const autoPassword = ref(true)
 
 const roleOptions = [
-  { value: 'Admin', label: 'Admin' },
-  { value: 'HR', label: 'HR' },
-  { value: 'Manager', label: 'Manager' },
-  { value: 'PayrollStaff', label: 'PayrollStaff' },
-  { value: 'Employee', label: 'Employee' },
+  { value: 'Admin', label: 'Quản trị viên (Admin)' },
+  { value: 'HR', label: 'Quản lý Nhân sự (HR)' },
+  { value: 'Manager', label: 'Quản lý bộ phận (Manager)' },
+  { value: 'PayrollStaff', label: 'Nhân viên tính lương (PayrollStaff)' },
+  { value: 'Employee', label: 'Nhân viên thường (Employee)' },
 ]
 
 function generateRandomPassword() {
-  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*'
+  const lower = 'abcdefghijklmnopqrstuvwxyz'
+  const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+  const digits = '0123456789'
+  const special = '!@#$%^&*'
+  
   let pass = ''
-  for (let i = 0; i < 10; i++) {
-    pass += chars.charAt(Math.floor(Math.random() * chars.length))
-  }
-  return pass
+  for (let i = 0; i < 3; i++) pass += lower.charAt(Math.floor(Math.random() * lower.length))
+  for (let i = 0; i < 3; i++) pass += upper.charAt(Math.floor(Math.random() * upper.length))
+  for (let i = 0; i < 2; i++) pass += digits.charAt(Math.floor(Math.random() * digits.length))
+  for (let i = 0; i < 2; i++) pass += special.charAt(Math.floor(Math.random() * special.length))
+  
+  return pass.split('').sort(() => 0.5 - Math.random()).join('')
 }
 
 function toggleAutoPassword() {
@@ -67,9 +73,9 @@ watch(() => props.edit, (e) => {
     }
   } else {
     form.value = { employeeCode: '', fullName: '', email: '', phone: '', gender: '', dateOfBirth: '', hireDate: new Date().toISOString().split('T')[0], departmentId: '', positionId: '', managerEmployeeId: '', status: 'Active' }
-    createAccount.value = false
+    createAccount.value = true
     accountEmail.value = ''
-    accountPassword.value = ''
+    accountPassword.value = generateRandomPassword()
     accountRoles.value = ['Employee']
     autoPassword.value = true
   }
@@ -107,8 +113,8 @@ async function save() {
       toast.error('Email đăng nhập tài khoản không được để trống')
       return
     }
-    if (!accountPassword.value || accountPassword.value.length < 6) {
-      toast.error('Mật khẩu tài khoản phải từ 6 ký tự')
+    if (!accountPassword.value || accountPassword.value.length < 8) {
+      toast.error('Mật khẩu tài khoản phải từ 8 ký tự')
       return
     }
     if (accountRoles.value.length === 0) {

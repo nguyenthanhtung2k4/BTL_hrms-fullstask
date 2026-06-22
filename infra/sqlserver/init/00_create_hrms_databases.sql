@@ -115,12 +115,20 @@ BEGIN
         PasswordHash NVARCHAR(500) NOT NULL,
         IsActive BIT NOT NULL CONSTRAINT DF_Users_IsActive DEFAULT (1),
         LastLoginAt DATETIME2(0) NULL,
+        AvatarUrl NVARCHAR(MAX) NULL,
         CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Users_CreatedAt DEFAULT SYSUTCDATETIME(),
         UpdatedAt DATETIME2(0) NULL,
         CONSTRAINT PK_Users PRIMARY KEY (Id),
         CONSTRAINT UQ_Users_Email UNIQUE (Email),
         CONSTRAINT FK_Users_Employee FOREIGN KEY (EmployeeId) REFERENCES dbo.Employees(Id)
     );
+END
+ELSE
+BEGIN
+    IF COL_LENGTH(N'dbo.Users', N'AvatarUrl') IS NULL
+    BEGIN
+        ALTER TABLE dbo.Users ADD AvatarUrl NVARCHAR(MAX) NULL;
+    END
 END
 GO
 

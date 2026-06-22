@@ -11,7 +11,7 @@ import { employeeService } from '../../services/employee.service'
 import PageHeader from '../../components/layout/PageHeader.vue'
 import AppButton from '../../components/ui/AppButton.vue'
 import AppInput from '../../components/ui/AppInput.vue'
-import type { Employee, Contract } from '../../types/hr.types'
+import type { Employee } from '../../types/hr.types'
 import { contractService } from '../../services/contract.service'
 import { useFormGuard } from '../../composables/useFormGuard'
 
