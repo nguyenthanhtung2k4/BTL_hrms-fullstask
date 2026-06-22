@@ -80,7 +80,7 @@ services:
       dockerfile: backend/gateway/Dockerfile
     container_name: hrms-gateway
     ports:
-      - "5000:8080"
+      - "5005:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ReverseProxy__Clusters__hr-core-cluster__Destinations__hr-core-api__Address=http://hr-core:8080/
@@ -91,7 +91,6 @@ services:
       - hr-core
       - attendance
       - payroll-report
-
   frontend:
     image: hrms-frontend:latest
     build:
@@ -102,6 +101,5 @@ services:
       - "5173:80"
     depends_on:
       - gateway
-
 volumes:
   mssql-data:
