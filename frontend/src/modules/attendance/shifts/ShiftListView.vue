@@ -90,7 +90,7 @@ onMounted(load)
       </template>
     </PageHeader>
 
-    <AppTable :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Chưa có ca làm việc nào">
+    <AppTable :page-size="10" :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Chưa có ca làm việc nào">
       <template #default="{ row }">
         <td class="px-4 py-3 text-sm font-mono">{{ (row as Shift).code }}</td>
         <td class="px-4 py-3 text-sm font-medium">{{ (row as Shift).name }}</td>

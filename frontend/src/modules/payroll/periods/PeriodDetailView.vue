@@ -106,7 +106,7 @@ onMounted(load)
     </div>
 
     <!-- Payslips table -->
-    <AppTable :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Chưa có phiếu lương — hãy nhấn Tính lương">
+    <AppTable :page-size="10" :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Chưa có phiếu lương — hãy nhấn Tính lương">
       <template #default="{ row }">
         <td class="px-4 py-3 text-sm font-medium">{{ (row as Payslip).fullName }}</td>
         <td class="px-4 py-3 text-sm text-slate-500">{{ (row as Payslip).employeeCode }}</td>

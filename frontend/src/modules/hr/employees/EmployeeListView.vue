@@ -113,7 +113,7 @@ onMounted(load)
   <div>
     <PageHeader title="Nhân viên" subtitle="Quản lý hồ sơ nhân viên" :breadcrumbs="[{ label: 'Nhân sự' }, { label: 'Nhân viên' }]">
       <template #actions>
-        <AppButton v-if="auth.isHR" @click="openCreate">
+        <AppButton v-if="auth.isHR || auth.isAdmin" @click="openCreate">
           <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
           Thêm nhân viên
         </AppButton>
@@ -138,7 +138,7 @@ onMounted(load)
     </div>
 
     <!-- Table -->
-    <AppTable :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Chưa có nhân viên nào">
+    <AppTable :page-size="10" :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Chưa có nhân viên nào">
       <template #default="{ row }">
         <td class="px-4 py-3 text-sm font-mono text-slate-600">{{ (row as Employee).employeeCode }}</td>
         <td class="px-4 py-3">
@@ -152,8 +152,8 @@ onMounted(load)
         <td class="px-4 py-3 text-right">
           <div class="flex justify-end gap-2">
             <AppButton size="sm" variant="ghost" @click="router.push(`/hr/employees/${(row as Employee).id}`)">Xem</AppButton>
-            <AppButton v-if="auth.isHR" size="sm" variant="secondary" @click="openEdit(row as Employee)">Sửa</AppButton>
-            <AppButton v-if="auth.isHR" size="sm" variant="ghost" @click="statusTarget = row as Employee">Trạng thái</AppButton>
+            <AppButton v-if="auth.isHR || auth.isAdmin" size="sm" variant="secondary" @click="openEdit(row as Employee)">Sửa</AppButton>
+            <AppButton v-if="auth.isHR || auth.isAdmin" size="sm" variant="ghost" @click="statusTarget = row as Employee">Trạng thái</AppButton>
             <AppButton v-if="auth.isAdmin" size="sm" variant="danger" @click="deleteTarget = row as Employee">Xóa</AppButton>
           </div>
         </td>

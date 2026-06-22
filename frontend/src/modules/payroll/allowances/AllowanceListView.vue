@@ -310,7 +310,7 @@ onMounted(load)
       </div>
     </div>
 
-    <AppTable :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Chưa có phụ cấp nào">
+    <AppTable :page-size="10" :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Chưa có phụ cấp nào">
       <template #default="{ row }">
         <td class="px-4 py-3 text-sm">{{ (row as EmployeeAllowance).periodName ?? '—' }}</td>
         <td v-if="!auth.isEmployee" class="px-4 py-3 text-sm font-medium">{{ (row as EmployeeAllowance).employeeName ?? '—' }}</td>

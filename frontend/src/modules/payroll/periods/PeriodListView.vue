@@ -121,7 +121,7 @@ onMounted(load)
       </template>
     </PageHeader>
 
-    <AppTable :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Chưa có kỳ lương nào">
+    <AppTable :page-size="10" :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Chưa có kỳ lương nào">
       <template #default="{ row }">
         <td class="px-4 py-3 text-sm font-medium">{{ (row as PayrollPeriod).name }}</td>
         <td class="px-4 py-3 text-sm text-slate-600">{{ fmt((row as PayrollPeriod).fromDate) }}</td>

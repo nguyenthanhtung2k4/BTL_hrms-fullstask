@@ -235,7 +235,7 @@ onMounted(load)
       </div>
     </div>
 
-    <AppTable :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Không có đơn nghỉ phép nào">
+    <AppTable :page-size="10" :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Không có đơn nghỉ phép nào">
       <template #default="{ row }">
         <td class="px-4 py-3 text-sm font-medium">{{ (row as LeaveRequest).employeeName }}</td>
         <td class="px-4 py-3 text-sm text-slate-600 font-mono">{{ fmt((row as LeaveRequest).createdAt) }}</td>

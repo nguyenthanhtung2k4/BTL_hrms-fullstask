@@ -327,7 +327,7 @@ onUnmounted(() => {
     <!-- History list table -->
     <div class="space-y-3">
       <h2 class="text-lg font-bold text-slate-800">Lịch sử chấm công gần đây</h2>
-      <AppTable
+      <AppTable :page-size="10"
         :columns="historyColumns"
         :rows="sortedHistory"
         :loading="loading"

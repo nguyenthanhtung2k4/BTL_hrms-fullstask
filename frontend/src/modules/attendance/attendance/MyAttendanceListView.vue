@@ -144,7 +144,7 @@ onMounted(load)
     </div>
 
     <!-- Bảng dữ liệu -->
-    <AppTable :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Không tìm thấy lịch sử chấm công phù hợp">
+    <AppTable :page-size="10" :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Không tìm thấy lịch sử chấm công phù hợp">
       <template #default="{ row }">
         <td class="px-5 py-4 text-sm font-semibold text-slate-900">{{ fmtDate((row as AttendanceRecord).workDate) }}</td>
         <td class="px-5 py-4 text-sm text-slate-700 font-medium">{{ (row as AttendanceRecord).shiftName ?? '—' }}</td>

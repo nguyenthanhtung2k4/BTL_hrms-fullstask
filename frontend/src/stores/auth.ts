@@ -24,6 +24,7 @@ export const useAuthStore = defineStore('auth', {
     roles: (state) => state.user?.roles ?? [],
     employeeId: (state) => state.user?.employeeId ?? null,
     userId: (state) => state.user?.id ?? null,
+    avatarUrl: (state) => state.user?.avatarUrl ?? null,
 
     // Role helpers — giữ nguyên quyền theo đúng spec dự án
     isAdmin: (state) => state.user?.roles.includes('Admin') ?? false,
@@ -47,7 +48,8 @@ export const useAuthStore = defineStore('auth', {
       try {
         const result = await authService.login({ email, password })
         this.token = result.accessToken
-        this.user = { ...result.user, roles: normalizeRoles((result.user as any).roles) }
+        const localAvatar = localStorage.getItem('avatar_' + result.user.id)
+        this.user = { ...result.user, roles: normalizeRoles((result.user as any).roles), avatarUrl: localAvatar || undefined }
         authService.saveTokens(result.accessToken, result.refreshToken)
       } finally {
         this.loading = false
@@ -62,7 +64,8 @@ export const useAuthStore = defineStore('auth', {
       }
       try {
         const me = await authService.getMe()
-        this.user = { ...me, roles: normalizeRoles((me as any).roles) }
+        const localAvatar = localStorage.getItem('avatar_' + me.id)
+        this.user = { ...me, roles: normalizeRoles((me as any).roles), avatarUrl: localAvatar || undefined }
       } catch {
         // Token không hợp lệ → thử refresh trước khi logout
         const refreshed = await this.tryRefresh()
@@ -79,11 +82,20 @@ export const useAuthStore = defineStore('auth', {
       try {
         const result = await authService.refresh(refreshToken)
         this.token = result.accessToken
-        this.user = { ...result.user, roles: normalizeRoles((result.user as any).roles) }
+        const localAvatar = localStorage.getItem('avatar_' + result.user.id)
+        this.user = { ...result.user, roles: normalizeRoles((result.user as any).roles), avatarUrl: localAvatar || undefined }
         authService.saveTokens(result.accessToken, result.refreshToken)
         return true
       } catch {
         return false
+      }
+    },
+
+    // ─── Cập nhật Avatar ──────────────────────────────────────────────────────
+    updateAvatar(base64Image: string) {
+      if (this.user) {
+        this.user.avatarUrl = base64Image
+        localStorage.setItem('avatar_' + this.user.id, base64Image)
       }
     },
 
