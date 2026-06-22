@@ -17,6 +17,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hrms.Contracts", "..\shared
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hrms.Shared", "..\shared\Hrms.Shared\Hrms.Shared.csproj", "{65BF125C-99EF-4B95-B928-B17330634C0A}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05-4346-4AA6-1389-037BE0695223}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "payroll-report-tests", "tests\payroll-report-tests\payroll-report-tests.csproj", "{497849D9-542A-4E7D-9E20-F72AD478129D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -99,6 +103,18 @@ Global
 		{65BF125C-99EF-4B95-B928-B17330634C0A}.Release|x64.Build.0 = Release|Any CPU
 		{65BF125C-99EF-4B95-B928-B17330634C0A}.Release|x86.ActiveCfg = Release|Any CPU
 		{65BF125C-99EF-4B95-B928-B17330634C0A}.Release|x86.Build.0 = Release|Any CPU
+		{497849D9-542A-4E7D-9E20-F72AD478129D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{497849D9-542A-4E7D-9E20-F72AD478129D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{497849D9-542A-4E7D-9E20-F72AD478129D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{497849D9-542A-4E7D-9E20-F72AD478129D}.Debug|x64.Build.0 = Debug|Any CPU
+		{497849D9-542A-4E7D-9E20-F72AD478129D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{497849D9-542A-4E7D-9E20-F72AD478129D}.Debug|x86.Build.0 = Debug|Any CPU
+		{497849D9-542A-4E7D-9E20-F72AD478129D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{497849D9-542A-4E7D-9E20-F72AD478129D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{497849D9-542A-4E7D-9E20-F72AD478129D}.Release|x64.ActiveCfg = Release|Any CPU
+		{497849D9-542A-4E7D-9E20-F72AD478129D}.Release|x64.Build.0 = Release|Any CPU
+		{497849D9-542A-4E7D-9E20-F72AD478129D}.Release|x86.ActiveCfg = Release|Any CPU
+		{497849D9-542A-4E7D-9E20-F72AD478129D}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -109,5 +125,6 @@ Global
 		{877DBFE2-B715-4D8A-9330-C46DD4B85557} = {E7BDDBC6-9FD1-D1D7-ACD8-2C4F8E3D2461}
 		{B340A249-EFFC-4062-AFB2-6731B38435BE} = {E7BDDBC6-9FD1-D1D7-ACD8-2C4F8E3D2461}
 		{4C0E6BE4-AB92-4972-829C-8F441D2C9382} = {E7BDDBC6-9FD1-D1D7-ACD8-2C4F8E3D2461}
+		{497849D9-542A-4E7D-9E20-F72AD478129D} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal

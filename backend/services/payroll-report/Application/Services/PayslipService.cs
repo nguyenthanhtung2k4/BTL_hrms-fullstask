@@ -284,16 +284,33 @@ public class PayslipService : IPayslipService
             }
             totalAllowance += seniorityAllowanceAmt;
 
-            // 6. Gather deductions
-            var empDeductions = periodDeductions.Where(d => d.EmployeeId == employee.Id).ToList();
-            decimal totalDeduction = empDeductions.Sum(d => d.Amount);
+            // 6. Calculate Social Insurances (BHXH: 8%, BHYT: 1.5%, BHTN: 1% trích lương nhân viên)
+            decimal insuranceSalaryForSocialAndHealth = Math.Min(baseSalary, 46800000m); // Trần 20 lần lương cơ sở (20 * 2,340,000)
+            decimal insuranceSalaryForUnemployment = Math.Min(baseSalary, 99200000m);    // Trần 20 lần lương tối thiểu vùng I (20 * 4,960,000)
 
-            // 7. Calculate Gross & Net
+            decimal bhxhAmount = Math.Round(insuranceSalaryForSocialAndHealth * 0.08m, 0);
+            decimal bhytAmount = Math.Round(insuranceSalaryForSocialAndHealth * 0.015m, 0);
+            decimal bhtnAmount = Math.Round(insuranceSalaryForUnemployment * 0.01m, 0);
+            decimal totalInsuranceDeduction = bhxhAmount + bhytAmount + bhtnAmount;
+
+            // 7. Calculate Personal Income Tax (PIT - Thuế TNCN)
             decimal grossSalary = baseSalaryByWork + totalAllowance;
+            decimal personalDeduction = 11000000m; // Giảm trừ bản thân: 11,000,000 VND
+            decimal dependentDeduction = 0m;      // Mặc định 0 người phụ thuộc (có thể nâng cấp thêm cột sau)
+            
+            decimal assessableIncome = grossSalary - totalInsuranceDeduction - personalDeduction - dependentDeduction;
+            if (assessableIncome < 0) assessableIncome = 0;
+            decimal pitAmount = CalculatePIT(assessableIncome);
+
+            // 8. Gather other custom deductions configured for this period
+            var empDeductions = periodDeductions.Where(d => d.EmployeeId == employee.Id).ToList();
+            decimal otherDeductions = empDeductions.Sum(d => d.Amount);
+
+            decimal totalDeduction = totalInsuranceDeduction + pitAmount + otherDeductions;
             decimal netSalary = grossSalary - totalDeduction;
             if (netSalary < 0) netSalary = 0;
 
-            // 8. Create Payslip
+            // 9. Create Payslip
             var payslip = new Payslip
             {
                 Id = Guid.NewGuid(),
@@ -354,7 +371,7 @@ public class PayslipService : IPayslipService
                 });
             }
 
-            // Deduction items
+            // Custom Deduction items
             foreach (var deduction in empDeductions)
             {
                 payslip.Items.Add(new PayslipItem
@@ -370,10 +387,107 @@ public class PayslipService : IPayslipService
                 });
             }
 
+            // Auto-generated Insurance Deductions
+            if (bhxhAmount > 0)
+            {
+                payslip.Items.Add(new PayslipItem
+                {
+                    Id = Guid.NewGuid(),
+                    PayslipId = payslip.Id,
+                    ItemType = "Deduction",
+                    Code = "DEDUCTION_BHXH",
+                    Name = "Bảo hiểm xã hội (8%)",
+                    Amount = bhxhAmount,
+                    SourceType = "Insurance",
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+            if (bhytAmount > 0)
+            {
+                payslip.Items.Add(new PayslipItem
+                {
+                    Id = Guid.NewGuid(),
+                    PayslipId = payslip.Id,
+                    ItemType = "Deduction",
+                    Code = "DEDUCTION_BHYT",
+                    Name = "Bảo hiểm y tế (1.5%)",
+                    Amount = bhytAmount,
+                    SourceType = "Insurance",
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+            if (bhtnAmount > 0)
+            {
+                payslip.Items.Add(new PayslipItem
+                {
+                    Id = Guid.NewGuid(),
+                    PayslipId = payslip.Id,
+                    ItemType = "Deduction",
+                    Code = "DEDUCTION_BHTN",
+                    Name = "Bảo hiểm thất nghiệp (1%)",
+                    Amount = bhtnAmount,
+                    SourceType = "Insurance",
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+
+            // Auto-generated PIT Deduction
+            if (pitAmount > 0)
+            {
+                payslip.Items.Add(new PayslipItem
+                {
+                    Id = Guid.NewGuid(),
+                    PayslipId = payslip.Id,
+                    ItemType = "Deduction",
+                    Code = "DEDUCTION_PIT",
+                    Name = "Thuế thu nhập cá nhân (TNCN)",
+                    Amount = pitAmount,
+                    SourceType = "Tax",
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+
             _dbContext.Payslips.Add(payslip);
         }
 
         await _dbContext.SaveChangesAsync();
         return Result.Success("Successfully calculated payslips for the period.");
+    }
+
+    private decimal CalculatePIT(decimal assessableIncome)
+    {
+        if (assessableIncome <= 0) return 0;
+
+        decimal tax = 0;
+        if (assessableIncome <= 5000000m)
+        {
+            tax = assessableIncome * 0.05m;
+        }
+        else if (assessableIncome <= 10000000m)
+        {
+            tax = (5000000m * 0.05m) + ((assessableIncome - 5000000m) * 0.10m);
+        }
+        else if (assessableIncome <= 18000000m)
+        {
+            tax = (5000000m * 0.05m) + (5000000m * 0.10m) + ((assessableIncome - 10000000m) * 0.15m);
+        }
+        else if (assessableIncome <= 32000000m)
+        {
+            tax = (5000000m * 0.05m) + (5000000m * 0.10m) + (8000000m * 0.15m) + ((assessableIncome - 18000000m) * 0.20m);
+        }
+        else if (assessableIncome <= 52000000m)
+        {
+            tax = (5000000m * 0.05m) + (5000000m * 0.10m) + (8000000m * 0.15m) + (14000000m * 0.20m) + ((assessableIncome - 32000000m) * 0.25m);
+        }
+        else if (assessableIncome <= 80000000m)
+        {
+            tax = (5000000m * 0.05m) + (5000000m * 0.10m) + (8000000m * 0.15m) + (14000000m * 0.20m) + (20000000m * 0.25m) + ((assessableIncome - 52000000m) * 0.30m);
+        }
+        else
+        {
+            tax = (5000000m * 0.05m) + (5000000m * 0.10m) + (8000000m * 0.15m) + (14000000m * 0.20m) + (20000000m * 0.25m) + (28000000m * 0.30m) + ((assessableIncome - 80000000m) * 0.35m);
+        }
+
+        return Math.Round(tax, 0);
     }
 }

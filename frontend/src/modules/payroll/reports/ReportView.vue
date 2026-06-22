@@ -83,7 +83,23 @@ function handleExport() {
   }
 }
 
-const { currentPage, perPage, paginatedData, total } = usePagination(reports)
+const searchDepartment = ref('')
+
+const filteredReports = ref<PayrollSummaryReport[]>([])
+
+// Update filteredReports whenever reports change
+import { watch } from 'vue'
+watch(reports, (newVal) => {
+  filteredReports.value = newVal
+}, { deep: true })
+
+const computedFilteredReports = computed(() => {
+  if (!searchDepartment.value) return reports.value
+  const q = searchDepartment.value.toLowerCase().trim()
+  return reports.value.filter(r => r.departmentName?.toLowerCase().includes(q))
+})
+
+const { currentPage, perPage, paginatedData, total } = usePagination(computedFilteredReports)
 
 onMounted(loadPeriods)
 </script>
@@ -102,7 +118,7 @@ onMounted(loadPeriods)
     </PageHeader>
 
     <!-- Filter -->
-    <div class="mb-6 flex gap-3 items-end">
+    <div class="mb-6 flex gap-3 items-end flex-wrap">
       <div class="flex flex-col gap-1">
         <label class="text-sm font-medium text-slate-700">Chọn kỳ lương</label>
         <select v-model="filterPeriod" class="h-9 rounded-lg border border-slate-300 px-3 text-sm bg-white outline-none focus:border-emerald-500 w-64">
@@ -111,6 +127,17 @@ onMounted(loadPeriods)
         </select>
       </div>
       <AppButton :loading="loading" @click="loadReport">Xem báo cáo</AppButton>
+
+      <!-- Department Search Input -->
+      <div v-if="reports.length > 0" class="flex flex-col gap-1 ml-auto">
+        <label class="text-sm font-medium text-slate-700">Tìm phòng ban</label>
+        <input
+          v-model="searchDepartment"
+          type="text"
+          placeholder="Nhập tên phòng ban..."
+          class="h-9 rounded-lg border border-slate-300 px-3 text-sm bg-white outline-none focus:border-emerald-500 w-64"
+        />
+      </div>
     </div>
 
     <!-- Summary cards -->

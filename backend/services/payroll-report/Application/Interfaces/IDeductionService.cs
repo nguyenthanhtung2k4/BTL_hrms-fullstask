@@ -14,4 +14,5 @@ public interface IDeductionService
     Task<Result<EmployeeDeductionDto>> UpdateAsync(Guid id, UpdateEmployeeDeductionDto dto);
     Task<Result> DeleteAsync(Guid id);
     Task<Result<IEnumerable<DeductionTypeDto>>> GetDeductionTypesAsync();
+    Task<Result<DeductionTypeDto>> CreateDeductionTypeAsync(string name);
 }

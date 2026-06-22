@@ -37,6 +37,19 @@ public class AllowancesController : ControllerBase
         return Ok(ApiResponse<IEnumerable<AllowanceTypeDto>>.Ok(result.Value!, result.Message));
     }
 
+    [HttpPost("types")]
+    public async Task<ActionResult<ApiResponse<AllowanceTypeDto>>> CreateAllowanceType([FromBody] CreateTypeRequest request)
+    {
+        var result = await _allowanceService.CreateAllowanceTypeAsync(request.Name);
+        if (result.IsFailure)
+        {
+            return BadRequest(ApiResponse<AllowanceTypeDto>.Fail(result.Errors, result.Message));
+        }
+        return Ok(ApiResponse<AllowanceTypeDto>.Ok(result.Value!, result.Message));
+    }
+
+    public record CreateTypeRequest(string Name);
+
     [HttpGet("{id}")]
     public async Task<ActionResult<ApiResponse<EmployeeAllowanceDto>>> GetById(Guid id)
     {

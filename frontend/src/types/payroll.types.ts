@@ -65,6 +65,7 @@ export interface EmployeeAllowance {
   payrollPeriodId: string
   periodName?: string
   employeeId: string
+  employeeCode?: string
   employeeName?: string
   allowanceTypeId: string
   allowanceTypeName?: string
@@ -95,6 +96,7 @@ export interface EmployeeDeduction {
   payrollPeriodId: string
   periodName?: string
   employeeId: string
+  employeeCode?: string
   employeeName?: string
   deductionTypeId: string
   deductionTypeName?: string

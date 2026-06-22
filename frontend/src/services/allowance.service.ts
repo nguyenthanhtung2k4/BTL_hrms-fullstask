@@ -9,4 +9,5 @@ export const allowanceService = {
   create: (dto: CreateAllowanceDto) => apiClient.post<{ data: EmployeeAllowance }>(BASE, dto).then(extractData),
   update: (id: string, dto: Partial<CreateAllowanceDto>) => apiClient.put<{ data: EmployeeAllowance }>(`${BASE}/${id}`, dto).then(extractData),
   delete: (id: string) => apiClient.delete(`${BASE}/${id}`),
+  createType: (name: string) => apiClient.post<{ data: AllowanceType }>(`${BASE}/types`, { name }).then(extractData),
 }

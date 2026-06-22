@@ -186,4 +186,65 @@ public class AllowanceService : IAllowanceService
 
         return Result<IEnumerable<AllowanceTypeDto>>.Success(types, "Successfully retrieved allowance types.");
     }
+
+    public async Task<Result<AllowanceTypeDto>> CreateAllowanceTypeAsync(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return Result<AllowanceTypeDto>.Failure("InvalidName", "Allowance type name cannot be empty.");
+        }
+
+        var trimmedName = name.Trim();
+        var exists = await _dbContext.AllowanceTypes.AnyAsync(t => t.Name == trimmedName);
+        if (exists)
+        {
+            return Result<AllowanceTypeDto>.Failure("AllowanceTypeExists", "An allowance type with this name already exists.");
+        }
+
+        string baseCode = GenerateCodeFromName("ALLOW", trimmedName);
+        string code = baseCode;
+        int counter = 1;
+        while (await _dbContext.AllowanceTypes.AnyAsync(t => t.Code == code))
+        {
+            code = $"{baseCode}_{counter++}";
+        }
+
+        var newType = new AllowanceType
+        {
+            Id = Guid.NewGuid(),
+            Code = code,
+            Name = trimmedName,
+            IsActive = true
+        };
+
+        _dbContext.AllowanceTypes.Add(newType);
+        await _dbContext.SaveChangesAsync();
+
+        var dto = new AllowanceTypeDto(newType.Id, newType.Code, newType.Name, newType.IsActive);
+        return Result<AllowanceTypeDto>.Success(dto, "Successfully created new allowance type.");
+    }
+
+    private string GenerateCodeFromName(string prefix, string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return prefix + "_" + Guid.NewGuid().ToString().Substring(0, 8).ToUpper();
+        
+        string normalized = name.Normalize(System.Text.NormalizationForm.FormD);
+        var sb = new System.Text.StringBuilder();
+        foreach (char c in normalized)
+        {
+            var unicodeCategory = System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c);
+            if (unicodeCategory != System.Globalization.UnicodeCategory.NonSpacingMark)
+            {
+                if (char.IsLetterOrDigit(c)) sb.Append(char.ToUpper(c));
+                else if (c == ' ' || c == '_' || c == '-') sb.Append('_');
+            }
+        }
+        
+        string codeName = sb.ToString();
+        while (codeName.Contains("__")) codeName = codeName.Replace("__", "_");
+        codeName = codeName.Trim('_');
+        
+        if (string.IsNullOrEmpty(codeName)) return prefix + "_" + Guid.NewGuid().ToString().Substring(0, 8).ToUpper();
+        return prefix + "_" + codeName;
+    }
 }

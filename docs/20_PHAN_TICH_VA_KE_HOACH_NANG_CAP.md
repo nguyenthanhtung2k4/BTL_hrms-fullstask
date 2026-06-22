@@ -79,30 +79,26 @@ Không thể upload:
 
 ### 2.2 ❌ Frontend — Thiếu quan trọng
 
-#### A. Không có trang Profile cá nhân
-Nhân viên không thể xem hoặc chỉnh sửa thông tin cá nhân của mình (số điện thoại, địa chỉ, thông tin ngân hàng).
+#### A. Không có trang Profile cá nhân [ĐÃ HOÀN THÀNH ✅]
+Nhân viên hiện tại đã có thể xem, chỉnh sửa thông tin cá nhân và tự đổi mật khẩu qua trang `/profile` (ProfileView.vue).
 
-#### B. Không có trang Quản lý User/Account (UI)
-`UsersController.cs` tồn tại ở backend nhưng **không có frontend view** tương ứng cho Admin quản lý tài khoản người dùng, đặt lại mật khẩu, gán role.
+#### B. Không có trang Quản lý User/Account (UI) [ĐÃ HOÀN THÀNH ✅]
+Đã phát triển giao diện quản lý tài khoản người dùng `/admin/users` (UserManagementView.vue) cho Admin để kích hoạt/khóa tài khoản, reset mật khẩu, và gán phân quyền (Roles).
 
-#### C. Dashboard chỉ có thống kê tĩnh
-Dashboard hiện tại hiển thị số liệu cơ bản. Không có:
-- Biểu đồ xu hướng lương theo các tháng
-- Cảnh báo hợp đồng sắp hết hạn
-- Nhân viên có tỷ lệ vắng mặt cao
-- Số ngày phép còn lại của toàn công ty
+#### C. Dashboard chỉ có thống kê tĩnh [ĐÃ HOÀN THÀNH ✅]
+Đã nâng cấp Dashboard nâng cao (DashboardView.vue) hiển thị biểu đồ xu hướng lương, tỷ lệ chuyên cần/vắng mặt, cảnh báo nhân sự mới, hợp đồng hết hạn và phân quyền hiển thị theo đúng vai trò (Admin, HR, Manager, PayrollStaff, Employee).
 
 #### D. Không có chức năng Tìm kiếm toàn cục
-Không có thanh tìm kiếm để nhanh chóng tìm nhân viên, hợp đồng, phiếu lương.
+Không có thanh tìm kiếm để nhanh chóng tìm nhân viên, hợp đồng, phiếu lương từ thanh Header.
 
-#### E. Không có chức năng In phiếu lương
-Nhân viên không thể in hoặc download PDF phiếu lương của mình.
+#### E. Không có chức năng In phiếu lương [ĐÃ HOÀN THÀNH ✅]
+Đã tích hợp chức năng xuất/in tải file PDF phiếu lương trực quan sử dụng thư viện `jsPDF` ở trang chi tiết phiếu lương.
 
-#### F. Không có Dark Mode
-Hiện tại chỉ có Light mode.
+#### F. Không có Dark Mode [ĐÃ HOÀN THÀNH ✅]
+Đã tích hợp hoàn chỉnh hệ thống CSS Variables toàn cục hỗ trợ Light/Dark Mode đồng bộ hóa giao diện người dùng.
 
 #### G. Chưa hỗ trợ mobile (Responsive kém)
-Sidebar và một số bảng dữ liệu hiển thị không tốt trên màn hình nhỏ (phone/tablet).
+Sidebar và một số bảng dữ liệu hiển thị chưa tối ưu hoàn toàn trên màn hình điện thoại/tablet nhỏ.
 
 ---
 
@@ -254,30 +250,30 @@ Hiện tại LeaveRequest có trạng thái Approved/Rejected nhưng không trac
 
 #### Backend
 - [ ] **Thêm Role-based Authorization chi tiết** cho EmployeesController, ContractsController
-- [ ] **Implement Refresh Token** — endpoint `/auth/refresh`, lưu RefreshToken vào DB
+- [x] **Implement Refresh Token** — endpoint `/auth/refresh`, lưu RefreshToken vào DB ✅
 - [ ] **Thêm Password Policy validation** khi tạo/đổi mật khẩu
-- [ ] **Viết Unit Tests** cho PayrollCalculation service (quan trọng nhất)
+- [x] **Viết Unit Tests** cho PayrollCalculation service (quan trọng nhất) ✅
 - [ ] **Sửa Health Checks** — kiểm tra DB connection và RabbitMQ connection
 
 #### Frontend
-- [ ] **Tạo trang `/admin/users`** — Quản lý tài khoản: xem, tạo, reset password, gán role
-- [ ] **Tạo trang `/profile`** — Nhân viên xem/sửa thông tin cá nhân
-- [ ] **Thêm Column Sorting** vào AppTable component
-- [ ] **In/Download PDF phiếu lương** — dùng thư viện `jsPDF`
-- [ ] **Sửa Timesheet view** — hiển thị calendar view thay vì bảng dữ liệu thô
+- [x] **Tạo trang `/admin/users`** — Quản lý tài khoản: xem, tạo, reset password, gán role ✅
+- [x] **Tạo trang `/profile`** — Nhân viên xem/sửa thông tin cá nhân ✅
+- [x] **Thêm Column Sorting** vào AppTable component ✅
+- [x] **In/Download PDF phiếu lương** — dùng thư viện `jsPDF` ✅
+- [x] **Sửa Timesheet view** — hiển thị calendar view thay vì bảng dữ liệu thô ✅
 
 ### 🟡 GIAI ĐOẠN 2 — Nghiệp vụ nâng cao (2-3 tuần)
 
 #### Backend
-- [ ] **Tính thuế TNCN** — Thêm `TaxCalculationService` với bậc thuế lũy tiến
-- [ ] **Tính BHXH/BHYT/BHTN** — Thêm vào PayslipItem với type riêng
+- [x] **Tính thuế TNCN** — Thêm `TaxCalculationService` với bậc thuế lũy tiến ✅
+- [x] **Tính BHXH/BHYT/BHTN** — Thêm vào PayslipItem với type riêng ✅
 - [ ] **Quản lý số ngày phép** — `LeaveBalance` entity, trừ ngày khi approve leave
 - [ ] **Cảnh báo hợp đồng** — Background job quét contract sắp hết hạn (< 30 ngày)
-- [ ] **Thêm API Pagination phía backend** — tránh load toàn bộ dữ liệu
+- [x] **Thêm API Pagination phía backend** — tránh load toàn bộ dữ liệu ✅
 - [ ] **In-memory Caching** — Cache danh sách Departments, Positions, AllowanceTypes
 
 #### Frontend
-- [ ] **Dashboard nâng cao** — Thêm biểu đồ xu hướng lương 6 tháng, tỷ lệ vắng mặt
+- [x] **Dashboard nâng cao** — Thêm biểu đồ xu hướng lương 6 tháng, tỷ lệ vắng mặt ✅
 - [ ] **Trang thông báo `/notifications`** — Hiển thị thông báo phê duyệt, phiếu lương mới
 - [ ] **Thêm Global Search** — Tìm kiếm nhân viên, phiếu lương từ thanh header
 - [ ] **Form Guard** — Cảnh báo khi rời trang có dữ liệu chưa lưu

@@ -37,6 +37,19 @@ public class DeductionsController : ControllerBase
         return Ok(ApiResponse<IEnumerable<DeductionTypeDto>>.Ok(result.Value!, result.Message));
     }
 
+    [HttpPost("types")]
+    public async Task<ActionResult<ApiResponse<DeductionTypeDto>>> CreateDeductionType([FromBody] CreateTypeRequest request)
+    {
+        var result = await _deductionService.CreateDeductionTypeAsync(request.Name);
+        if (result.IsFailure)
+        {
+            return BadRequest(ApiResponse<DeductionTypeDto>.Fail(result.Errors, result.Message));
+        }
+        return Ok(ApiResponse<DeductionTypeDto>.Ok(result.Value!, result.Message));
+    }
+
+    public record CreateTypeRequest(string Name);
+
     [HttpGet("{id}")]
     public async Task<ActionResult<ApiResponse<EmployeeDeductionDto>>> GetById(Guid id)
     {
