@@ -1,7 +1,23 @@
-nhân viên  profile chx hiện thị hết !
+- Phana chia cac phong ban lon den nho  to va be | Phân chia quản lý nhân viên phòng ban chi tiết 
+- 
+- xin nghi  (  min max  trong bao lau )  tính luong
+-  Sua lai service tinh luong chi tiet  cho moi nguoi 
+- sua lai giao dien nhan vien them anh nhan vien vao  ok
+-  Admin k co cham cong checkin 
+-  sap xep  phieu lương (  admin UI )
+-  Xuất nhập các nhân viên, Excel / csv ( nhân viên  bảng công ) 
+- tìm kiếm sắp xếp .... 
+- XÓA HÀNG LOẠT ĐC 
+- TRẢ VỀ CÁC EROR CỤ THỂ TRONG PHẦN WEB  
+
+==>  Sắp xếp lại UI tối ưu lại  và phân tích lại logic lại với nhau 
 
 
-==================================================
+==>>  tHEM DEMO  db NHIỀU DATA ( nhan vien )
+
+
+================================================== CHỐT  LẠI 
+
 - Hãy làm cho bài toán cụ thể cho  một công ty củ thể thì mới có thể  trực quan đc 
 
 - Bây giờ tôi  cần bạn  đọc  lại  dự án một cách chi tiết và tư đó phân tích cho tôi biết là  dự án này tôi đang còn thiếu những gì và cần gì bổ sung nữa không ? 
