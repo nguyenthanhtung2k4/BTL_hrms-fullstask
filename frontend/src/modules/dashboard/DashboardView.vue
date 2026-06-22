@@ -30,7 +30,9 @@ import {
   ArrowRight,
   RefreshCw,
   ShieldCheck,
-  CheckSquare
+  CheckSquare,
+  UserCircle,
+  UmbrellaOff
 } from '@lucide/vue'
 
 // Import Chart.js components
@@ -615,18 +617,36 @@ const myPayslipsChartData = computed<any>(() => ({
       <div v-else-if="auth.isEmployee" class="space-y-6">
         <div class="dash-grid-three-col">
           <!-- Cổng thông tin & Thao tác nhanh -->
-          <div class="dash-portal-card">
-            <div>
-              <h3 class="dash-portal-card__title">{{ t('dashboard.personalPortal') }}</h3>
-              <p class="dash-portal-card__desc">{{ t('dashboard.personalPortalSub') }}</p>
-            </div>
-            <div class="dash-portal-card__actions">
-              <button class="dash-portal-btn dash-portal-btn--primary" @click="router.push('/attendance/checkin')">
-                🕑 {{ t('dashboard.quickCheckin') }}
-              </button>
-              <button class="dash-portal-btn dash-portal-btn--outline" @click="router.push('/attendance/leaves')">
-                🏖️ {{ t('dashboard.registerLeave') }}
-              </button>
+          <div class="dash-portal-card group overflow-hidden">
+            <!-- Decorative background elements -->
+            <div class="dash-portal-card__bg-blur1"></div>
+            <div class="dash-portal-card__bg-blur2"></div>
+            
+            <div class="relative z-10 flex h-full flex-col justify-between">
+              <div>
+                <div class="dash-portal-card__pill">
+                  <UserCircle class="h-4 w-4" /> Cổng Nhân Viên
+                </div>
+                <h3 class="dash-portal-card__title">{{ t('dashboard.personalPortal') }}</h3>
+                <p class="dash-portal-card__desc">{{ t('dashboard.personalPortalSub') }}</p>
+              </div>
+              
+              <div class="dash-portal-card__actions">
+                <button class="dash-portal-btn dash-portal-btn--primary group/btn" @click="router.push('/attendance/checkin')">
+                  <span class="flex items-center gap-2">
+                    <Clock class="h-4 w-4 text-emerald-600 transition-transform group-hover/btn:-rotate-12" />
+                    {{ t('dashboard.quickCheckin') }}
+                  </span>
+                  <ArrowRight class="h-4 w-4 opacity-50 transition-transform group-hover/btn:translate-x-1" />
+                </button>
+                <button class="dash-portal-btn dash-portal-btn--outline group/btn" @click="router.push('/attendance/leaves')">
+                  <span class="flex items-center gap-2">
+                    <UmbrellaOff class="h-4 w-4 transition-transform group-hover/btn:scale-110" />
+                    {{ t('dashboard.registerLeave') }}
+                  </span>
+                  <ArrowRight class="h-4 w-4 opacity-50 transition-transform group-hover/btn:translate-x-1" />
+                </button>
+              </div>
             </div>
           </div>
 
@@ -992,60 +1012,110 @@ const myPayslipsChartData = computed<any>(() => ({
 
 /* Quick Action / Portal lists for employee */
 .dash-portal-card {
-  background-image: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
-  padding: 1.5rem;
-  border-radius: var(--radius-xl);
+  position: relative;
+  background-image: linear-gradient(135deg, var(--color-primary) 0%, #059669 100%);
+  padding: 1.75rem;
+  border-radius: var(--radius-2xl, 1rem);
   color: white;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  box-shadow: 0 8px 30px color-mix(in srgb, var(--color-primary) 20%, transparent);
+  box-shadow: 0 10px 40px -10px color-mix(in srgb, var(--color-primary) 50%, transparent);
+  min-height: 280px;
+}
+.dash-portal-card__bg-blur1 {
+  position: absolute;
+  top: -2rem;
+  right: -2rem;
+  height: 8rem;
+  width: 8rem;
+  border-radius: 9999px;
+  background-color: rgba(255, 255, 255, 0.1);
+  filter: blur(24px);
+  transition: background-color 0.5s ease;
+}
+.dash-portal-card:hover .dash-portal-card__bg-blur1 {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+.dash-portal-card__bg-blur2 {
+  position: absolute;
+  bottom: -2.5rem;
+  left: -2.5rem;
+  height: 10rem;
+  width: 10rem;
+  border-radius: 9999px;
+  background-color: rgba(0, 0, 0, 0.15);
+  filter: blur(40px);
+}
+.dash-portal-card__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  background-color: rgba(255, 255, 255, 0.2);
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: white;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 1.25rem;
 }
 .dash-portal-card__title {
-  font-size: 1.125rem;
-  font-weight: 700;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
   margin: 0;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 .dash-portal-card__desc {
-  font-size: 0.8125rem;
-  line-height: 1.5;
-  margin: 0.5rem 0 0;
-  opacity: 0.9;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  margin: 0.75rem 0 0;
+  color: rgba(255, 255, 255, 0.9);
 }
 .dash-portal-card__actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.625rem;
-  margin-top: 1.5rem;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  margin-top: 2rem;
 }
 .dash-portal-btn {
   width: 100%;
-  height: 2.5rem;
-  font-size: 0.8125rem;
+  height: 3rem;
+  font-size: 0.875rem;
   font-weight: 700;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   border: none;
   cursor: pointer;
-  transition: all var(--transition-fast);
-  display: inline-flex;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
+  padding: 0 1.25rem;
 }
 .dash-portal-btn--primary {
   background-color: white;
   color: var(--color-primary-text);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 .dash-portal-btn--primary:hover {
-  background-color: var(--color-primary-light);
+  background-color: var(--bg-muted);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.12);
 }
 .dash-portal-btn--outline {
-  background-color: transparent;
+  background-color: rgba(255, 255, 255, 0.1);
   color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(4px);
 }
 .dash-portal-btn--outline:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.2);
   border-color: white;
+  transform: translateY(-2px);
 }
 
 .dash-card-footer {

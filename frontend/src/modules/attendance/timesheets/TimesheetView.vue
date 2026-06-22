@@ -78,7 +78,10 @@ const calendarDays = computed(() => {
 })
 
 function toDateStr(d: Date): string {
-  return d.toISOString().split('T')[0]
+  const yyyy = d.getFullYear()
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
 }
 
 function getRecordForDay(date: Date): AttendanceRecord | null {
@@ -150,14 +153,22 @@ async function load() {
       year: filterYear.value,
       employeeId: auth.isManager ? undefined : auth.employeeId ?? undefined,
     }
-    const [resTimesheets, resEmployees, resDepts] = await Promise.all([
-      timesheetService.getAll(params),
-      employeeService.getAll(),
-      departmentService.getAll(),
-    ])
+    let resTimesheets
+    if (auth.isManager) {
+      const [ts, emps, depts] = await Promise.all([
+        timesheetService.getAll(params),
+        employeeService.getAll(),
+        departmentService.getAll(),
+      ])
+      resTimesheets = ts
+      employees.value = emps
+      departments.value = depts
+    } else {
+      resTimesheets = await timesheetService.getAll(params)
+      employees.value = []
+      departments.value = []
+    }
     timesheets.value = resTimesheets
-    employees.value = resEmployees
-    departments.value = resDepts
 
     // Load attendance records for calendar view (own records)
     if (auth.employeeId) {

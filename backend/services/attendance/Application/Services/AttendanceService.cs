@@ -39,7 +39,7 @@ public class AttendanceService : IAttendanceService
         var shift = await _dbContext.Shifts.FirstOrDefaultAsync(s => s.Code == shiftCode && s.IsActive);
         if (shift == null) return Result<AttendanceRecordDto>.Failure($"Shift with code '{shiftCode}' not found or inactive.");
 
-        var today = DateOnly.FromDateTime(DateTime.Today);
+        var today = GetVietnamToday();
 
         // 3. Check duplicate check-in
         var existingRecord = await _dbContext.AttendanceRecords
@@ -96,7 +96,7 @@ public class AttendanceService : IAttendanceService
 
     public async Task<Result<AttendanceRecordDto>> CheckOutAsync(Guid employeeId)
     {
-        var today = DateOnly.FromDateTime(DateTime.Today);
+        var today = GetVietnamToday();
 
         // Find CheckedIn record for today
         var record = await _dbContext.AttendanceRecords
@@ -217,17 +217,44 @@ public class AttendanceService : IAttendanceService
         return new AttendanceRecordDto(
             r.Id,
             r.EmployeeId,
-            r.Employee.FullName,
+            r.Employee?.FullName ?? "Unknown",
             r.WorkScheduleId,
             r.ShiftId,
-            r.Shift.Name,
+            r.Shift?.Name ?? "Unknown",
             r.WorkDate,
-            r.CheckInAt,
-            r.CheckOutAt,
+            DateTime.SpecifyKind(r.CheckInAt, DateTimeKind.Utc),
+            r.CheckOutAt.HasValue ? DateTime.SpecifyKind(r.CheckOutAt.Value, DateTimeKind.Utc) : null,
             r.WorkedMinutes,
             r.Status,
-            r.CreatedAt,
-            r.UpdatedAt
+            DateTime.SpecifyKind(r.CreatedAt, DateTimeKind.Utc),
+            r.UpdatedAt.HasValue ? DateTime.SpecifyKind(r.UpdatedAt.Value, DateTimeKind.Utc) : null
         );
+    }
+
+    private static DateTime GetVietnamTime()
+    {
+        var utcNow = DateTime.UtcNow;
+        try
+        {
+            var tz = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+            return TimeZoneInfo.ConvertTimeFromUtc(utcNow, tz);
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            try
+            {
+                var tz = TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh");
+                return TimeZoneInfo.ConvertTimeFromUtc(utcNow, tz);
+            }
+            catch (TimeZoneNotFoundException)
+            {
+                return utcNow.AddHours(7);
+            }
+        }
+    }
+
+    private static DateOnly GetVietnamToday()
+    {
+        return DateOnly.FromDateTime(GetVietnamTime());
     }
 }

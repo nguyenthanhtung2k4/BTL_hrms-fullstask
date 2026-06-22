@@ -78,8 +78,16 @@ public class AttendanceController : ControllerBase
         [FromQuery] Guid? employeeId,
         [FromQuery] Guid? departmentId,
         [FromQuery] DateOnly? fromDate,
-        [FromQuery] DateOnly? toDate)
+        [FromQuery] DateOnly? toDate,
+        [FromQuery] int? month,
+        [FromQuery] int? year)
     {
+        if (month.HasValue && year.HasValue)
+        {
+            fromDate = new DateOnly(year.Value, month.Value, 1);
+            toDate = fromDate.Value.AddMonths(1).AddDays(-1);
+        }
+
         var result = await _attendanceService.GetRecordsAsync(employeeId, departmentId, fromDate, toDate);
         return Ok(ApiResponse<IEnumerable<AttendanceRecordDto>>.Ok(result.Value!, result.Message));
     }
