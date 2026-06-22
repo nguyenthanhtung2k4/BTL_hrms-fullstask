@@ -28,6 +28,7 @@ IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_Departments_ParentDep
 GO
 
 -- 2. Safely delete data
+IF OBJECT_ID('dbo.RefreshTokens', 'U') IS NOT NULL DELETE FROM dbo.RefreshTokens;
 IF OBJECT_ID('dbo.EmployeeStatusHistories', 'U') IS NOT NULL DELETE FROM dbo.EmployeeStatusHistories;
 IF OBJECT_ID('dbo.AuditLogs', 'U') IS NOT NULL DELETE FROM dbo.AuditLogs;
 IF OBJECT_ID('dbo.OutboxMessages', 'U') IS NOT NULL DELETE FROM dbo.OutboxMessages;

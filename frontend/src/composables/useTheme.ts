@@ -1,4 +1,4 @@
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch } from 'vue'
 
 export type ThemeMode = 'light' | 'dark' | 'system'
 
@@ -47,12 +47,6 @@ export function useTheme() {
     if (themeMode.value === 'system') return getSystemTheme() === 'dark'
     return themeMode.value === 'dark'
   }
-
-  onMounted(() => {
-    if (!document.documentElement.getAttribute('data-theme')) {
-      initTheme()
-    }
-  })
 
   return { themeMode, initTheme, cycleTheme, setTheme, isDark }
 }

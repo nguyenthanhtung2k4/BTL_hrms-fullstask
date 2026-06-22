@@ -223,10 +223,42 @@ BEGIN
         RetryCount INT NOT NULL CONSTRAINT DF_OutboxMessages_RetryCount DEFAULT (0),
         ErrorMessage NVARCHAR(1000) NULL,
         Status NVARCHAR(30) NOT NULL CONSTRAINT DF_OutboxMessages_Status DEFAULT (N'Pending'),
-        CONSTRAINT PK_OutboxMessages PRIMARY KEY (Id)
     );
 END
 GO
+
+IF OBJECT_ID(N'dbo.RefreshTokens', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.RefreshTokens
+    (
+        Id UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_RefreshTokens_Id DEFAULT NEWSEQUENTIALID(),
+        UserId UNIQUEIDENTIFIER NOT NULL,
+        Token NVARCHAR(512) NOT NULL,
+        ExpiresAt DATETIME2 NOT NULL,
+        IsRevoked BIT NOT NULL CONSTRAINT DF_RefreshTokens_IsRevoked DEFAULT (0),
+        DeviceInfo NVARCHAR(255) NULL,
+        CreatedAt DATETIME2 NOT NULL CONSTRAINT DF_RefreshTokens_CreatedAt DEFAULT SYSUTCDATETIME(),
+        UpdatedAt DATETIME2 NULL,
+        CreatedBy NVARCHAR(100) NULL,
+        UpdatedBy NVARCHAR(100) NULL,
+        CONSTRAINT PK_RefreshTokens PRIMARY KEY (Id),
+        CONSTRAINT FK_RefreshTokens_Users FOREIGN KEY (UserId) REFERENCES dbo.Users(Id) ON DELETE CASCADE
+    );
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_RefreshTokens_Token')
+    CREATE UNIQUE INDEX IX_RefreshTokens_Token ON dbo.RefreshTokens(Token);
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_RefreshTokens_UserId')
+    CREATE INDEX IX_RefreshTokens_UserId ON dbo.RefreshTokens(UserId);
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_RefreshTokens_ExpiresAt')
+    CREATE INDEX IX_RefreshTokens_ExpiresAt ON dbo.RefreshTokens(ExpiresAt);
+GO
+
 
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UX_Users_EmployeeId_NotNull')
     CREATE UNIQUE INDEX UX_Users_EmployeeId_NotNull ON dbo.Users(EmployeeId) WHERE EmployeeId IS NOT NULL;
