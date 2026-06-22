@@ -2,7 +2,7 @@
 /**
  * DashboardView — Premium, Unified design, Responsive, supports Dark Mode & Multi-role layout.
  */
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import { useToastStore } from '../../stores/toast'
@@ -14,6 +14,7 @@ import { useI18n } from 'vue-i18n'
 import StatCard from '../../components/layout/StatCard.vue'
 import AppBadge from '../../components/ui/AppBadge.vue'
 import AppButton from '../../components/ui/AppButton.vue'
+import gsap from 'gsap'
 
 // Import Lucide Icons
 import {
@@ -94,7 +95,23 @@ const {
 const attendanceInterval = ref<'day' | 'week' | 'month'>('day')
 const actionLoading = ref<Record<string, boolean>>({})
 
-onMounted(load)
+function animateCards() {
+  gsap.fromTo('.animate-dash-card',
+    { opacity: 0, y: 15, scale: 0.98 },
+    { opacity: 1, y: 0, scale: 1, duration: 0.5, stagger: 0.04, ease: 'power2.out', clearProps: 'all' }
+  )
+}
+
+watch(loading, (newVal) => {
+  if (!newVal) {
+    nextTick(animateCards)
+  }
+})
+
+onMounted(async () => {
+  await load()
+  nextTick(animateCards)
+})
 
 const greeting = computed(() => {
   const h = new Date().getHours()
@@ -318,26 +335,22 @@ const myPayslipsChartData = computed<any>(() => ({
       </div>
     </div>
 
-    <!-- Loading Skeleton overlay when full reloading -->
-    <div v-if="loading && employees.length === 0" class="dash-skeleton-grid">
-      <div v-for="n in 4" :key="n" class="dash-skeleton-card" />
-    </div>
-
-    <div v-else class="space-y-6">
+    <!-- Cổng nội dung, được làm mờ khi loading = true -->
+    <div :class="['dash-content-area', { 'dash-content-area--blur': loading }]">
       <!-- 👑 ROLE: ADMIN / HR DASHBOARD -->
       <div v-if="auth.isHR || auth.isAdmin" class="space-y-6">
         <!-- Row 1: Stat Cards -->
         <div class="dash-stats-grid">
-          <StatCard :title="t('dashboard.totalEmployees')" :value="employees.length" :subtitle="t('employee.list')" color="emerald" :loading="loading">
+          <StatCard class="animate-dash-card" :title="t('dashboard.totalEmployees')" :value="employees.length" :subtitle="t('employee.list')" color="emerald">
             <template #icon><Users class="h-5 w-5" /></template>
           </StatCard>
-          <StatCard :title="t('dashboard.presentToday')" :value="`${todayAttendance.checkedIn} NV`" :subtitle="`Tỷ lệ: ${todayAttendance.rate}%`" color="blue" :loading="loading">
+          <StatCard class="animate-dash-card" :title="t('dashboard.presentToday')" :value="`${todayAttendance.checkedIn} NV`" :subtitle="`Tỷ lệ: ${todayAttendance.rate}%`" color="blue">
             <template #icon><CheckCircle class="h-5 w-5" /></template>
           </StatCard>
-          <StatCard title="Nhân viên mới" :value="newHires.length" subtitle="Gia nhập tháng này" color="violet" :loading="loading">
+          <StatCard class="animate-dash-card" title="Nhân viên mới" :value="newHires.length" subtitle="Gia nhập tháng này" color="violet">
             <template #icon><UserPlus class="h-5 w-5" /></template>
           </StatCard>
-          <StatCard title="Hợp đồng hết hạn" :value="expiringContracts.length" subtitle="Trong vòng 30 ngày" color="red" :loading="loading">
+          <StatCard class="animate-dash-card" title="Hợp đồng hết hạn" :value="expiringContracts.length" subtitle="Trong vòng 30 ngày" color="red">
             <template #icon><AlertTriangle class="h-5 w-5" /></template>
           </StatCard>
         </div>
@@ -345,7 +358,7 @@ const myPayslipsChartData = computed<any>(() => ({
         <!-- Row 2: Analysis Charts -->
         <div class="dash-chart-row-1">
           <!-- Human Resource Status -->
-          <div class="dash-chart-card">
+          <div class="dash-chart-card animate-dash-card">
             <h3 class="dash-chart-card__title">
               <Activity class="h-4 w-4 text-success" /> Trạng thái nhân sự
             </h3>
@@ -355,7 +368,7 @@ const myPayslipsChartData = computed<any>(() => ({
           </div>
 
           <!-- Employees by Department -->
-          <div class="dash-chart-card dash-chart-card--span-2">
+          <div class="dash-chart-card dash-chart-card--span-2 animate-dash-card">
             <h3 class="dash-chart-card__title">
               <Users class="h-4 w-4 text-info" /> Nhân viên theo phòng ban
             </h3>
@@ -368,7 +381,7 @@ const myPayslipsChartData = computed<any>(() => ({
         <!-- Row 3: Payroll Trend & Attendance History -->
         <div class="dash-chart-row-2">
           <!-- Payroll Trend -->
-          <div class="dash-chart-card">
+          <div class="dash-chart-card animate-dash-card">
             <h3 class="dash-chart-card__title">
               <TrendingUp class="h-4 w-4 text-warning" /> Biến động quỹ lương (Net & Gross)
             </h3>
@@ -381,7 +394,7 @@ const myPayslipsChartData = computed<any>(() => ({
           </div>
 
           <!-- Attendance Trends -->
-          <div class="dash-chart-card">
+          <div class="dash-chart-card animate-dash-card">
             <div class="dash-chart-card__header-row">
               <h3 class="dash-chart-card__title">
                 <Clock class="h-4 w-4 text-success" /> Tần suất chấm công
@@ -401,7 +414,7 @@ const myPayslipsChartData = computed<any>(() => ({
         <!-- Row 4: Actionable Lists -->
         <div class="dash-grid-two-col">
           <!-- Leaves waiting for approval -->
-          <div class="dash-list-card">
+          <div class="dash-list-card animate-dash-card">
             <div class="dash-list-card__header">
               <h3 class="dash-list-card__title">
                 <Calendar class="h-4 w-4 text-success" /> {{ t('dashboard.pendingLeaves') }}
@@ -428,7 +441,7 @@ const myPayslipsChartData = computed<any>(() => ({
           </div>
 
           <!-- Expiring Contracts -->
-          <div class="dash-list-card">
+          <div class="dash-list-card animate-dash-card">
             <div class="dash-list-card__header">
               <h3 class="dash-list-card__title">
                 <FileText class="h-4 w-4 text-danger" /> Hợp đồng sắp hết hạn (30 ngày)
@@ -456,7 +469,7 @@ const myPayslipsChartData = computed<any>(() => ({
         </div>
 
         <!-- Row 5: System Login sessions (ADMIN only) -->
-        <div v-if="auth.isAdmin" class="dash-table-card">
+        <div v-if="auth.isAdmin" class="dash-table-card animate-dash-card">
           <div class="dash-table-card__header">
             <h3 class="dash-table-card__title">
               <ShieldCheck class="h-4 w-4 text-success" /> {{ t('dashboard.latestLogins') }}
@@ -507,20 +520,20 @@ const myPayslipsChartData = computed<any>(() => ({
       <!-- 👔 ROLE: MANAGER DASHBOARD -->
       <div v-else-if="auth.isManager" class="space-y-6">
         <div class="dash-stats-grid">
-          <StatCard :title="t('dashboard.managerTeam')" :value="employees.length" subtitle="Trực thuộc quyền quản lý" color="emerald" :loading="loading">
+          <StatCard class="animate-dash-card" :title="t('dashboard.managerTeam')" :value="employees.length" subtitle="Trực thuộc quyền quản lý" color="emerald">
             <template #icon><Users class="h-5 w-5" /></template>
           </StatCard>
-          <StatCard :title="t('dashboard.onLeaveTeam')" :value="employees.filter(e => e.status === 'OnLeave').length" subtitle="Nghỉ phép hôm nay" color="amber" :loading="loading">
+          <StatCard class="animate-dash-card" :title="t('dashboard.onLeaveTeam')" :value="employees.filter(e => e.status === 'OnLeave').length" subtitle="Nghỉ phép hôm nay" color="amber">
             <template #icon><Calendar class="h-5 w-5" /></template>
           </StatCard>
-          <StatCard :title="t('dashboard.pendingLeaves')" :value="pendingLeaves.length" subtitle="Cần xem xét" color="red" :loading="loading">
+          <StatCard class="animate-dash-card" :title="t('dashboard.pendingLeaves')" :value="pendingLeaves.length" subtitle="Cần xem xét" color="red">
             <template #icon><Clock class="h-5 w-5" /></template>
           </StatCard>
         </div>
 
         <div class="dash-chart-row-1">
           <!-- Team attendance history -->
-          <div class="dash-chart-card dash-chart-card--span-2">
+          <div class="dash-chart-card dash-chart-card--span-2 animate-dash-card">
             <h3 class="dash-chart-card__title">
               <Clock class="h-4 w-4 text-success" /> {{ t('dashboard.attendanceTrendDept') }}
             </h3>
@@ -530,7 +543,7 @@ const myPayslipsChartData = computed<any>(() => ({
           </div>
 
           <!-- Team quick leave approval -->
-          <div class="dash-list-card">
+          <div class="dash-list-card animate-dash-card">
             <h3 class="dash-list-card__title mb-4">
               <CheckSquare class="h-4 w-4 text-success" /> {{ t('dashboard.leaveApprovalQuick') }}
             </h3>
@@ -557,20 +570,20 @@ const myPayslipsChartData = computed<any>(() => ({
       <!-- 💰 ROLE: PAYROLL STAFF DASHBOARD -->
       <div v-else-if="auth.isPayrollStaff" class="space-y-6">
         <div class="dash-stats-grid">
-          <StatCard :title="t('dashboard.openPeriods')" :value="periodsNeedAction.length" subtitle="Cần xử lý" color="blue" :loading="loading">
+          <StatCard class="animate-dash-card" :title="t('dashboard.openPeriods')" :value="periodsNeedAction.length" subtitle="Cần xử lý" color="blue">
             <template #icon><Calendar class="h-5 w-5" /></template>
           </StatCard>
-          <StatCard :title="t('dashboard.totalPayslips')" :value="allPayslips.length" subtitle="Tất cả thời kỳ" color="emerald" :loading="loading">
+          <StatCard class="animate-dash-card" :title="t('dashboard.totalPayslips')" :value="allPayslips.length" subtitle="Tất cả thời kỳ" color="emerald">
             <template #icon><FileText class="h-5 w-5" /></template>
           </StatCard>
-          <StatCard :title="t('dashboard.lastPeriodCost')" :value="allPayslips.slice(-1)[0] ? fmtMoney(allPayslips.slice(-1)[0].netSalary) : '0 ₫'" subtitle="Kỳ lương gần nhất" color="violet" :loading="loading">
+          <StatCard class="animate-dash-card" :title="t('dashboard.lastPeriodCost')" :value="allPayslips.slice(-1)[0] ? fmtMoney(allPayslips.slice(-1)[0].netSalary) : '0 ₫'" subtitle="Kỳ lương gần nhất" color="violet">
             <template #icon><CreditCard class="h-5 w-5" /></template>
           </StatCard>
         </div>
 
         <div class="dash-chart-row-1">
           <!-- Payroll Expenses -->
-          <div class="dash-chart-card dash-chart-card--span-2">
+          <div class="dash-chart-card dash-chart-card--span-2 animate-dash-card">
             <h3 class="dash-chart-card__title">
               <TrendingUp class="h-4 w-4 text-success" /> Biến động chi lương (Net & Gross)
             </h3>
@@ -583,7 +596,7 @@ const myPayslipsChartData = computed<any>(() => ({
           </div>
 
           <!-- Open periods action -->
-          <div class="dash-list-card">
+          <div class="dash-list-card animate-dash-card">
             <h3 class="dash-list-card__title mb-4">
               <Calendar class="h-4 w-4 text-info" /> {{ t('dashboard.payrollPeriodsAction') }}
             </h3>
@@ -594,8 +607,8 @@ const myPayslipsChartData = computed<any>(() => ({
               <div v-for="p in periodsNeedAction" :key="p.id" class="dash-action-item">
                 <div class="w-full">
                   <div class="flex items-center justify-between">
-                    <span class="font-semibold text-sm">{{ p.name }}</span>
-                    <AppBadge :status="p.status" />
+                     <span class="font-semibold text-sm">{{ p.name }}</span>
+                     <AppBadge :status="p.status" />
                   </div>
                   <p class="text-xs mt-1" style="color: var(--text-secondary);">Hạn: {{ fmtDate(p.fromDate) }} - {{ fmtDate(p.toDate) }}</p>
                   <div class="flex justify-end mt-3">
@@ -617,7 +630,7 @@ const myPayslipsChartData = computed<any>(() => ({
       <div v-else-if="auth.isEmployee" class="space-y-6">
         <div class="dash-grid-three-col">
           <!-- Cổng thông tin & Thao tác nhanh -->
-          <div class="dash-portal-card group overflow-hidden">
+          <div class="dash-portal-card group overflow-hidden animate-dash-card">
             <!-- Decorative background elements -->
             <div class="dash-portal-card__bg-blur1"></div>
             <div class="dash-portal-card__bg-blur2"></div>
@@ -651,7 +664,7 @@ const myPayslipsChartData = computed<any>(() => ({
           </div>
 
           <!-- Personal Net Salary Chart -->
-          <div class="dash-chart-card">
+          <div class="dash-chart-card animate-dash-card">
             <h3 class="dash-chart-card__title">
               <TrendingUp class="h-4 w-4 text-success" /> {{ t('dashboard.netSalaryTrend6') }}
             </h3>
@@ -669,7 +682,7 @@ const myPayslipsChartData = computed<any>(() => ({
           </div>
 
           <!-- Leaves overview -->
-          <div class="dash-list-card">
+          <div class="dash-list-card animate-dash-card">
             <h3 class="dash-list-card__title">
               <Calendar class="h-4 w-4 text-success" /> {{ t('dashboard.myLeavesRecent') }}
             </h3>
@@ -695,7 +708,7 @@ const myPayslipsChartData = computed<any>(() => ({
       </div>
 
       <!-- 🏥 System Health Connection Status Bar (Visible to Admin/HR/PayrollStaff) -->
-      <div v-if="auth.isHR || auth.isAdmin || auth.isPayrollStaff" class="dash-health-card">
+      <div v-if="auth.isHR || auth.isAdmin || auth.isPayrollStaff" class="dash-health-card animate-dash-card">
         <h3 class="dash-health-card__title">
           <Activity class="h-4 w-4 text-success" /> {{ t('dashboard.systemHealth') }}
         </h3>
@@ -721,6 +734,21 @@ const myPayslipsChartData = computed<any>(() => ({
         </div>
       </div>
     </div>
+
+    <!-- Glassmorphic Loader Overlay -->
+    <Transition name="fade">
+      <div v-if="loading" class="dash-loading-overlay">
+        <div class="dash-loading-card">
+          <div class="dash-loading-spinner-wrapper">
+            <svg class="dash-loading-spinner" viewBox="0 0 24 24" fill="none">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+          </div>
+          <span class="dash-loading-text">Đang đồng bộ dữ liệu hệ thống...</span>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -1309,5 +1337,86 @@ const myPayslipsChartData = computed<any>(() => ({
 @keyframes ping {
   0% { transform: scale(1); opacity: 1; }
   100% { transform: scale(2.5); opacity: 0; }
+}
+
+/* Premium Card hover effects and transitions */
+.dash-chart-card, .dash-list-card, .dash-table-card, .dash-health-card {
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+}
+.dash-chart-card:hover, .dash-list-card:hover, .dash-table-card:hover, .dash-health-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--border-strong);
+}
+
+/* Premium blur loading transition */
+.dash-content-area {
+  transition: filter 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+  opacity: 1;
+  filter: blur(0);
+}
+.dash-content-area--blur {
+  filter: blur(8px);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Glassmorphic Loader Overlay */
+.dash-loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background-color: rgba(255, 255, 255, 0.01);
+  pointer-events: none;
+}
+.dash-loading-card {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 1.125rem 1.75rem;
+  border-radius: var(--radius-xl);
+  border: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
+  background-color: color-mix(in srgb, var(--bg-surface) 80%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+  pointer-events: auto;
+  transform: translateY(16px);
+  animation: dashLoaderSlideUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes dashLoaderSlideUp {
+  to {
+    transform: translateY(0);
+  }
+}
+
+.dash-loading-spinner-wrapper {
+  color: var(--color-primary);
+  animation: spin 1s linear infinite;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+.dash-loading-spinner {
+  width: 100%;
+  height: 100%;
+}
+.dash-loading-text {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+/* Loader fade transition */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

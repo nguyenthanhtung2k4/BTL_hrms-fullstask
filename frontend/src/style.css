@@ -188,3 +188,57 @@ button, input, select, textarea {
   opacity: 0;
   transform: translateY(-4px);
 }
+
+/* ─────────────────────────────────────────────────────────
+   Dark Mode Global Contrast Overrides
+   Ensures static light utility classes adapt to dark mode
+───────────────────────────────────────────────────────── */
+[data-theme="dark"] .bg-white,
+[data-theme="dark"] .bg-white\/80 {
+  background-color: var(--bg-surface) !important;
+}
+[data-theme="dark"] .bg-slate-50,
+[data-theme="dark"] .bg-gray-50,
+[data-theme="dark"] .bg-slate-100 {
+  background-color: var(--bg-subtle) !important;
+}
+[data-theme="dark"] .text-slate-900,
+[data-theme="dark"] .text-slate-950,
+[data-theme="dark"] .text-slate-800,
+[data-theme="dark"] .text-gray-900,
+[data-theme="dark"] .text-gray-800,
+[data-theme="dark"] .text-slate-700,
+[data-theme="dark"] .text-gray-700 {
+  color: var(--text-primary) !important;
+}
+[data-theme="dark"] .text-slate-600,
+[data-theme="dark"] .text-gray-600,
+[data-theme="dark"] .text-slate-500,
+[data-theme="dark"] .text-gray-500 {
+  color: var(--text-secondary) !important;
+}
+[data-theme="dark"] .border-slate-100,
+[data-theme="dark"] .border-slate-200,
+[data-theme="dark"] .border-gray-100,
+[data-theme="dark"] .border-gray-200 {
+  border-color: var(--border) !important;
+}
+[data-theme="dark"] .border-slate-300,
+[data-theme="dark"] .border-gray-300 {
+  border-color: var(--border-strong) !important;
+}
+
+/* Form input dark mode overrides */
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background-color: var(--bg-surface) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-strong) !important;
+}
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] select::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: var(--text-tertiary) !important;
+}
+

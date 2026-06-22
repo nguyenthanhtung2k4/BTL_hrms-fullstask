@@ -12,6 +12,11 @@ function getSystemTheme(): 'light' | 'dark' {
 function applyTheme(mode: ThemeMode) {
   const resolved = mode === 'system' ? getSystemTheme() : mode
   document.documentElement.setAttribute('data-theme', resolved)
+  if (resolved === 'dark') {
+    document.documentElement.classList.add('dark')
+  } else {
+    document.documentElement.classList.remove('dark')
+  }
 }
 
 // Watch system preference changes
