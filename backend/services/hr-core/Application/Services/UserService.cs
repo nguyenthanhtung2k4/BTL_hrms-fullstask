@@ -72,6 +72,12 @@ public class UserService : IUserService
             return Result<UserDto>.Failure("EmployeeId, Email, and Password are required.");
         }
 
+        var (isValid, message) = PasswordHasher.ValidatePassword(dto.Password);
+        if (!isValid)
+        {
+            return Result<UserDto>.Failure(message);
+        }
+
         var employee = await _dbContext.Employees.FindAsync(dto.EmployeeId);
         if (employee == null)
         {
@@ -160,9 +166,10 @@ public class UserService : IUserService
 
     public async Task<Result> ResetPasswordAsync(Guid id, ResetPasswordDto dto)
     {
-        if (string.IsNullOrWhiteSpace(dto.NewPassword))
+        var (isValid, message) = PasswordHasher.ValidatePassword(dto.NewPassword);
+        if (!isValid)
         {
-            return Result.Failure("New password cannot be empty.");
+            return Result.Failure(message);
         }
 
         var user = await _dbContext.Users.FindAsync(id);

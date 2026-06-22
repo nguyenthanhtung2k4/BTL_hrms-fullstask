@@ -4,6 +4,7 @@ using Hrms.PayrollReport.Application;
 using Hrms.PayrollReport.Infrastructure;
 using Hrms.Shared.Middleware;
 using Hrms.Shared.Security;
+using Hrms.Shared.Diagnostics;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -47,7 +48,7 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-builder.Services.AddHealthChecks();
+builder.Services.AddSharedHealthChecks(builder.Configuration);
 
 var app = builder.Build();
 

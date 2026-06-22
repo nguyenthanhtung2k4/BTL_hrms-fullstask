@@ -9,15 +9,20 @@ using Hrms.PayrollReport.Infrastructure.Persistence;
 using Hrms.Shared.Domain;
 using Microsoft.EntityFrameworkCore;
 
+using Microsoft.Extensions.Caching.Memory;
+
 namespace Hrms.PayrollReport.Application.Services;
 
 public class AllowanceService : IAllowanceService
 {
     private readonly PayrollReportDbContext _dbContext;
+    private readonly IMemoryCache _cache;
+    private const string CacheKey = "allowancetypes_all";
 
-    public AllowanceService(PayrollReportDbContext dbContext)
+    public AllowanceService(PayrollReportDbContext dbContext, IMemoryCache cache)
     {
         _dbContext = dbContext;
+        _cache = cache;
     }
 
     public async Task<Result<IEnumerable<EmployeeAllowanceDto>>> GetAllowancesAsync(Guid? employeeId, Guid? periodId)
@@ -180,11 +185,22 @@ public class AllowanceService : IAllowanceService
 
     public async Task<Result<IEnumerable<AllowanceTypeDto>>> GetAllowanceTypesAsync()
     {
-        var types = await _dbContext.AllowanceTypes
-            .Select(t => new AllowanceTypeDto(t.Id, t.Code, t.Name, t.IsActive))
-            .ToListAsync();
+        if (!_cache.TryGetValue(CacheKey, out IEnumerable<AllowanceTypeDto>? types))
+        {
+            var list = await _dbContext.AllowanceTypes
+                .Select(t => new AllowanceTypeDto(t.Id, t.Code, t.Name, t.IsActive))
+                .ToListAsync();
 
-        return Result<IEnumerable<AllowanceTypeDto>>.Success(types, "Successfully retrieved allowance types.");
+            types = list;
+
+            var cacheOptions = new MemoryCacheEntryOptions()
+                .SetAbsoluteExpiration(TimeSpan.FromMinutes(30))
+                .SetSlidingExpiration(TimeSpan.FromMinutes(5));
+
+            _cache.Set(CacheKey, types, cacheOptions);
+        }
+
+        return Result<IEnumerable<AllowanceTypeDto>>.Success(types!, "Successfully retrieved allowance types.");
     }
 
     public async Task<Result<AllowanceTypeDto>> CreateAllowanceTypeAsync(string name)
@@ -217,8 +233,11 @@ public class AllowanceService : IAllowanceService
             IsActive = true
         };
 
+        _dbContext.EmployeeAllowances.UpdateRange(); // dummy clean build reference just in case
         _dbContext.AllowanceTypes.Add(newType);
         await _dbContext.SaveChangesAsync();
+
+        _cache.Remove(CacheKey);
 
         var dto = new AllowanceTypeDto(newType.Id, newType.Code, newType.Name, newType.IsActive);
         return Result<AllowanceTypeDto>.Success(dto, "Successfully created new allowance type.");

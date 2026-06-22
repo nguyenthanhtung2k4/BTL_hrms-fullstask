@@ -22,6 +22,7 @@ public class EmployeesController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "Admin,HR,Manager,PayrollStaff")]
     public async Task<ActionResult<ApiResponse<IEnumerable<EmployeeDto>>>> GetAll()
     {
         var result = await _employeeService.GetAllAsync();
@@ -31,6 +32,16 @@ public class EmployeesController : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<ApiResponse<EmployeeDto>>> GetById(Guid id)
     {
+        var isPrivileged = User.IsInRole("Admin") || User.IsInRole("HR") || User.IsInRole("Manager") || User.IsInRole("PayrollStaff");
+        if (!isPrivileged)
+        {
+            var employeeIdClaim = User.FindFirst("employeeId")?.Value;
+            if (string.IsNullOrEmpty(employeeIdClaim) || !Guid.TryParse(employeeIdClaim, out var employeeId) || employeeId != id)
+            {
+                return Forbid();
+            }
+        }
+
         var result = await _employeeService.GetByIdAsync(id);
         if (result.IsFailure)
         {
@@ -41,6 +52,7 @@ public class EmployeesController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin,HR")]
     public async Task<ActionResult<ApiResponse<EmployeeDto>>> Create([FromBody] CreateEmployeeDto dto)
     {
         var result = await _employeeService.CreateAsync(dto);
@@ -53,6 +65,7 @@ public class EmployeesController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Roles = "Admin,HR")]
     public async Task<ActionResult<ApiResponse<EmployeeDto>>> Update(Guid id, [FromBody] UpdateEmployeeDto dto)
     {
         var result = await _employeeService.UpdateAsync(id, dto);
@@ -65,6 +78,7 @@ public class EmployeesController : ControllerBase
     }
 
     [HttpPut("{id:guid}/status")]
+    [Authorize(Roles = "Admin,HR")]
     public async Task<ActionResult<ApiResponse>> ChangeStatus(Guid id, [FromBody] ChangeStatusDto dto)
     {
         var result = await _employeeService.ChangeStatusAsync(id, dto);
@@ -77,6 +91,7 @@ public class EmployeesController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Roles = "Admin,HR")]
     public async Task<ActionResult<ApiResponse>> Delete(Guid id)
     {
         var result = await _employeeService.DeleteAsync(id);

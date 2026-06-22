@@ -79,6 +79,30 @@ public class LeaveRequestService : ILeaveRequestService
         return Result<IEnumerable<LeaveRequestDto>>.Success(dtos);
     }
 
+    private async Task<LeaveBalance> GetOrCreateLeaveBalanceAsync(Guid employeeId, Guid leaveTypeId, int year)
+    {
+        var balance = await _dbContext.LeaveBalances
+            .FirstOrDefaultAsync(b => b.EmployeeId == employeeId && b.LeaveTypeId == leaveTypeId && b.Year == year);
+
+        if (balance == null)
+        {
+            balance = new LeaveBalance
+            {
+                Id = Guid.NewGuid(),
+                EmployeeId = employeeId,
+                LeaveTypeId = leaveTypeId,
+                Year = year,
+                EntitledDays = 12, // Default 12 days
+                UsedDays = 0,
+                CreatedAt = DateTime.UtcNow
+            };
+            _dbContext.LeaveBalances.Add(balance);
+            await _dbContext.SaveChangesAsync();
+        }
+
+        return balance;
+    }
+
     public async Task<Result<LeaveRequestDto>> CreateAsync(Guid employeeId, CreateLeaveRequestDto dto)
     {
         var employee = await _dbContext.EmployeeProjections.FindAsync(employeeId);
@@ -102,6 +126,14 @@ public class LeaveRequestService : ILeaveRequestService
 
         // Calculate days
         decimal totalDays = (dto.ToDate.DayNumber - dto.FromDate.DayNumber) + 1;
+
+        // Check leave balance
+        var year = dto.FromDate.Year;
+        var balance = await GetOrCreateLeaveBalanceAsync(employeeId, dto.LeaveTypeId, year);
+        if (balance.RemainingDays < totalDays)
+        {
+            return Result<LeaveRequestDto>.Failure($"Không đủ ngày phép khả dụng cho năm {year}. Số ngày yêu cầu: {totalDays}, Số ngày còn lại: {balance.RemainingDays}.");
+        }
 
         var request = new LeaveRequest
         {
@@ -147,6 +179,16 @@ public class LeaveRequestService : ILeaveRequestService
 
         var approver = await _dbContext.EmployeeProjections.FindAsync(approvedByEmployeeId);
         if (approver == null) return Result<LeaveRequestDto>.Failure("Approver employee not found.");
+
+        // Deduct from leave balance
+        var year = request.FromDate.Year;
+        var balance = await GetOrCreateLeaveBalanceAsync(request.EmployeeId, request.LeaveTypeId, year);
+        if (balance.RemainingDays < request.TotalDays)
+        {
+            return Result<LeaveRequestDto>.Failure($"Không đủ ngày phép khả dụng để duyệt. Số ngày yêu cầu: {request.TotalDays}, Số ngày còn lại: {balance.RemainingDays}.");
+        }
+
+        balance.UsedDays += request.TotalDays;
 
         request.Status = "Approved";
         request.ApprovedByEmployeeId = approvedByEmployeeId;

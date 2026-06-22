@@ -15,13 +15,21 @@ const saving = ref(false)
 const password = ref('')
 const autoGeneratePassword = ref(true)
 
+import { extractError } from '../../../services/apiClient'
+
 function generateRandomPassword() {
-  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*'
+  const lower = 'abcdefghijklmnopqrstuvwxyz'
+  const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+  const digits = '0123456789'
+  const special = '!@#$%^&*'
+  
   let pass = ''
-  for (let i = 0; i < 10; i++) {
-    pass += chars.charAt(Math.floor(Math.random() * chars.length))
-  }
-  return pass
+  for (let i = 0; i < 3; i++) pass += lower.charAt(Math.floor(Math.random() * lower.length))
+  for (let i = 0; i < 3; i++) pass += upper.charAt(Math.floor(Math.random() * upper.length))
+  for (let i = 0; i < 2; i++) pass += digits.charAt(Math.floor(Math.random() * digits.length))
+  for (let i = 0; i < 2; i++) pass += special.charAt(Math.floor(Math.random() * special.length))
+  
+  return pass.split('').sort(() => 0.5 - Math.random()).join('')
 }
 
 onMounted(() => {
@@ -39,8 +47,8 @@ function toggleAutoPassword() {
 }
 
 async function save() {
-  if (!password.value || password.value.length < 6) {
-    toast.error('Mật khẩu phải có ít nhất 6 ký tự')
+  if (!password.value || password.value.length < 8) {
+    toast.error('Mật khẩu phải chứa ít nhất 8 ký tự')
     return
   }
 
@@ -50,7 +58,7 @@ async function save() {
     toast.success(`Đã đặt lại mật khẩu cho tài khoản ${props.userAccount.email} thành công!`)
     emit('saved')
   } catch (err: any) {
-    toast.error(err?.response?.data?.message ?? 'Đặt lại mật khẩu thất bại')
+    toast.error(extractError(err, 'Đặt lại mật khẩu thất bại'))
   } finally {
     saving.value = false
   }
@@ -88,7 +96,7 @@ async function save() {
           v-model="password"
           :type="autoGeneratePassword ? 'text' : 'password'"
           :readonly="autoGeneratePassword"
-          placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)"
+          placeholder="Nhập mật khẩu mới (tối thiểu 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt)"
           class="h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-400 bg-white"
           :class="{ 'bg-slate-50 border-slate-200 font-mono text-slate-700': autoGeneratePassword }"
         />

@@ -22,6 +22,7 @@ public class ContractsController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "Admin,HR,Manager,PayrollStaff")]
     public async Task<ActionResult<ApiResponse<IEnumerable<ContractDto>>>> GetAll()
     {
         var result = await _contractService.GetAllAsync();
@@ -37,10 +38,23 @@ public class ContractsController : ControllerBase
             return NotFound(ApiResponse<ContractDto>.Fail(result.Errors, result.Message));
         }
 
+        // Check permissions: Admin, HR, Manager, PayrollStaff can view any contract.
+        // Employee can only view their own contract.
+        var isPrivileged = User.IsInRole("Admin") || User.IsInRole("HR") || User.IsInRole("Manager") || User.IsInRole("PayrollStaff");
+        if (!isPrivileged)
+        {
+            var employeeIdClaim = User.FindFirst("employeeId")?.Value;
+            if (string.IsNullOrEmpty(employeeIdClaim) || !Guid.TryParse(employeeIdClaim, out var employeeId) || employeeId != result.Value!.EmployeeId)
+            {
+                return Forbid();
+            }
+        }
+
         return Ok(ApiResponse<ContractDto>.Ok(result.Value!, result.Message));
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin,HR")]
     public async Task<ActionResult<ApiResponse<ContractDto>>> Create([FromBody] CreateContractDto dto)
     {
         var result = await _contractService.CreateAsync(dto);
@@ -53,6 +67,7 @@ public class ContractsController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Roles = "Admin,HR")]
     public async Task<ActionResult<ApiResponse<ContractDto>>> Update(Guid id, [FromBody] UpdateContractDto dto)
     {
         var result = await _contractService.UpdateAsync(id, dto);
@@ -65,6 +80,7 @@ public class ContractsController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Roles = "Admin,HR")]
     public async Task<ActionResult<ApiResponse>> Delete(Guid id)
     {
         var result = await _contractService.DeleteAsync(id);

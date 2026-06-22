@@ -12,6 +12,7 @@ import PageHeader from '../../components/layout/PageHeader.vue'
 import AppButton from '../../components/ui/AppButton.vue'
 import AppInput from '../../components/ui/AppInput.vue'
 import type { Employee } from '../../types/hr.types'
+import { useFormGuard } from '../../composables/useFormGuard'
 
 const { t } = useI18n()
 const auth = useAuthStore()
@@ -38,6 +39,11 @@ const pwForm = ref({ currentPassword: '', newPassword: '', confirmPassword: '' }
 const pwErrors = ref<Record<string, string>>({})
 const pwLoading = ref(false)
 
+const isDirty = computed(() => {
+  return !!(pwForm.value.currentPassword || pwForm.value.newPassword || pwForm.value.confirmPassword)
+})
+useFormGuard(isDirty)
+
 function validatePw(): boolean {
   pwErrors.value = {}
   if (!pwForm.value.currentPassword) { pwErrors.value.currentPassword = t('validation.required'); return false }
@@ -60,6 +66,7 @@ async function submitChangePassword() {
       confirmPassword: pwForm.value.confirmPassword,
     })
     toast.success(t('profile.changePasswordSuccess'))
+    pwForm.value = { currentPassword: '', newPassword: '', confirmPassword: '' }
     // auth.changePassword gọi logout() → redirect về login tự động
   } catch (e: any) {
     const msg = e?.response?.data?.message ?? t('toast.saveFailed')

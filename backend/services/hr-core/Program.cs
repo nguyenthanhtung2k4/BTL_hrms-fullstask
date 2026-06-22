@@ -3,8 +3,9 @@ using Hrms.Contracts.Events;
 using Hrms.HrCore.Application;
 using Hrms.HrCore.Infrastructure;
 using Hrms.HrCore.Infrastructure.Persistence;
-using Hrms.Shared.Middleware;
 using Hrms.Shared.Security;
+using Hrms.Shared.Diagnostics;
+using Hrms.Shared.Middleware;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -46,8 +47,8 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 });
-builder.Services.AddHealthChecks();
-
+builder.Services.AddSharedHealthChecks(builder.Configuration);
+builder.Services.AddHostedService<Hrms.HrCore.Application.Services.ContractExpiryBackgroundService>();
 
 var app = builder.Build();
 

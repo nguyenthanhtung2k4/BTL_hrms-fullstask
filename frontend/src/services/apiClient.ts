@@ -114,6 +114,15 @@ export function extractData<T>(response: { data: { data: T } }): T {
   return response.data.data
 }
 
+// ─── Helper: trích xuất chi tiết lỗi từ ApiResponse ──────────────────────────
+export function extractError(err: any, fallback: string = 'Thao tác thất bại'): string {
+  const apiData = err?.response?.data
+  if (apiData?.errors && Array.isArray(apiData.errors) && apiData.errors.length > 0) {
+    return apiData.errors.join(', ')
+  }
+  return apiData?.message || fallback
+}
+
 // ─── Export helpers ───────────────────────────────────────────────────────────
 export const TOKEN_STORAGE_KEY         = TOKEN_KEY
 export const REFRESH_TOKEN_STORAGE_KEY = REFRESH_TOKEN_KEY

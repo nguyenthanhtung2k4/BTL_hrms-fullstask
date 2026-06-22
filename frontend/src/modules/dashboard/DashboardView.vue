@@ -2,7 +2,7 @@
 /**
  * DashboardView — Premium, Unified design, Responsive, supports Dark Mode & Multi-role layout.
  */
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import { useToastStore } from '../../stores/toast'
@@ -29,9 +29,7 @@ import {
   CreditCard,
   ArrowRight,
   RefreshCw,
-  LayoutDashboard,
   ShieldCheck,
-  Briefcase,
   CheckSquare
 } from '@lucide/vue'
 

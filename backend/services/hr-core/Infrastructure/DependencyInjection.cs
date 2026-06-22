@@ -16,13 +16,18 @@ public static class DependencyInjection
         
         // Register the Audit Interceptor as Scoped
         services.AddScoped<UpdateAuditableEntitiesInterceptor>();
+        services.AddMemoryCache();
 
         // Register the DbContext pointing to SQL Server
         services.AddDbContext<HrDbContext>(options =>
             options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
         // Register MassTransit RabbitMQ
-        services.AddSharedMassTransit(configuration);
+        services.AddSharedMassTransit(configuration, x =>
+        {
+            x.AddConsumer<Hrms.HrCore.Infrastructure.Messaging.Consumers.LeaveApprovedConsumer>();
+            x.AddConsumer<Hrms.HrCore.Infrastructure.Messaging.Consumers.PayrollClosedConsumer>();
+        });
         
         return services;
     }

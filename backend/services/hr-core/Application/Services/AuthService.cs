@@ -130,8 +130,9 @@ public class AuthService : IAuthService
         if (request.NewPassword != request.ConfirmPassword)
             return Result.Failure("Mật khẩu xác nhận không khớp.");
 
-        if (request.NewPassword.Length < 6)
-            return Result.Failure("Mật khẩu mới phải có ít nhất 6 ký tự.");
+        var (isValid, message) = PasswordHasher.ValidatePassword(request.NewPassword);
+        if (!isValid)
+            return Result.Failure(message);
 
         var user = await _dbContext.Users.FindAsync(userId);
         if (user == null)

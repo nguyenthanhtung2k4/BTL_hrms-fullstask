@@ -4,9 +4,9 @@ import {
   CalendarCheck, Clock, Calendar, ClipboardList, UmbrellaOff,
   BadgeDollarSign, ScrollText, Settings2, PiggyBank, Wallet,
   BarChart3, LogOut, Menu, Network,
-  Sun, Moon, Monitor, ChevronDown, ShieldCheck, UserCircle,
+  Sun, Moon, Monitor, ChevronDown, ShieldCheck, UserCircle, Bell
 } from '@lucide/vue'
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { RouterLink, RouterView, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
@@ -15,9 +15,12 @@ import { useTheme, type ThemeMode } from '../composables/useTheme'
 import { useLocale, type LocaleCode } from '../composables/useLocale'
 import AppToast from '../components/ui/AppToast.vue'
 
+import { useNotificationStore } from '../stores/notification'
+
 const router = useRouter()
 const auth = useAuthStore()
 const toast = useToastStore()
+const notificationStore = useNotificationStore()
 const { t } = useI18n()
 const { themeMode, setTheme } = useTheme()
 const { currentLocale, setLocale } = useLocale()
@@ -25,6 +28,19 @@ const { currentLocale, setLocale } = useLocale()
 const mobileOpen = ref(false)
 const langDropdownOpen = ref(false)
 const themeDropdownOpen = ref(false)
+
+
+
+// ── Notifications polling
+onMounted(() => {
+  if (auth.isAuthenticated) {
+    notificationStore.startPolling()
+  }
+})
+
+onUnmounted(() => {
+  notificationStore.stopPolling()
+})
 
 // Close dropdowns when clicking outside
 function closeDropdowns() {
@@ -112,10 +128,10 @@ const menuGroups = computed(() => {
   }
   groups.push({ label: t('nav.payroll'), items: payItems })
 
-  // Admin — chỉ Admin
-  if (auth.isAdmin) {
+  // Admin / HR — Quản trị tài khoản
+  if (auth.isAdmin || auth.isHR) {
     groups.push({
-      label: 'Admin',
+      label: t('user.title'),
       items: [
         { to: '/admin/users', name: 'admin-users', label: t('nav.userManagement'), icon: ShieldCheck },
       ],
@@ -275,6 +291,22 @@ async function logout() {
 
         <!-- Right controls -->
         <div class="flex items-center gap-1.5">
+
+          <!-- Notification Bell -->
+          <RouterLink
+            to="/notifications"
+            class="relative flex items-center justify-center h-9 w-9 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
+            style="color: var(--text-secondary);"
+            title="Thông báo"
+          >
+            <Bell :size="18" />
+            <span
+              v-if="notificationStore.unreadCount > 0"
+              class="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm"
+            >
+              {{ notificationStore.unreadCount }}
+            </span>
+          </RouterLink>
 
           <!-- Language Switcher -->
           <div class="relative">

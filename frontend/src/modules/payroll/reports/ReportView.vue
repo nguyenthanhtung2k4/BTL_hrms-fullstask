@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { reportService } from '../../../services/report.service'
 import { payrollPeriodService } from '../../../services/payrollPeriod.service'
 import { useToastStore } from '../../../stores/toast'
@@ -88,7 +88,6 @@ const searchDepartment = ref('')
 const filteredReports = ref<PayrollSummaryReport[]>([])
 
 // Update filteredReports whenever reports change
-import { watch } from 'vue'
 watch(reports, (newVal) => {
   filteredReports.value = newVal
 }, { deep: true })

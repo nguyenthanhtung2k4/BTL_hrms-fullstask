@@ -4,6 +4,7 @@ using Hrms.Attendance.Application;
 using Hrms.Attendance.Infrastructure;
 using Hrms.Shared.Middleware;
 using Hrms.Shared.Security;
+using Hrms.Shared.Diagnostics;
 using Microsoft.OpenApi.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -48,7 +49,7 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-builder.Services.AddHealthChecks();
+builder.Services.AddSharedHealthChecks(builder.Configuration);
 
 var app = builder.Build();
 
@@ -59,6 +60,26 @@ using (var scope = app.Services.CreateScope())
     await context.Database.ExecuteSqlRawAsync(
         "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.EmployeeProjections') AND name = 'HireDate') " +
         "ALTER TABLE dbo.EmployeeProjections ADD HireDate DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME();"
+    );
+    await context.Database.ExecuteSqlRawAsync(
+        "IF OBJECT_ID('dbo.LeaveBalances', 'U') IS NULL " +
+        "BEGIN " +
+        "    CREATE TABLE dbo.LeaveBalances ( " +
+        "        Id UNIQUEIDENTIFIER NOT NULL PRIMARY KEY, " +
+        "        EmployeeId UNIQUEIDENTIFIER NOT NULL, " +
+        "        LeaveTypeId UNIQUEIDENTIFIER NOT NULL, " +
+        "        Year INT NOT NULL, " +
+        "        EntitledDays DECIMAL(18,2) NOT NULL, " +
+        "        UsedDays DECIMAL(18,2) NOT NULL, " +
+        "        CreatedAt DATETIME2 NOT NULL, " +
+        "        CreatedBy NVARCHAR(max) NULL, " +
+        "        UpdatedAt DATETIME2 NULL, " +
+        "        UpdatedBy NVARCHAR(max) NULL, " +
+        "        CONSTRAINT FK_LeaveBalances_EmployeeProjections_EmployeeId FOREIGN KEY (EmployeeId) REFERENCES dbo.EmployeeProjections(EmployeeId), " +
+        "        CONSTRAINT FK_LeaveBalances_LeaveTypes_LeaveTypeId FOREIGN KEY (LeaveTypeId) REFERENCES dbo.LeaveTypes(Id) " +
+        "    ); " +
+        "    CREATE UNIQUE INDEX IX_LeaveBalances_EmployeeId_LeaveTypeId_Year ON dbo.LeaveBalances(EmployeeId, LeaveTypeId, Year); " +
+        "END"
     );
 }
 

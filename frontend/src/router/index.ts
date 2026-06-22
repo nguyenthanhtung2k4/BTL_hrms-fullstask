@@ -43,6 +43,9 @@ const UserManagementView = () => import('../modules/admin/UserManagementView.vue
 // ── Profile
 const ProfileView = () => import('../modules/profile/ProfileView.vue')
 
+// ── Notifications
+const NotificationListView = () => import('../modules/notifications/NotificationListView.vue')
+
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
@@ -57,6 +60,9 @@ export const router = createRouter({
       children: [
         // Dashboard
         { path: '', name: 'dashboard', component: DashboardView },
+
+        // Notifications
+        { path: 'notifications', name: 'notifications', component: NotificationListView },
 
         // ── HR Core
         {
@@ -187,12 +193,12 @@ export const router = createRouter({
           meta: { roles: ['Admin', 'HR', 'PayrollStaff', 'Manager'] },
         },
 
-        // ── Admin
+        // ── Admin / Quản trị tài khoản
         {
           path: 'admin/users',
           name: 'admin-users',
           component: UserManagementView,
-          meta: { roles: ['Admin'] },
+          meta: { roles: ['Admin', 'HR'] },
         },
 
         // ── Profile (tất cả roles)

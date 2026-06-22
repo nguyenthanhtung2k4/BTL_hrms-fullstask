@@ -203,7 +203,7 @@ onMounted(load)
             <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
               Nhân sự này chưa được cấp tài khoản để đăng nhập vào cổng thông tin nội bộ HRMS.
             </p>
-            <div class="mt-5" v-if="auth.isAdmin">
+            <div class="mt-5" v-if="auth.isAdmin || auth.isHR">
               <AppButton @click="showGrantModal = true">
                 <UserPlus class="h-4 w-4 mr-2" />
                 Cấp tài khoản đăng nhập
@@ -252,10 +252,11 @@ onMounted(load)
             </div>
 
             <!-- Administrative Actions Widget -->
-            <div class="rounded-xl border border-slate-200 bg-white p-6 space-y-4 h-fit" v-if="auth.isAdmin">
+            <div class="rounded-xl border border-slate-200 bg-white p-6 space-y-4 h-fit" v-if="auth.isAdmin || auth.isHR">
               <h3 class="text-sm font-bold text-slate-950 uppercase tracking-wider mb-2">Thao tác quản trị</h3>
 
               <button
+                v-if="auth.isAdmin"
                 @click="showEditRolesModal = true"
                 class="w-full inline-flex items-center justify-center gap-2 h-10 rounded-lg border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-50"
               >

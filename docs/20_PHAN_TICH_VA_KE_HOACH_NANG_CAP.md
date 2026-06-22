@@ -249,11 +249,11 @@ Hiện tại LeaveRequest có trạng thái Approved/Rejected nhưng không trac
 ### 🔵 GIAI ĐOẠN 1 — Hoàn thiện Core (Ưu tiên cao — 1-2 tuần)
 
 #### Backend
-- [ ] **Thêm Role-based Authorization chi tiết** cho EmployeesController, ContractsController
+- [x] **Thêm Role-based Authorization chi tiết** cho EmployeesController, ContractsController ✅
 - [x] **Implement Refresh Token** — endpoint `/auth/refresh`, lưu RefreshToken vào DB ✅
-- [ ] **Thêm Password Policy validation** khi tạo/đổi mật khẩu
+- [x] **Thêm Password Policy validation** khi tạo/đổi mật khẩu ✅
 - [x] **Viết Unit Tests** cho PayrollCalculation service (quan trọng nhất) ✅
-- [ ] **Sửa Health Checks** — kiểm tra DB connection và RabbitMQ connection
+- [x] **Sửa Health Checks** — kiểm tra DB connection và RabbitMQ connection ✅
 
 #### Frontend
 - [x] **Tạo trang `/admin/users`** — Quản lý tài khoản: xem, tạo, reset password, gán role ✅
@@ -267,23 +267,23 @@ Hiện tại LeaveRequest có trạng thái Approved/Rejected nhưng không trac
 #### Backend
 - [x] **Tính thuế TNCN** — Thêm `TaxCalculationService` với bậc thuế lũy tiến ✅
 - [x] **Tính BHXH/BHYT/BHTN** — Thêm vào PayslipItem với type riêng ✅
-- [ ] **Quản lý số ngày phép** — `LeaveBalance` entity, trừ ngày khi approve leave
-- [ ] **Cảnh báo hợp đồng** — Background job quét contract sắp hết hạn (< 30 ngày)
+- [x] **Quản lý số ngày phép** — `LeaveBalance` entity, trừ ngày khi approve leave ✅
+- [x] **Cảnh báo hợp đồng** — Background job quét contract sắp hết hạn (< 30 ngày) ✅
 - [x] **Thêm API Pagination phía backend** — tránh load toàn bộ dữ liệu ✅
-- [ ] **In-memory Caching** — Cache danh sách Departments, Positions, AllowanceTypes
+- [x] **In-memory Caching** — Cache danh sách Departments, Positions, AllowanceTypes ✅
 
 #### Frontend
 - [x] **Dashboard nâng cao** — Thêm biểu đồ xu hướng lương 6 tháng, tỷ lệ vắng mặt ✅
-- [ ] **Trang thông báo `/notifications`** — Hiển thị thông báo phê duyệt, phiếu lương mới
-- [ ] **Thêm Global Search** — Tìm kiếm nhân viên, phiếu lương từ thanh header
-- [ ] **Form Guard** — Cảnh báo khi rời trang có dữ liệu chưa lưu
-- [ ] **Responsive Mobile** — Sửa sidebar, bảng dữ liệu cho màn hình nhỏ
+- [x] **Trang thông báo `/notifications`** — Hiển thị thông báo phê duyệt, phiếu lương mới ✅
+- [x] **Thêm Global Search** — Tìm kiếm nhân viên, phiếu lương từ thanh header ✅
+- [x] **Form Guard** — Cảnh báo khi rời trang có dữ liệu chưa lưu ✅
+- [x] **Responsive Mobile** — Sửa sidebar, bảng dữ liệu cho màn hình nhỏ ✅
 
 ### 🟢 GIAI ĐOẠN 3 — Production Ready (3-4 tuần)
 
 #### Infrastructure
-- [ ] **Dockerize toàn bộ** — `docker-compose.yml` cho cả frontend + 4 backend services
-- [ ] **CI/CD Pipeline** — GitHub Actions: build → test → deploy tự động
+- [x] **Dockerize toàn bộ** — `docker-compose.yml` cho cả frontend + 4 backend services ✅
+- [x] **CI/CD Pipeline** — GitHub Actions: build → test → deploy tự động ✅
 - [ ] **Centralized Logging** — Tích hợp Serilog + Seq
 - [ ] **Rate Limiting** — Thêm vào Gateway: 100 req/min per IP
 - [ ] **HTTPS/SSL** — Cấu hình Nginx reverse proxy với SSL certificate

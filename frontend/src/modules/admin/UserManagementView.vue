@@ -7,8 +7,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useToastStore } from '../../stores/toast'
+import { useAuthStore } from '../../stores/auth'
 import { userService } from '../../services/user.service'
 import { employeeService } from '../../services/employee.service'
+import { extractError } from '../../services/apiClient'
 import type { UserAccount } from '../../types/user.types'
 import type { Employee } from '../../types/hr.types'
 import PageHeader from '../../components/layout/PageHeader.vue'
@@ -21,6 +23,7 @@ import AppConfirm from '../../components/ui/AppConfirm.vue'
 
 const { t } = useI18n()
 const toast = useToastStore()
+const auth = useAuthStore()
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 const users = ref<UserAccount[]>([])
@@ -88,8 +91,8 @@ function toggleRole(role: string) {
 async function submitCreate() {
   createErrors.value = {}
   if (!createForm.value.employeeId) { createErrors.value.employeeId = t('validation.required'); return }
-  if (!createForm.value.password || createForm.value.password.length < 6) {
-    createErrors.value.password = t('profile.passwordMinLength'); return
+  if (!createForm.value.password || createForm.value.password.length < 8) {
+    createErrors.value.password = 'Mật khẩu phải chứa ít nhất 8 ký tự'; return
   }
   if (createForm.value.roles.length === 0) { createErrors.value.roles = t('validation.required'); return }
 
@@ -112,7 +115,7 @@ async function submitCreate() {
     showCreateModal.value = false
     await loadData()
   } catch (e: any) {
-    toast.error(e?.response?.data?.message ?? t('toast.saveFailed'))
+    toast.error(extractError(e, t('toast.saveFailed')))
   } finally {
     createLoading.value = false
   }
@@ -166,8 +169,8 @@ function openResetModal(user: UserAccount) {
 
 async function submitReset() {
   if (!resetTarget.value) return
-  if (!newPassword.value || newPassword.value.length < 6) {
-    toast.error(t('profile.passwordMinLength'))
+  if (!newPassword.value || newPassword.value.length < 8) {
+    toast.error('Mật khẩu phải chứa ít nhất 8 ký tự')
     return
   }
   resetLoading.value = true
@@ -175,8 +178,8 @@ async function submitReset() {
     await userService.resetPassword(resetTarget.value.id, newPassword.value)
     toast.success(t('user.resetSuccess'))
     showResetModal.value = false
-  } catch {
-    toast.error(t('toast.saveFailed'))
+  } catch (e: any) {
+    toast.error(extractError(e, t('toast.saveFailed')))
   } finally {
     resetLoading.value = false
   }
@@ -323,7 +326,7 @@ onMounted(loadData)
         <!-- Actions -->
         <td class="app-table__td">
           <div class="flex items-center gap-1.5 flex-wrap">
-            <AppButton variant="ghost" size="xs" :title="t('user.edit')" @click="openRolesModal(row)">
+            <AppButton v-if="auth.isAdmin" variant="ghost" size="xs" :title="t('user.edit')" @click="openRolesModal(row)">
               <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />

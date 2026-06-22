@@ -14,6 +14,7 @@ public static class DependencyInjection
     {
         services.AddHttpContextAccessor();
         services.AddScoped<UpdateAuditableEntitiesInterceptor>();
+        services.AddMemoryCache();
 
         services.AddDbContext<PayrollReportDbContext>((sp, options) =>
         {

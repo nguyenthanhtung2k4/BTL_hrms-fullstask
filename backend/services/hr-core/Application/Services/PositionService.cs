@@ -10,6 +10,7 @@ using Hrms.HrCore.Infrastructure.Persistence;
 using Hrms.Shared.Domain;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Hrms.HrCore.Application.Services;
 
@@ -17,18 +18,31 @@ public class PositionService : IPositionService
 {
     private readonly HrDbContext _dbContext;
     private readonly IPublishEndpoint _publishEndpoint;
+    private readonly IMemoryCache _cache;
+    private const string CacheKey = "positions_all";
 
-    public PositionService(HrDbContext dbContext, IPublishEndpoint publishEndpoint)
+    public PositionService(HrDbContext dbContext, IPublishEndpoint publishEndpoint, IMemoryCache cache)
     {
         _dbContext = dbContext;
         _publishEndpoint = publishEndpoint;
+        _cache = cache;
     }
 
     public async Task<Result<IEnumerable<PositionDto>>> GetAllAsync()
     {
-        var positions = await _dbContext.Positions.ToListAsync();
-        var dtos = positions.Select(p => MapToDto(p));
-        return Result<IEnumerable<PositionDto>>.Success(dtos);
+        if (!_cache.TryGetValue(CacheKey, out IEnumerable<PositionDto>? dtos))
+        {
+            var positions = await _dbContext.Positions.ToListAsync();
+            dtos = positions.Select(p => MapToDto(p)).ToList();
+
+            var cacheOptions = new MemoryCacheEntryOptions()
+                .SetAbsoluteExpiration(TimeSpan.FromMinutes(30))
+                .SetSlidingExpiration(TimeSpan.FromMinutes(5));
+
+            _cache.Set(CacheKey, dtos, cacheOptions);
+        }
+
+        return Result<IEnumerable<PositionDto>>.Success(dtos!);
     }
 
     public async Task<Result<PositionDto>> GetByIdAsync(Guid id)
@@ -65,6 +79,8 @@ public class PositionService : IPositionService
         await _dbContext.Positions.AddAsync(position);
         await _dbContext.SaveChangesAsync();
 
+        _cache.Remove(CacheKey);
+
         // Publish integration event
         var integrationEvent = new IntegrationEvent<PositionPayload>(
             EventId: Guid.NewGuid(),
@@ -99,6 +115,8 @@ public class PositionService : IPositionService
 
         await _dbContext.SaveChangesAsync();
 
+        _cache.Remove(CacheKey);
+
         // Publish integration event
         var integrationEvent = new IntegrationEvent<PositionPayload>(
             EventId: Guid.NewGuid(),
@@ -129,6 +147,8 @@ public class PositionService : IPositionService
 
         _dbContext.Positions.Remove(position);
         await _dbContext.SaveChangesAsync();
+
+        _cache.Remove(CacheKey);
 
         return Result.Success("Position deleted successfully.");
     }
