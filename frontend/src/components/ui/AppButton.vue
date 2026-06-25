@@ -67,13 +67,15 @@ defineProps<{
 
 /* Variants */
 .btn--primary {
-  background-color: var(--color-primary);
-  color: var(--text-inverse);
-  border-color: var(--color-primary);
+  background: linear-gradient(135deg, var(--color-primary), hsl(165, 80%, 30%)) !important;
+  color: var(--text-inverse) !important;
+  border-color: transparent !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+  transition: all var(--transition-fast) !important;
 }
 .btn--primary:hover:not(:disabled) {
-  background-color: var(--color-primary-hover);
-  border-color: var(--color-primary-hover);
+  background: linear-gradient(135deg, var(--color-primary-hover), hsl(165, 80%, 25%)) !important;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-primary) 30%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
 }
 
 .btn--secondary {

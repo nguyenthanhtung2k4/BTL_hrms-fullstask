@@ -189,30 +189,9 @@ async function main() {
         }
     }
 
-    // 7. Work Schedules
+    // 7. Work Schedules (Bypassed - Handled in bulk by Step 5 sqlcmd)
     STEP("7. Work Schedules");
-    const defaultShift = shiftIds["CA_HC"];
-    if (defaultShift) {
-        for (const ec of Object.keys(empIds)) {
-            try {
-                const body = {
-                    employeeId: empIds[ec],
-                    shiftId: defaultShift,
-                    startDate: "2026-06-01",
-                    endDate: "2026-12-31"
-                };
-                const response = await fetch(`${BASE}/attendance/work-schedules`, {
-                    method: "POST",
-                    headers: headers,
-                    body: JSON.stringify(body)
-                });
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                OK(`Schedule for ${ec}`);
-            } catch (e) {
-                ERR(`Schedule for ${ec} failed`, e.message);
-            }
-        }
-    }
+    console.log("  Info: Skipping API scheduling. Work schedules are bulk-seeded via SQL in Step 5.");
 
     // 8. Payroll Rule
     STEP("8. Payroll Rule");
@@ -244,9 +223,11 @@ async function main() {
     if (ruleId) {
         try {
             const body = {
+                code: "PERIOD_2026_06",
                 name: "Luong thang 6/2026",
                 fromDate: "2026-06-01",
                 toDate: "2026-06-30",
+                standardWorkDays: 22,
                 payrollRuleId: ruleId
             };
             const response = await fetch(`${BASE}/payroll/payroll-periods`, {

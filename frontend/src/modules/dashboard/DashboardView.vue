@@ -764,12 +764,25 @@ const myPayslipsChartData = computed<any>(() => ({
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  padding: 1.5rem;
+  padding: 2rem;
   border-radius: var(--radius-xl);
-  border: 1px solid var(--border);
-  background-color: var(--bg-surface);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 15%, var(--border));
+  background: linear-gradient(135deg, var(--bg-surface) 0%, color-mix(in srgb, var(--color-primary) 4%, var(--bg-surface)) 100%);
   box-shadow: var(--shadow-sm);
-  transition: border-color var(--transition-base), background-color var(--transition-base);
+  position: relative;
+  overflow: hidden;
+  transition: border-color var(--transition-base), background-color var(--transition-base), box-shadow var(--transition-base);
+}
+.dash-greeting-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-primary) 8%, transparent) 0%, transparent 70%);
+  pointer-events: none;
 }
 @media (min-width: 640px) {
   .dash-greeting-card {
@@ -1341,12 +1354,13 @@ const myPayslipsChartData = computed<any>(() => ({
 
 /* Premium Card hover effects and transitions */
 .dash-chart-card, .dash-list-card, .dash-table-card, .dash-health-card {
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+  transition: transform var(--transition-base), box-shadow var(--transition-base), border-color var(--transition-base);
+  will-change: transform, box-shadow, border-color;
 }
 .dash-chart-card:hover, .dash-list-card:hover, .dash-table-card:hover, .dash-health-card:hover {
-  transform: translateY(-3px);
+  transform: translateY(-4px) scale(1.005);
   box-shadow: var(--shadow-lg);
-  border-color: var(--border-strong);
+  border-color: color-mix(in srgb, var(--color-primary) 25%, var(--border-strong));
 }
 
 /* Premium blur loading transition */
