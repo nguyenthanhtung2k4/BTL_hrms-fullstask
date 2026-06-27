@@ -10,7 +10,6 @@ using Hrms.HrCore.Infrastructure.Persistence;
 using Hrms.Shared.Domain;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 
 namespace Hrms.HrCore.Application.Services;
 
@@ -25,33 +24,16 @@ public class EmployeeService : IEmployeeService
         _publishEndpoint = publishEndpoint;
     }
 
-    public async Task<Result<IEnumerable<EmployeeDto>>> GetAllAsync(ClaimsPrincipal currentUser)
+    public async Task<Result<IEnumerable<EmployeeDto>>> GetAllAsync()
     {
-        var query = _dbContext.Employees
+        var employees = await _dbContext.Employees
             .Include(e => e.Department)
             .Include(e => e.Position)
             .Include(e => e.Manager)
-            .AsQueryable();
+            .ToListAsync();
 
-        if (currentUser.IsInRole("Manager"))
-        {
-            var departmentIdClaim = currentUser.FindFirst("departmentId")?.Value;
-            if (string.IsNullOrEmpty(departmentIdClaim) || !Guid.TryParse(departmentIdClaim, out var departmentId))
-                return Result<IEnumerable<EmployeeDto>>.Failure("Manager has no department assigned.");
-
-            query = query.Where(e => e.DepartmentId == departmentId);
-        }
-        else if (currentUser.IsInRole("Employee"))
-        {
-            var employeeIdClaim = currentUser.FindFirst("employeeId")?.Value;
-            if (string.IsNullOrEmpty(employeeIdClaim) || !Guid.TryParse(employeeIdClaim, out var employeeId))
-                return Result<IEnumerable<EmployeeDto>>.Failure("Employee claim not found.");
-
-            query = query.Where(e => e.Id == employeeId);
-        }
-
-        var employees = await query.ToListAsync();
-        return Result<IEnumerable<EmployeeDto>>.Success(employees.Select(MapToDto));
+        var dtos = employees.Select(e => MapToDto(e));
+        return Result<IEnumerable<EmployeeDto>>.Success(dtos);
     }
 
     public async Task<Result<EmployeeDto>> GetByIdAsync(Guid id)
