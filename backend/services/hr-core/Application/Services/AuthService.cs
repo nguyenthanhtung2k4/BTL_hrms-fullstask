@@ -167,7 +167,14 @@ public class AuthService : IAuthService
         };
 
         if (user.EmployeeId.HasValue)
+        {
             claims.Add(new Claim("employeeId", user.EmployeeId.Value.ToString()));
+
+
+            var departmentId = user.Employee?.DepartmentId; // if some function need this
+            if (departmentId.HasValue)
+                claims.Add(new Claim("departmentId", departmentId.Value.ToString()));
+        }
 
         foreach (var role in roles)
             claims.Add(new Claim(ClaimTypes.Role, role));

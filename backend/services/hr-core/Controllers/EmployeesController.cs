@@ -21,13 +21,13 @@ public class EmployeesController : ControllerBase
         _employeeService = employeeService;
     }
 
-    [HttpGet]
-    [Authorize(Roles = "Admin,HR,Manager,PayrollStaff,Employee")]
-    public async Task<ActionResult<ApiResponse<IEnumerable<EmployeeDto>>>> GetAll()
-    {
-        var result = await _employeeService.GetAllAsync();
-        return Ok(ApiResponse<IEnumerable<EmployeeDto>>.Ok(result.Value!, result.Message));
-    }
+[HttpGet]
+[Authorize(Roles = "Admin,HR,Manager,PayrollStaff,Employee")]
+public async Task<ActionResult<ApiResponse<IEnumerable<EmployeeDto>>>> GetAll()
+{
+    var result = await _employeeService.GetAllAsync(User);
+    return Ok(ApiResponse<IEnumerable<EmployeeDto>>.Ok(result.Value!, result.Message));
+}
 
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<ApiResponse<EmployeeDto>>> GetById(Guid id)
