@@ -172,6 +172,7 @@ BEGIN
         EndDate DATE NULL,
         BaseSalary DECIMAL(18, 2) NOT NULL,
         Status NVARCHAR(30) NOT NULL CONSTRAINT DF_Contracts_Status DEFAULT (N'Active'),
+        AttachmentUrl NVARCHAR(MAX) NULL,   -- <--- THÊM DÒNG NÀY
         CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Contracts_CreatedAt DEFAULT SYSUTCDATETIME(),
         UpdatedAt DATETIME2(0) NULL,
         CONSTRAINT PK_Contracts PRIMARY KEY (Id),

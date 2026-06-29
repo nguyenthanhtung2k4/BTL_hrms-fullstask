@@ -12,7 +12,7 @@ public class Contract : AuditableEntity
     public DateTime? EndDate { get; set; }
     public decimal BaseSalary { get; set; }
     public string Status { get; set; } = "Active";
-
+    public string? AttachmentUrl { get; set; } 
 
     // Navigation properties
     public Employee Employee { get; set; } = null!;
