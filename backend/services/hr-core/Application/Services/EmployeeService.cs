@@ -311,21 +311,21 @@ public class EmployeeService : IEmployeeService
         );
     }
 
-    public Task<Result> DeleteMultipleAsync(IEnumerable<Guid> ids)
+    public async Task<Result> DeleteMultipleAsync(IEnumerable<Guid> ids)
     {
         foreach (var id in ids)
         {
-            var employee = _dbContext.Employees.Find(id);
+            var employee = await _dbContext.Employees.FindAsync(id);
             if (employee != null)
             {
                 // Check if employee has contracts
-                if (_dbContext.Contracts.Any(c => c.EmployeeId == id))
+                if (await _dbContext.Contracts.AnyAsync(c => c.EmployeeId == id))
                 {
-                    return Task.FromResult(Result.Failure($"Cannot delete employee with ID {id} because they have contract records."));
+                    return Result.Failure($"Cannot delete employee with ID {id} because they have contract records.");
                 }
 
                 // Check if employee has user account
-                var user = _dbContext.Users.FirstOrDefault(u => u.EmployeeId == id);
+                var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.EmployeeId == id);
                 if (user != null)
                 {
                     _dbContext.Users.Remove(user);
@@ -334,6 +334,7 @@ public class EmployeeService : IEmployeeService
                 _dbContext.Employees.Remove(employee);
             }
         }
-        return Task.FromResult(Result.Success("Employees deleted successfully."));
+        await _dbContext.SaveChangesAsync();
+        return Result.Success("Employees deleted successfully.");
     }
 }

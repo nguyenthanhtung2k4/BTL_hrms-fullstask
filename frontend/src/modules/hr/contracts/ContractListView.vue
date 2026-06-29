@@ -27,6 +27,7 @@ const deleteLoading = ref(false)
 const saving = ref(false)
 const filterEmployee = ref('')
 const filterStatus = ref('')
+const search = ref('')
 
 const selectedFile = ref<File | null>(null)
 const filePreviewUrl = ref<string | null>(null)
@@ -85,6 +86,13 @@ const filtered = computed(() => {
   let list = contracts.value
   if (filterEmployee.value) list = list.filter((c) => c.employeeId === filterEmployee.value)
   if (filterStatus.value) list = list.filter((c) => c.status === filterStatus.value)
+  if (search.value) {
+    const q = search.value.toLowerCase()
+    list = list.filter((c) =>
+      c.contractNumber.toLowerCase().includes(q) ||
+      c.employeeName?.toLowerCase().includes(q)
+    )
+  }
   return list
 })
 
@@ -210,6 +218,16 @@ onMounted(load)
     </PageHeader>
 
     <div class="mb-4 flex gap-3 flex-wrap">
+      <div class="relative">
+        <input v-model="search" type="text" placeholder="Tìm theo tên NV, số HĐ..."
+          class="h-9 rounded-lg border border-slate-300 bg-white px-3 pl-9 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 min-w-[240px]" />
+        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+      </div>
       <select v-model="filterEmployee"
         class="h-9 rounded-lg border border-slate-300 px-3 text-sm bg-white outline-none focus:border-emerald-500">
         <option value="">Tất cả nhân viên</option>
