@@ -50,7 +50,7 @@ export const router = createRouter({
   history: createWebHistory(),
   routes: [
     // Public
-    { path: '/login', name: 'login', component: LoginView },
+    { path: '/', name: 'login', component: LoginView },
 
     // Protected
     {
@@ -59,7 +59,7 @@ export const router = createRouter({
       meta: { requiresAuth: true },
       children: [
         // Dashboard
-        { path: '', name: 'dashboard', component: DashboardView },
+        { path: 'dashboard', name: 'dashboard', component: DashboardView },
 
         // Notifications
         { path: 'notifications', name: 'notifications', component: NotificationListView },

@@ -274,7 +274,7 @@ Port dự kiến:
 
 ```text
 Frontend:              http://localhost:5173
-API Gateway:           http://localhost:5000
+API Gateway:           http://localhost:5005
 HR Core Service:        http://localhost:5001
 Attendance Service:    http://localhost:5002
 Payroll Report Service:http://localhost:5003

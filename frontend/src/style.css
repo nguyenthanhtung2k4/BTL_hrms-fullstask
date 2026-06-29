@@ -3,53 +3,53 @@
 
 
 /* ─────────────────────────────────────────────────────────
-   CSS Design Tokens — Light Mode (default)
-───────────────────────────────────────────────────────── */
+   CSS Design Tokens — Light Mode (Premium Forest Mint)
+   ───────────────────────────────────────────────────────── */
 :root {
   /* Backgrounds */
-  --bg-page:       hsl(210, 20%, 98%);
+  --bg-page:       hsl(160, 20%, 97.5%);
   --bg-surface:    hsl(0, 0%, 100%);
-  --bg-subtle:     hsl(210, 17%, 96%);
-  --bg-muted:      hsl(210, 14%, 93%);
+  --bg-subtle:     hsl(160, 15%, 95.5%);
+  --bg-muted:      hsl(160, 12%, 92.5%);
 
   /* Borders */
-  --border:        hsl(214, 32%, 91%);
-  --border-strong: hsl(214, 25%, 83%);
+  --border:        hsl(160, 12%, 90%);
+  --border-strong: hsl(160, 10%, 82%);
 
   /* Text */
-  --text-primary:   hsl(222, 47%, 11%);
-  --text-secondary: hsl(215, 16%, 47%);
-  --text-tertiary:  hsl(215, 13%, 65%);
+  --text-primary:   hsl(160, 40%, 11%);
+  --text-secondary: hsl(160, 15%, 38%);
+  --text-tertiary:  hsl(160, 10%, 58%);
   --text-inverse:   hsl(0, 0%, 100%);
 
-  /* Brand — Emerald */
-  --color-primary:       hsl(158, 64%, 42%);
-  --color-primary-hover: hsl(158, 64%, 36%);
-  --color-primary-light: hsl(158, 64%, 95%);
-  --color-primary-text:  hsl(158, 64%, 30%);
+  /* Brand — Emerald Premium */
+  --color-primary:       hsl(161, 84%, 38%);
+  --color-primary-hover: hsl(161, 84%, 31%);
+  --color-primary-light: hsl(161, 84%, 96%);
+  --color-primary-text:  hsl(161, 84%, 25%);
 
   /* Semantic */
-  --color-success:       hsl(142, 71%, 45%);
-  --color-success-light: hsl(142, 71%, 94%);
-  --color-warning:       hsl(45, 93%, 47%);
-  --color-warning-light: hsl(45, 93%, 94%);
-  --color-danger:        hsl(351, 83%, 53%);
-  --color-danger-light:  hsl(351, 83%, 95%);
-  --color-info:          hsl(213, 94%, 60%);
-  --color-info-light:    hsl(213, 94%, 94%);
+  --color-success:       hsl(150, 75%, 38%);
+  --color-success-light: hsl(150, 75%, 95%);
+  --color-warning:       hsl(42, 95%, 45%);
+  --color-warning-light: hsl(42, 95%, 94%);
+  --color-danger:        hsl(356, 85%, 55%);
+  --color-danger-light:  hsl(356, 85%, 96%);
+  --color-info:          hsl(198, 90%, 46%);
+  --color-info-light:    hsl(198, 90%, 95%);
 
   /* Shadows */
-  --shadow-sm:   0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md:   0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
-  --shadow-lg:   0 4px 16px rgba(0, 0, 0, 0.10);
-  --shadow-xl:   0 20px 60px rgba(0, 0, 0, 0.12);
+  --shadow-sm:   0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md:   0 4px 12px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-lg:   0 12px 28px rgba(0, 0, 0, 0.07);
+  --shadow-xl:   0 24px 68px rgba(0, 0, 0, 0.10);
 
   /* Sidebar */
   --sidebar-bg:     hsl(0, 0%, 100%);
-  --sidebar-border: hsl(214, 32%, 91%);
-  --sidebar-hover:  hsl(158, 64%, 96%);
-  --sidebar-active: hsl(158, 64%, 94%);
-  --sidebar-active-text: hsl(158, 64%, 30%);
+  --sidebar-border: hsl(160, 12%, 90%);
+  --sidebar-hover:  hsl(161, 84%, 96%);
+  --sidebar-active: hsl(161, 84%, 93%);
+  --sidebar-active-text: hsl(161, 84%, 25%);
 
   /* Transitions */
   --transition-fast:   150ms ease-out;
@@ -65,40 +65,40 @@
 }
 
 /* ─────────────────────────────────────────────────────────
-   Dark Mode — [data-theme="dark"]
-───────────────────────────────────────────────────────── */
+   Dark Mode — [data-theme="dark"] (Emerald Jade Midnight)
+   ───────────────────────────────────────────────────────── */
 [data-theme="dark"] {
-  --bg-page:       hsl(222, 47%, 8%);
-  --bg-surface:    hsl(222, 47%, 11%);
-  --bg-subtle:     hsl(222, 40%, 14%);
-  --bg-muted:      hsl(222, 35%, 17%);
+  --bg-page:       hsl(160, 15%, 6%);
+  --bg-surface:    hsl(160, 12%, 10%);
+  --bg-subtle:     hsl(160, 12%, 14%);
+  --bg-muted:      hsl(160, 8%, 18%);
 
-  --border:        hsl(217, 33%, 20%);
-  --border-strong: hsl(217, 28%, 28%);
+  --border:        hsl(160, 8%, 18%);
+  --border-strong: hsl(160, 10%, 25%);
 
-  --text-primary:   hsl(210, 40%, 96%);
-  --text-secondary: hsl(215, 20%, 65%);
-  --text-tertiary:  hsl(215, 16%, 48%);
-  --text-inverse:   hsl(222, 47%, 8%);
+  --text-primary:   hsl(160, 20%, 96%);
+  --text-secondary: hsl(160, 10%, 72%);
+  --text-tertiary:  hsl(160, 8%, 52%);
+  --text-inverse:   hsl(160, 15%, 6%);
 
-  --color-primary-light: hsl(158, 64%, 12%);
-  --color-primary-text:  hsl(158, 60%, 60%);
+  --color-primary-light: hsl(161, 84%, 12%);
+  --color-primary-text:  hsl(161, 80%, 65%);
 
-  --color-success-light: hsl(142, 40%, 12%);
-  --color-warning-light: hsl(45, 50%, 12%);
-  --color-danger-light:  hsl(351, 40%, 12%);
-  --color-info-light:    hsl(213, 50%, 12%);
+  --color-success-light: hsl(150, 75%, 11%);
+  --color-warning-light: hsl(42, 50%, 11%);
+  --color-danger-light:  hsl(356, 40%, 11%);
+  --color-info-light:    hsl(198, 50%, 11%);
 
-  --shadow-sm:   0 1px 2px rgba(0, 0, 0, 0.30);
-  --shadow-md:   0 2px 6px rgba(0, 0, 0, 0.35);
-  --shadow-lg:   0 8px 24px rgba(0, 0, 0, 0.40);
-  --shadow-xl:   0 20px 60px rgba(0, 0, 0, 0.50);
+  --shadow-sm:   0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-md:   0 4px 16px rgba(0, 0, 0, 0.35);
+  --shadow-lg:   0 12px 32px rgba(0, 0, 0, 0.45);
+  --shadow-xl:   0 24px 72px rgba(0, 0, 0, 0.55);
 
-  --sidebar-bg:     hsl(222, 47%, 11%);
-  --sidebar-border: hsl(217, 33%, 20%);
-  --sidebar-hover:  hsl(158, 30%, 13%);
-  --sidebar-active: hsl(158, 30%, 15%);
-  --sidebar-active-text: hsl(158, 60%, 60%);
+  --sidebar-bg:     hsl(160, 12%, 10%);
+  --sidebar-border: hsl(160, 8%, 18%);
+  --sidebar-hover:  hsl(161, 30%, 14%);
+  --sidebar-active: hsl(161, 30%, 17%);
+  --sidebar-active-text: hsl(161, 80%, 65%);
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -188,3 +188,146 @@ button, input, select, textarea {
   opacity: 0;
   transform: translateY(-4px);
 }
+
+/* ─────────────────────────────────────────────────────────
+   Dark Mode Global Contrast Overrides
+   Ensures static light utility classes adapt to dark mode
+───────────────────────────────────────────────────────── */
+[data-theme="dark"] .bg-white,
+[data-theme="dark"] .bg-white\/80 {
+  background-color: var(--bg-surface) !important;
+}
+[data-theme="dark"] .bg-slate-50,
+[data-theme="dark"] .bg-gray-50,
+[data-theme="dark"] .bg-slate-100 {
+  background-color: var(--bg-subtle) !important;
+}
+[data-theme="dark"] .text-slate-900,
+[data-theme="dark"] .text-slate-950,
+[data-theme="dark"] .text-slate-800,
+[data-theme="dark"] .text-gray-900,
+[data-theme="dark"] .text-gray-800,
+[data-theme="dark"] .text-slate-700,
+[data-theme="dark"] .text-gray-700 {
+  color: var(--text-primary) !important;
+}
+[data-theme="dark"] .text-slate-600,
+[data-theme="dark"] .text-gray-600,
+[data-theme="dark"] .text-slate-500,
+[data-theme="dark"] .text-gray-500 {
+  color: var(--text-secondary) !important;
+}
+[data-theme="dark"] .border-slate-100,
+[data-theme="dark"] .border-slate-200,
+[data-theme="dark"] .border-gray-100,
+[data-theme="dark"] .border-gray-200 {
+  border-color: var(--border) !important;
+}
+[data-theme="dark"] .border-slate-300,
+[data-theme="dark"] .border-gray-300 {
+  border-color: var(--border-strong) !important;
+}
+
+/* Form input dark mode overrides */
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background-color: var(--bg-surface) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-strong) !important;
+}
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] select::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: var(--text-tertiary) !important;
+}
+
+/* ─────────────────────────────────────────────────────────
+   Premium SaaS Form Controls & Inputs overrides
+   ───────────────────────────────────────────────────────── */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+input[type="datetime-local"],
+input[type="search"],
+select {
+  height: 2.375rem !important; /* Clean corporate height (38px) */
+  border-radius: var(--radius-md) !important;
+  border: 1px solid var(--border-strong) !important;
+  padding: 0.5rem 0.875rem !important;
+  font-size: 0.8125rem !important;
+  background-color: var(--bg-surface) !important;
+  color: var(--text-primary) !important;
+  transition: all var(--transition-fast) !important;
+  outline: none !important;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+input[type="date"]:focus,
+input[type="datetime-local"]:focus,
+input[type="search"]:focus,
+select:focus {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 12%, transparent) !important;
+}
+
+textarea {
+  border-radius: var(--radius-md) !important;
+  border: 1px solid var(--border-strong) !important;
+  padding: 0.5rem 0.875rem !important;
+  font-size: 0.8125rem !important;
+  background-color: var(--bg-surface) !important;
+  color: var(--text-primary) !important;
+  transition: all var(--transition-fast) !important;
+  outline: none !important;
+}
+
+textarea:focus {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 12%, transparent) !important;
+}
+
+/* ─────────────────────────────────────────────────────────
+   Premium Table Customizations (Spacious & Clean)
+   ───────────────────────────────────────────────────────── */
+.app-table-wrap {
+  box-shadow: var(--shadow-md) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-xl) !important;
+  overflow: hidden !important;
+}
+
+.app-table__th {
+  padding: 0.875rem 1.25rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.05em !important;
+  background-color: color-mix(in srgb, var(--bg-subtle) 80%, transparent) !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+.app-table__td {
+  padding: 0.925rem 1.25rem !important;
+  font-size: 0.8125rem !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+.app-table__row {
+  transition: background-color var(--transition-base) !important;
+}
+
+.app-table__row:hover td {
+  background-color: color-mix(in srgb, var(--color-primary) 2.5%, var(--bg-subtle)) !important;
+}
+
+.app-table__pagination {
+  border-top: 1px solid var(--border) !important;
+  background-color: var(--bg-surface) !important;
+  padding: 1rem 1.25rem !important;
+}
+</style>
+

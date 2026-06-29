@@ -16,6 +16,7 @@ import { useLocale, type LocaleCode } from '../composables/useLocale'
 import AppToast from '../components/ui/AppToast.vue'
 
 import { useNotificationStore } from '../stores/notification'
+import gsap from 'gsap'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -28,6 +29,37 @@ const { currentLocale, setLocale } = useLocale()
 const mobileOpen = ref(false)
 const langDropdownOpen = ref(false)
 const themeDropdownOpen = ref(false)
+
+// GSAP Page Transition Callbacks
+function onBeforeEnter(el: any) {
+  gsap.set(el, {
+    opacity: 0,
+    y: 12,
+    scale: 0.99
+  })
+}
+
+function onEnter(el: any, done: () => void) {
+  gsap.to(el, {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    duration: 0.4,
+    ease: 'power2.out',
+    onComplete: done
+  })
+}
+
+function onLeave(el: any, done: () => void) {
+  gsap.to(el, {
+    opacity: 0,
+    y: -12,
+    scale: 0.99,
+    duration: 0.25,
+    ease: 'power2.in',
+    onComplete: done
+  })
+}
 
 
 
@@ -387,7 +419,17 @@ async function logout() {
 
       <!-- Page content -->
       <main class="flex-1 px-4 py-6 lg:px-8">
-        <RouterView />
+        <router-view v-slot="{ Component }">
+          <transition
+            :css="false"
+            @before-enter="onBeforeEnter"
+            @enter="onEnter"
+            @leave="onLeave"
+            mode="out-in"
+          >
+            <component :is="Component" />
+          </transition>
+        </router-view>
       </main>
     </div>
 
@@ -406,8 +448,12 @@ async function logout() {
 :deep(.router-link-active:not(.sidebar-active)):hover {
   background-color: var(--sidebar-hover);
 }
+nav a {
+  transition: all var(--transition-fast);
+}
 nav a:hover {
   background-color: var(--sidebar-hover);
   color: var(--sidebar-active-text);
+  transform: translateX(4px);
 }
 </style>

@@ -6,7 +6,7 @@
  */
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axios'
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000'
+const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5005'
 
 // ─── Keys lưu trữ ────────────────────────────────────────────────────────────
 const TOKEN_KEY         = 'hrms_token'
@@ -104,8 +104,8 @@ apiClient.interceptors.response.use(
 function handleLogout() {
   localStorage.removeItem(TOKEN_KEY)
   localStorage.removeItem(REFRESH_TOKEN_KEY)
-  if (!window.location.pathname.includes('/login')) {
-    window.location.href = '/login'
+  if (window.location.pathname !== '/') {
+    window.location.href = '/'
   }
 }
 
