@@ -89,8 +89,10 @@ const menuGroups = computed(() => {
   if (auth.isManager) {
     attItems.push({ to: '/attendance/records', name: 'attendance-records', label: t('nav.attendanceRecords'), icon: ClipboardList })
   }
-  attItems.push({ to: '/attendance/checkin', name: 'attendance-checkin', label: t('nav.checkin'), icon: CalendarCheck })
-  attItems.push({ to: '/attendance/my-attendance', name: 'attendance-my-attendance', label: t('nav.myAttendance'), icon: ClipboardList })
+  if (!auth.isAdmin) {
+    attItems.push({ to: '/attendance/checkin', name: 'attendance-checkin', label: t('nav.checkin'), icon: CalendarCheck })
+    attItems.push({ to: '/attendance/my-attendance', name: 'attendance-my-attendance', label: t('nav.myAttendance'), icon: ClipboardList })
+  }
   attItems.push({
     to: '/attendance/leaves',
     name: 'attendance-leaves',

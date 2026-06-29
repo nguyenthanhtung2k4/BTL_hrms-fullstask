@@ -15,6 +15,10 @@
 
 ==>>  tHEM DEMO  db NHIỀU DATA ( nhan vien )
 
+=====================================  BUG cua Vượng 
+-  xóa nhân viên Db k đổi trạng thái(  vẫn  để  activate ) 
+-  tạo nhân viên 
+
 
 ================================================== CHỐT  LẠI 
 

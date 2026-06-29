@@ -234,6 +234,11 @@ router.beforeEach(async (to) => {
     return { name: 'dashboard' }
   }
 
+  // Ngăn Admin truy cập các chức năng check-in/check-out và chấm công cá nhân
+  if (auth.isAuthenticated && auth.isAdmin && (to.name === 'attendance-checkin' || to.name === 'attendance-my-attendance')) {
+    return { name: 'dashboard' }
+  }
+
   // Kiểm tra role
   const requiredRoles = to.meta.roles as string[] | undefined
   if (requiredRoles && auth.isAuthenticated) {
