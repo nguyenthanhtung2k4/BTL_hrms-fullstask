@@ -104,8 +104,8 @@ apiClient.interceptors.response.use(
 function handleLogout() {
   localStorage.removeItem(TOKEN_KEY)
   localStorage.removeItem(REFRESH_TOKEN_KEY)
-  if (!window.location.pathname.includes('/login')) {
-    window.location.href = '/login'
+  if (window.location.pathname !== '/') {
+    window.location.href = '/'
   }
 }
 

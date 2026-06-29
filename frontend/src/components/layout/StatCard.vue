@@ -32,13 +32,14 @@ defineProps<{
   background-color: var(--bg-surface);
   padding: 1.25rem;
   box-shadow: var(--shadow-sm);
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+  transition: transform var(--transition-base), box-shadow var(--transition-base), border-color var(--transition-base);
   cursor: default;
+  will-change: transform, box-shadow, border-color;
 }
 .stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--border-strong);
+  transform: translateY(-4px) scale(1.005);
+  box-shadow: var(--shadow-lg);
+  border-color: color-mix(in srgb, var(--color-primary) 25%, var(--border-strong));
 }
 
 .stat-card__header {
