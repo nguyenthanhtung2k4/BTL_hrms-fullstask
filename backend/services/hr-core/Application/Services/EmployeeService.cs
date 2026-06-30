@@ -311,4 +311,30 @@ public class EmployeeService : IEmployeeService
         );
     }
 
+    public async Task<Result> DeleteMultipleAsync(IEnumerable<Guid> ids)
+    {
+        foreach (var id in ids)
+        {
+            var employee = await _dbContext.Employees.FindAsync(id);
+            if (employee != null)
+            {
+                // Check if employee has contracts
+                if (await _dbContext.Contracts.AnyAsync(c => c.EmployeeId == id))
+                {
+                    return Result.Failure($"Cannot delete employee with ID {id} because they have contract records.");
+                }
+
+                // Check if employee has user account
+                var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.EmployeeId == id);
+                if (user != null)
+                {
+                    _dbContext.Users.Remove(user);
+                }
+
+                _dbContext.Employees.Remove(employee);
+            }
+        }
+        await _dbContext.SaveChangesAsync();
+        return Result.Success("Employees deleted successfully.");
+    }
 }

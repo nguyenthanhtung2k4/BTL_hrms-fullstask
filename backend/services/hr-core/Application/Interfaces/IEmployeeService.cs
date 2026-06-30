@@ -14,4 +14,6 @@ public interface IEmployeeService
     Task<Result<EmployeeDto>> UpdateAsync(Guid id, UpdateEmployeeDto dto);
     Task<Result> ChangeStatusAsync(Guid id, ChangeStatusDto dto);
     Task<Result> DeleteAsync(Guid id);
+
+    Task<Result> DeleteMultipleAsync (IEnumerable<Guid> ids);
 }

@@ -78,4 +78,16 @@ public class DepartmentsController : ControllerBase
 
         return Ok(ApiResponse.Ok(result.Message));
     }
+
+    [HttpGet("my")]
+    [Authorize(Roles = "Manager")]
+    public async Task<ActionResult<ApiResponse<IEnumerable<DepartmentDto>>>> GetMyDepartments()
+    {
+        var employeeIdClaim = User.FindFirst("employeeId")?.Value;
+        if (!Guid.TryParse(employeeIdClaim, out var managerId))
+            return Forbid();
+
+        var result = await _departmentService.GetMyDepartmentsAsync(managerId);
+        return Ok(ApiResponse<IEnumerable<DepartmentDto>>.Ok(result.Value!, result.Message));
+    }
 }

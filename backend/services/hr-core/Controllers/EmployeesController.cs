@@ -102,4 +102,17 @@ public class EmployeesController : ControllerBase
 
         return Ok(ApiResponse.Ok(result.Message));
     }
+
+    [HttpDelete("list-employees")]
+    [Authorize(Roles = "Admin,HR")]
+    public async Task<ActionResult<ApiResponse>> DeleteMultiple([FromBody] List<Guid> employeeIds)
+    {
+        var result = await _employeeService.DeleteMultipleAsync(employeeIds);
+        if (result.IsFailure)
+        {
+            return BadRequest(ApiResponse.Fail(result.Errors, result.Message));
+        }
+
+        return Ok(ApiResponse.Ok(result.Message));
+    }
 }

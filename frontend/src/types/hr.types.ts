@@ -114,6 +114,7 @@ export type ContractType = 'Chính thức' | 'Thử việc' | 'Part-time'
 export interface Contract {
   id: string
   contractNumber: string
+  attachmentUrl?: string
   employeeId: string
   employeeName: string
   contractType: ContractType
@@ -131,6 +132,7 @@ export interface CreateContractDto {
   contractType: ContractType
   startDate: string
   endDate?: string
+  attachmentUrl?: string | null
   baseSalary: number
 }
 
@@ -138,6 +140,7 @@ export interface UpdateContractDto {
   contractType: ContractType
   startDate: string
   endDate?: string
+  attachmentUrl?: string | null
   baseSalary: number
   status: ContractStatus
 }
