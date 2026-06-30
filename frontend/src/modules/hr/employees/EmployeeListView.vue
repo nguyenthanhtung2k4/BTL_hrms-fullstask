@@ -64,7 +64,13 @@ const filtered = computed(() => {
   }
   if (filterDept.value) list = list.filter((e) => e.departmentId === filterDept.value)
   if (filterStatus.value) list = list.filter((e) => e.status === filterStatus.value)
-  return list
+  
+  // Prioritize active employees ('Active' status) on top
+  return [...list].sort((a, b) => {
+    if (a.status === 'Active' && b.status !== 'Active') return -1
+    if (a.status !== 'Active' && b.status === 'Active') return 1
+    return 0
+  })
 })
 
 const { currentPage, perPage, paginatedData, total } = usePagination(filtered)
@@ -150,20 +156,41 @@ async function handleFileUpload(event: Event) {
     
     for (const row of rows) {
       try {
+        const empCode = row['Mã NV']?.toString() || ''
+        const fullName = row['Họ tên']?.toString() || row['Tên']?.toString() || ''
+        const email = row['Email']?.toString() || ''
+        
+        if (!empCode || !fullName || !email) {
+          throw new Error('Thiếu thông tin bắt buộc: Mã NV, Họ tên, hoặc Email.')
+        }
+
+        const deptName = row['Phòng ban']?.toString() || ''
+        const posName = row['Chức vụ']?.toString() || ''
+        
+        const dept = departments.value.find(d => d.name === deptName)
+        const pos = positions.value.find(p => p.name === posName)
+        
+        if (!dept) {
+          throw new Error(`Không tìm thấy phòng ban '${deptName}' trong hệ thống.`)
+        }
+        if (!pos) {
+          throw new Error(`Không tìm thấy chức vụ '${posName}' trong hệ thống.`)
+        }
+
         const dto: CreateEmployeeDto = {
-          employeeCode: row['Mã NV']?.toString() || '',
-          fullName: row['Họ tên']?.toString() || row['Tên']?.toString() || '',
-          email: row['Email']?.toString() || '',
+          employeeCode: empCode,
+          fullName: fullName,
+          email: email,
           phone: row['SĐT']?.toString() || '',
           hireDate: row['Ngày vào'] ? new Date(row['Ngày vào']).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-          departmentId: departments.value.find(d => d.name === row['Phòng ban'])?.id || '',
-          positionId: positions.value.find(p => p.name === row['Chức vụ'])?.id || '',
+          departmentId: dept.id,
+          positionId: pos.id,
           dateOfBirth: row['Ngày sinh'] ? new Date(row['Ngày sinh']).toISOString().split('T')[0] : undefined,
           gender: row['Giới tính'] === 'Nữ' ? 'Female' : (row['Giới tính'] === 'Nam' ? 'Male' : 'Other')
         }
         await employeeService.create(dto)
         successCount++
-      } catch (err) {
+      } catch (err: any) {
         console.error('Lỗi khi import dòng:', row, err)
         errorCount++
       }

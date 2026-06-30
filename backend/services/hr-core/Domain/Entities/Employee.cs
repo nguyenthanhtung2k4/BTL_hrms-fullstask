@@ -17,6 +17,7 @@ public class Employee : AuditableEntity
     public Guid PositionId { get; set; }
     public Guid? ManagerEmployeeId { get; set; }
     public string Status { get; set; } = "Active";
+    public bool IsDeleted { get; set; } = false;
 
 
     // Navigation properties

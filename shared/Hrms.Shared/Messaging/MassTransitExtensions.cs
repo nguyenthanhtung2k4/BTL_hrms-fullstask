@@ -10,12 +10,16 @@ public static class MassTransitExtensions
     public static IServiceCollection AddSharedMassTransit(
         this IServiceCollection services, 
         IConfiguration configuration, 
+        string serviceName,
         Action<IBusRegistrationConfigurator>? configureConsumers = null)
     {
         services.AddMassTransit(x =>
         {
             // Register consumers if passed
             configureConsumers?.Invoke(x);
+
+            // Configure kebab-case endpoints with service name prefix to prevent competing consumers
+            x.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter(serviceName, false));
 
             x.UsingRabbitMq((context, cfg) =>
             {

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { userService } from '../../../services/user.service'
+import { extractError } from '../../../services/apiClient'
 import { useToastStore } from '../../../stores/toast'
 import type { Employee } from '../../../types/hr.types'
 import type { UserAccount } from '../../../types/user.types'
@@ -35,7 +36,7 @@ async function save() {
     toast.success(`Đã cập nhật vai trò cho tài khoản ${props.userAccount.email} thành công!`)
     emit('saved')
   } catch (err: any) {
-    toast.error(err?.response?.data?.message ?? 'Cập nhật vai trò thất bại')
+    toast.error(extractError(err, 'Cập nhật vai trò thất bại'))
   } finally {
     saving.value = false
   }

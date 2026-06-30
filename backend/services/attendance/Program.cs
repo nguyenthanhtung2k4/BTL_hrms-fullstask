@@ -58,6 +58,12 @@ using (var scope = app.Services.CreateScope())
     var context = scope.ServiceProvider.GetRequiredService<Hrms.Attendance.Infrastructure.Persistence.AttendanceDbContext>();
     await context.Database.EnsureCreatedAsync();
     await context.Database.ExecuteSqlRawAsync(
+        "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.EmployeeProjections') AND name = 'IsDeleted') " +
+        "BEGIN " +
+        "    ALTER TABLE dbo.EmployeeProjections ADD IsDeleted BIT NOT NULL DEFAULT 0; " +
+        "END"
+    );
+    await context.Database.ExecuteSqlRawAsync(
         "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.EmployeeProjections') AND name = 'HireDate') " +
         "ALTER TABLE dbo.EmployeeProjections ADD HireDate DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME();"
     );
@@ -128,7 +134,8 @@ group.MapGet("/info", () => Results.Ok(new ServiceInfoResponse(
         EventNames.PositionUpdated,
         EventNames.EmployeeCreated,
         EventNames.EmployeeUpdated,
-        EventNames.EmployeeStatusChanged
+        EventNames.EmployeeStatusChanged,
+        EventNames.EmployeeDeleted
     ])));
 
 group.MapGet("/modules", () => Results.Ok(new[]

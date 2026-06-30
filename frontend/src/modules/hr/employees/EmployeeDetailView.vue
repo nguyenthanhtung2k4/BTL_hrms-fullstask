@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { employeeService } from '../../../services/employee.service'
 import { contractService } from '../../../services/contract.service'
 import { userService } from '../../../services/user.service'
+import { extractError } from '../../../services/apiClient'
 import { useAuthStore } from '../../../stores/auth'
 import { useToastStore } from '../../../stores/toast'
 import type { Employee, Contract } from '../../../types/hr.types'
@@ -35,14 +36,20 @@ const showEditRolesModal = ref(false)
 const changingStatus = ref(false)
 
 async function load() {
+  const id = route.params.id as string
   try {
-    const id = route.params.id as string
     employee.value = await employeeService.getById(id)
-    const all = await contractService.getAll()
-    contracts.value = all.filter((c) => c.employeeId === id)
   } catch {
     toast.error('Không tìm thấy nhân viên')
     router.push('/hr/employees')
+    loading.value = false
+    return
+  }
+
+  try {
+    contracts.value = await contractService.getByEmployeeId(id)
+  } catch (err) {
+    console.error('Lỗi tải danh sách hợp đồng:', err)
   } finally {
     loading.value = false
   }
@@ -76,7 +83,7 @@ async function toggleStatus() {
     toast.success(newStatus ? 'Đã kích hoạt tài khoản' : 'Đã tạm khóa tài khoản')
     await loadAccount()
   } catch (err: any) {
-    toast.error(err?.response?.data?.message ?? 'Thao tác thất bại')
+    toast.error(extractError(err, 'Thao tác thất bại'))
   } finally {
     changingStatus.value = false
   }

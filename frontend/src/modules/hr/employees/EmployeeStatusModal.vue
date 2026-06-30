@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { employeeService } from '../../../services/employee.service'
+import { extractError } from '../../../services/apiClient'
 import { useAuthStore } from '../../../stores/auth'
 import { useToastStore } from '../../../stores/toast'
 import type { Employee } from '../../../types/hr.types'
@@ -35,7 +36,7 @@ async function save() {
     })
     toast.success(`Đã đổi trạng thái sang "${newStatus.value}"`)
     emit('saved')
-  } catch (err: any) { toast.error(err?.response?.data?.message ?? 'Cập nhật thất bại') }
+  } catch (err: any) { toast.error(extractError(err, 'Cập nhật thất bại')) }
   finally { saving.value = false }
 }
 </script>

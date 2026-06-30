@@ -29,6 +29,25 @@ public class ContractsController : ControllerBase
         return Ok(ApiResponse<IEnumerable<ContractDto>>.Ok(result.Value!, result.Message));
     }
 
+    [HttpGet("employee/{employeeId:guid}")]
+    public async Task<ActionResult<ApiResponse<IEnumerable<ContractDto>>>> GetByEmployeeId(Guid employeeId)
+    {
+        // Check permissions: Admin, HR, Manager, PayrollStaff can view any contract.
+        // Employee can only view their own contracts.
+        var isPrivileged = User.IsInRole("Admin") || User.IsInRole("HR") || User.IsInRole("Manager") || User.IsInRole("PayrollStaff");
+        if (!isPrivileged)
+        {
+            var employeeIdClaim = User.FindFirst("employeeId")?.Value;
+            if (string.IsNullOrEmpty(employeeIdClaim) || !Guid.TryParse(employeeIdClaim, out var claimEmpId) || claimEmpId != employeeId)
+            {
+                return Forbid();
+            }
+        }
+
+        var result = await _contractService.GetByEmployeeIdAsync(employeeId);
+        return Ok(ApiResponse<IEnumerable<ContractDto>>.Ok(result.Value!, result.Message));
+    }
+
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<ApiResponse<ContractDto>>> GetById(Guid id)
     {

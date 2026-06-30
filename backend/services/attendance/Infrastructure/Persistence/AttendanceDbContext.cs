@@ -70,6 +70,7 @@ public class AttendanceDbContext : DbContext
         {
             entity.ToTable("EmployeeProjections");
             entity.HasKey(e => e.Id);
+            entity.HasQueryFilter(e => !e.IsDeleted);
             entity.Property(e => e.Id).HasColumnName("EmployeeId");
             entity.Property(e => e.EmployeeCode).HasMaxLength(50).IsRequired();
             entity.Property(e => e.FullName).HasMaxLength(200).IsRequired();

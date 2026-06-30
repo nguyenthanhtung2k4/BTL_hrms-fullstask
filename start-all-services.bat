@@ -57,7 +57,7 @@ echo    SQL Server:   localhost:1434 (sa / Hrms@123456789)
 echo    RabbitMQ:     http://localhost:15672 (guest / guest)
 echo.
 echo  Backend:
-echo    Gateway:      http://localhost:5000
+echo    Gateway:      http://localhost:5005
 echo    HR Core:      http://localhost:5001
 echo    Attendance:   http://localhost:5002
 echo    Payroll:      http://localhost:5003

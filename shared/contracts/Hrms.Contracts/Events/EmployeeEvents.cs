@@ -19,6 +19,9 @@ public sealed record EmployeeStatusChangedPayload(
     string NewStatus,
     string? Reason);
 
+public sealed record EmployeeDeletedPayload(
+    Guid EmployeeId);
+
 public sealed record ContractSalaryPayload(
     Guid ContractId,
     Guid EmployeeId,

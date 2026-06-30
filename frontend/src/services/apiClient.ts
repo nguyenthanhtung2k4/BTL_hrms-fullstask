@@ -117,10 +117,23 @@ export function extractData<T>(response: { data: { data: T } }): T {
 // ─── Helper: trích xuất chi tiết lỗi từ ApiResponse ──────────────────────────
 export function extractError(err: any, fallback: string = 'Thao tác thất bại'): string {
   const apiData = err?.response?.data
-  if (apiData?.errors && Array.isArray(apiData.errors) && apiData.errors.length > 0) {
-    return apiData.errors.join(', ')
+  if (!apiData) return err?.message || fallback
+
+  // 1. Kiểm tra mảng errors (camelCase hoặc PascalCase)
+  const errors = apiData.errors || apiData.Errors
+  if (errors && Array.isArray(errors) && errors.length > 0) {
+    return errors.join(', ')
   }
-  return apiData?.message || fallback
+
+  // 2. Kiểm tra detail/Detail (lỗi chi tiết từ ExceptionMiddleware)
+  const detail = apiData.detail || apiData.Detail
+  if (detail) return detail
+
+  // 3. Kiểm tra message/Message
+  const message = apiData.message || apiData.Message
+  if (message) return message
+
+  return fallback
 }
 
 // ─── Export helpers ───────────────────────────────────────────────────────────

@@ -38,6 +38,17 @@ public class ContractService : IContractService
         return Result<IEnumerable<ContractDto>>.Success(dtos);
     }
 
+    public async Task<Result<IEnumerable<ContractDto>>> GetByEmployeeIdAsync(Guid employeeId)
+    {
+        var contracts = await _dbContext.Contracts
+            .Include(c => c.Employee)
+            .Where(c => c.EmployeeId == employeeId)
+            .ToListAsync();
+
+        var dtos = contracts.Select(c => MapToDto(c));
+        return Result<IEnumerable<ContractDto>>.Success(dtos);
+    }
+
     public async Task<Result<ContractDto>> GetByIdAsync(Guid id)
     {
         var contract = await _dbContext.Contracts

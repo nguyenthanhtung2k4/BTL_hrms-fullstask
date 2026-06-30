@@ -9,6 +9,7 @@ public static class EventNames
     public const string EmployeeCreated = nameof(EmployeeCreated);
     public const string EmployeeUpdated = nameof(EmployeeUpdated);
     public const string EmployeeStatusChanged = nameof(EmployeeStatusChanged);
+    public const string EmployeeDeleted = nameof(EmployeeDeleted);
     public const string ContractCreated = nameof(ContractCreated);
     public const string ContractUpdated = nameof(ContractUpdated);
     public const string ContractTerminated = nameof(ContractTerminated);

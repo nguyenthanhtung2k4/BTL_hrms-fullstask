@@ -105,6 +105,7 @@ group.MapGet("/info", () => Results.Ok(new ServiceInfoResponse(
         EventNames.EmployeeCreated,
         EventNames.EmployeeUpdated,
         EventNames.EmployeeStatusChanged,
+        EventNames.EmployeeDeleted,
         EventNames.ContractCreated,
         EventNames.ContractUpdated,
         EventNames.ContractTerminated,

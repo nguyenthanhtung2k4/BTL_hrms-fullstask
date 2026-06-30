@@ -3,6 +3,7 @@
 - xin nghi  (  min max  trong bao lau )  tính luong
 -  Sua lai service tinh luong chi tiet  cho moi nguoi 
 - sua lai giao dien nhan vien them anh nhan vien vao  ok
+
 -  Admin k co cham cong checkin 
 -  sap xep  phieu lương (  admin UI )
 -  Xuất nhập các nhân viên, Excel / csv ( nhân viên  bảng công ) 
