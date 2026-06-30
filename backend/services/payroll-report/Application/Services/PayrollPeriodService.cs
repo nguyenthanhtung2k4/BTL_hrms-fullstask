@@ -139,6 +139,9 @@ public class PayrollPeriodService : IPayrollPeriodService
             return Result<PayrollPeriodDto>.Failure("PayrollRuleNotFound", "Payroll rule not found.");
         }
 
+        // ĐÃ SỬA: Cập nhật mã Code từ DTO để sửa lỗi không lưu được mã kỳ lương
+        period.Code = dto.Code;
+
         period.Name = dto.Name;
         period.FromDate = dto.FromDate;
         period.ToDate = dto.ToDate;
@@ -178,7 +181,6 @@ public class PayrollPeriodService : IPayrollPeriodService
             return Result.Failure("PeriodClosed", "Cannot delete a closed payroll period.");
         }
 
-        // Delete any related payslips, allowances, and deductions
         var payslips = await _dbContext.Payslips.Where(p => p.PayrollPeriodId == id).ToListAsync();
         _dbContext.Payslips.RemoveRange(payslips);
 
@@ -229,7 +231,6 @@ public class PayrollPeriodService : IPayrollPeriodService
 
         _dbContext.PayrollPeriods.Update(period);
 
-        // Also lock all payslips belonging to this period
         var payslips = await _dbContext.Payslips.Where(p => p.PayrollPeriodId == id).ToListAsync();
         foreach (var payslip in payslips)
         {
@@ -240,7 +241,6 @@ public class PayrollPeriodService : IPayrollPeriodService
 
         await _dbContext.SaveChangesAsync();
 
-        // Publish PayrollClosed integration event
         var payload = new PayrollClosedPayload(
             PayrollPeriodId: period.Id,
             PeriodName: period.Name,

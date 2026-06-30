@@ -27,16 +27,14 @@ public class ReportService : IReportService
             return Result<PayrollSummaryReportDto>.Failure("PayrollPeriodNotFound", "Payroll period not found.");
         }
 
-        // Get all payslips for this period
+        // Lấy tất cả phiếu lương kèm theo chi tiết Items
         var payslips = await _dbContext.Payslips
             .Include(p => p.Employee)
             .Include(p => p.Items)
             .Where(p => p.PayrollPeriodId == periodId)
             .ToListAsync();
 
-        // Get all departments to make sure we represent them all
         var departments = await _dbContext.DepartmentProjections.ToListAsync();
-
         var deptSummaries = new List<DepartmentSummaryDto>();
 
         foreach (var dept in departments)
@@ -47,12 +45,8 @@ public class ReportService : IReportService
 
             if (deptPayslips.Count == 0)
             {
-                // Add empty department info
                 deptSummaries.Add(new DepartmentSummaryDto(
-                    dept.Id,
-                    dept.Code,
-                    dept.Name,
-                    0, 0, 0, 0, 0, 0, 0
+                    dept.Id, dept.Code, dept.Name, 0, 0, 0, 0, 0, 0, 0
                 ));
                 continue;
             }
@@ -62,7 +56,8 @@ public class ReportService : IReportService
                 DepartmentCode: dept.Code,
                 DepartmentName: dept.Name,
                 EmployeeCount: deptPayslips.Count,
-                TotalBaseSalary: deptPayslips.Sum(p => p.BaseSalary),
+                // SỬA TẠI ĐÂY: Cộng tổng "Lương thực nhận" từ Items thay vì lương hợp đồng
+                TotalBaseSalary: deptPayslips.Sum(p => p.Items.Where(i => i.ItemType == "BasicSalary").Sum(i => i.Amount)),
                 TotalWorkedDays: deptPayslips.Sum(p => p.WorkedDays),
                 TotalAllowance: deptPayslips.Sum(p => p.Items.Where(i => i.ItemType == "Allowance").Sum(i => i.Amount)),
                 TotalDeduction: deptPayslips.Sum(p => p.TotalDeduction),
@@ -71,7 +66,6 @@ public class ReportService : IReportService
             ));
         }
 
-        // Include any payslips that don't have a department projection mapping just in case
         var unassignedPayslips = payslips
             .Where(p => p.Employee == null || !p.Employee.DepartmentId.HasValue || !departments.Any(d => d.Id == p.Employee.DepartmentId.Value))
             .ToList();
@@ -83,7 +77,8 @@ public class ReportService : IReportService
                 "UNASSIGNED",
                 "Unassigned Department",
                 unassignedPayslips.Count,
-                unassignedPayslips.Sum(p => p.BaseSalary),
+                // SỬA TẠI ĐÂY
+                unassignedPayslips.Sum(p => p.Items.Where(i => i.ItemType == "BasicSalary").Sum(i => i.Amount)),
                 unassignedPayslips.Sum(p => p.WorkedDays),
                 unassignedPayslips.Sum(p => p.Items.Where(i => i.ItemType == "Allowance").Sum(i => i.Amount)),
                 unassignedPayslips.Sum(p => p.TotalDeduction),
@@ -96,7 +91,8 @@ public class ReportService : IReportService
             PayrollPeriodId: periodId,
             PeriodName: period.Name,
             TotalEmployees: payslips.Count,
-            TotalBaseSalary: payslips.Sum(p => p.BaseSalary),
+            // SỬA TẠI ĐÂY (Tổng toàn công ty)
+            TotalBaseSalary: payslips.Sum(p => p.Items.Where(i => i.ItemType == "BasicSalary").Sum(i => i.Amount)),
             TotalAllowance: payslips.Sum(p => p.Items.Where(i => i.ItemType == "Allowance").Sum(i => i.Amount)),
             TotalGrossSalary: payslips.Sum(p => p.GrossSalary),
             TotalDeduction: payslips.Sum(p => p.TotalDeduction),

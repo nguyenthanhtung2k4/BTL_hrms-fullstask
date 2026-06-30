@@ -36,7 +36,6 @@ const form = ref({ payrollPeriodId: '', employeeId: '', deductionTypeId: '', amo
 const newTypeName = ref('')
 const errors = ref<Record<string, string>>({})
 
-// Filter states
 const searchQuery = ref('')
 const filterPeriod = ref('')
 const filterType = ref('')
@@ -47,7 +46,6 @@ function clearFilters() {
   filterType.value = ''
 }
 
-// Dynamic columns based on role permissions
 const columns = computed(() => {
   const list = [
     { key: 'period', label: 'Kỳ lương' },
@@ -78,8 +76,27 @@ async function load() {
       payrollPeriodService.getAll(),
       auth.isEmployee ? Promise.resolve([]) : employeeService.getAll(),
     ])
-    deductions.value = dedData
-    types.value = typeData
+
+    // ĐÃ FIX: Lọc trùng lặp danh sách khấu trừ cho nhân viên (tránh lặp đúp hiển thị)
+    const uniqueDeductions = new Map()
+    dedData.forEach((item: any) => {
+      const uniqueKey = `${item.payrollPeriodId}_${item.employeeId}_${item.deductionTypeId}`
+      if (!uniqueDeductions.has(uniqueKey)) {
+        uniqueDeductions.set(uniqueKey, item)
+      }
+    })
+    deductions.value = Array.from(uniqueDeductions.values())
+
+    // ĐÃ FIX: Lọc trùng lặp danh sách Loại khấu trừ (bỏ qua khác biệt chữ hoa/thường và khoảng trắng)
+    const uniqueTypes = new Map()
+    typeData.forEach((t: any) => {
+      const normalizedKey = t.name.trim().toLowerCase()
+      if (!uniqueTypes.has(normalizedKey)) {
+        uniqueTypes.set(normalizedKey, t)
+      }
+    })
+    types.value = Array.from(uniqueTypes.values())
+
     periods.value = periodData
     employees.value = empData
   } catch {
@@ -145,7 +162,6 @@ async function confirmDelete() {
   }
 }
 
-// Export deductions list to Excel
 function handleExport() {
   try {
     const dataToExport = deductions.value.map((item) => {
@@ -167,7 +183,6 @@ function handleExport() {
   }
 }
 
-// Bulk import deductions from Excel
 async function handleImportSave(validatedRows: any[]) {
   saving.value = true
   let successCount = 0
@@ -199,8 +214,9 @@ async function handleImportSave(validatedRows: any[]) {
   await load()
 }
 
-function fmtMoney(n: number) {
-  return n.toLocaleString('vi-VN') + ' ₫'
+// ĐÃ FIX: Ép kiểu dữ liệu về Number để Format tiền tệ chuẩn xác
+function fmtMoney(n: any) {
+  return Number(n).toLocaleString('vi-VN') + ' ₫'
 }
 
 const filteredDeductions = computed(() => {
@@ -227,7 +243,6 @@ onMounted(load)
     <PageHeader title="Khấu trừ nhân viên" :breadcrumbs="[{ label: 'Lương & Báo cáo' }, { label: 'Khấu trừ' }]">
       <template #actions>
         <div class="flex gap-2">
-          <!-- Export Button - for all roles -->
           <AppButton variant="secondary" @click="handleExport">
             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -235,7 +250,6 @@ onMounted(load)
             <span>Xuất Excel</span>
           </AppButton>
 
-          <!-- Import and Add Buttons - strictly Admin / PayrollStaff -->
           <template v-if="auth.isPayrollStaff">
             <AppButton variant="secondary" @click="showImportModal = true">
               <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -255,7 +269,6 @@ onMounted(load)
       </template>
     </PageHeader>
 
-    <!-- Filter Card -->
     <div class="mb-6 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
       <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
@@ -264,7 +277,6 @@ onMounted(load)
         </div>
         
         <div class="flex flex-wrap gap-3 items-center">
-          <!-- Search employee name or code (hidden for Employee role) -->
           <div v-if="!auth.isEmployee" class="relative min-w-[200px] flex-1 md:flex-initial">
             <span class="absolute inset-y-0 left-3 flex items-center text-slate-400">
               <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -279,7 +291,6 @@ onMounted(load)
             />
           </div>
 
-          <!-- Period dropdown -->
           <select
             v-model="filterPeriod"
             class="h-9 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
@@ -288,7 +299,6 @@ onMounted(load)
             <option v-for="p in periods" :key="p.id" :value="p.id">{{ p.name }}</option>
           </select>
 
-          <!-- Deduction Type dropdown -->
           <select
             v-model="filterType"
             class="h-9 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
@@ -323,7 +333,6 @@ onMounted(load)
     </AppTable>
     <AppPagination :total="total" :current="currentPage" :per-page="perPage" @change="currentPage = $event" @per-page-change="perPage = $event" />
 
-    <!-- Form modal -->
     <AppModal v-if="showForm" title="Thêm khấu trừ" @close="showForm = false">
       <div class="space-y-4">
         <div class="flex flex-col gap-1">
@@ -371,7 +380,6 @@ onMounted(load)
       </template>
     </AppModal>
 
-    <!-- Excel Import Modal -->
     <ExcelImportModal
       v-if="showImportModal"
       :is-open="showImportModal"

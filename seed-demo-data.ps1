@@ -1,6 +1,5 @@
-$BASE = "http://localhost:5000/api/v1"
+$BASE = "http://localhost:5005/api/v1"
 $hdrs = @{ "Content-Type" = "application/json; charset=utf-8" }
-
 function OK($m) { Write-Host "  OK $m" -ForegroundColor Green }
 function ERR($m) { Write-Host "  ERR $m" -ForegroundColor Red }
 function STEP($m) { Write-Host "`n--- $m ---" -ForegroundColor Cyan }

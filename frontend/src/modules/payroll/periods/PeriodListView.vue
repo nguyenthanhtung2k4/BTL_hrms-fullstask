@@ -47,11 +47,12 @@ function openCreate() {
   const mm = String(now.getMonth() + 1).padStart(2, '0')
   const yy = now.getFullYear()
   form.value = {
-    code: `KY-${mm}-${yy}`,
-    name: `Lương tháng ${now.getMonth() + 1}/${yy}`,
+    // SỬA LỖI 3: Tự động tạo mã gợi ý chuẩn form
+    code: `KY-${mm}-${yy}`, 
+    name: `Lương tháng ${mm}/${yy}`,
     fromDate: new Date(yy, now.getMonth(), 1).toISOString().split('T')[0],
     toDate: new Date(yy, now.getMonth() + 1, 0).toISOString().split('T')[0],
-    payrollRuleId: rules.value[0]?.id ?? ''
+    payrollRuleId: rules.value.length > 0 ? rules.value[0].id : ''
   }
   errors.value = {}; showForm.value = true
 }
@@ -103,7 +104,14 @@ async function confirmDelete() {
   finally { deleteLoading.value = false }
 }
 
-function fmt(d: string) { return new Date(d).toLocaleDateString('vi-VN') }
+// SỬA LỖI 1: Ép cứng định dạng hiển thị ngày/tháng/năm để không bị lỗi trên các trình duyệt khác nhau
+function fmt(d: string) { 
+  if (!d) return '';
+  const dt = new Date(d);
+  const dd = String(dt.getDate()).padStart(2, '0');
+  const mm = String(dt.getMonth() + 1).padStart(2, '0');
+  return `${dd}/${mm}/${dt.getFullYear()}`;
+}
 
 const { currentPage, perPage, paginatedData, total } = usePagination(periods)
 
@@ -126,7 +134,12 @@ onMounted(load)
         <td class="px-4 py-3 text-sm font-medium">{{ (row as PayrollPeriod).name }}</td>
         <td class="px-4 py-3 text-sm text-slate-600">{{ fmt((row as PayrollPeriod).fromDate) }}</td>
         <td class="px-4 py-3 text-sm text-slate-600">{{ fmt((row as PayrollPeriod).toDate) }}</td>
-        <td class="px-4 py-3 text-sm text-slate-600">{{ (row as PayrollPeriod).payrollRuleName ?? '—' }}</td>
+        
+        <td class="px-4 py-3 text-sm text-slate-600">
+          <!-- SỬA LỖI 2: Thêm toLowerCase() để giải quyết xung đột chữ hoa/chữ thường trong ID -->
+          {{ rules.find(r => r.id?.toLowerCase() === (row as PayrollPeriod).payrollRuleId?.toLowerCase())?.name || '—' }}
+        </td>
+        
         <td class="px-4 py-3"><AppBadge :status="(row as PayrollPeriod).status" /></td>
         <td class="px-4 py-3 text-right">
           <div class="flex justify-end gap-1.5">
@@ -144,7 +157,16 @@ onMounted(load)
     <AppModal v-if="showForm" :title="editTarget ? 'Sửa kỳ lương' : 'Tạo kỳ lương'" @close="showForm = false">
       <div class="space-y-4">
         <div class="grid grid-cols-2 gap-3">
-          <AppInput id="pp-code" v-model="form.code" label="Mã kỳ lương" required :disabled="!!editTarget" :error="errors.code" placeholder="VD: KY-06-2026" />
+          <!-- SỬA LỖI 3: Khóa Mã kỳ lương (disabled) khi đang ở chế độ Sửa (editTarget != null) -->
+          <AppInput 
+            id="pp-code" 
+            v-model="form.code" 
+            label="Mã kỳ lương" 
+            required 
+            :error="errors.code" 
+            placeholder="VD: KY-06-2026" 
+            :disabled="!!editTarget" 
+          />
           <AppInput id="pp-name" v-model="form.name" label="Tên kỳ lương" required :error="errors.name" placeholder="VD: Lương tháng 06/2026" />
         </div>
         <div class="grid grid-cols-2 gap-3">
@@ -169,4 +191,3 @@ onMounted(load)
     <AppConfirm v-if="deleteTarget" title="Xóa kỳ lương" :message="`Xóa kỳ &quot;${deleteTarget.name}&quot;?`" confirm-text="Xóa" :danger="true" :loading="deleteLoading" @confirm="confirmDelete" @cancel="deleteTarget = null" />
   </div>
 </template>
-

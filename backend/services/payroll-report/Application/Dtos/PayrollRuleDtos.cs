@@ -8,8 +8,13 @@ public record PayrollRuleDto(
     string Name,
     decimal WorkDayHours,
     bool PaidLeaveCountsAsWork,
-    decimal OvertimeRate,
-    bool IsActive
+    decimal OtMultiplierWeekday,
+    decimal OtMultiplierWeekend,
+    decimal OtMultiplierHoliday,
+    decimal StandardWorkingDays,
+    decimal LatePenaltyRule,
+    bool IsActive,
+    decimal OvertimeRate
 );
 
 public record CreatePayrollRuleDto(
@@ -17,6 +22,11 @@ public record CreatePayrollRuleDto(
     string Name,
     decimal WorkDayHours,
     bool PaidLeaveCountsAsWork,
+    decimal OtMultiplierWeekday,
+    decimal OtMultiplierWeekend,
+    decimal OtMultiplierHoliday,
+    decimal StandardWorkingDays,
+    decimal LatePenaltyRule,
     decimal OvertimeRate
 );
 
@@ -24,6 +34,11 @@ public record UpdatePayrollRuleDto(
     string Name,
     decimal WorkDayHours,
     bool PaidLeaveCountsAsWork,
-    decimal OvertimeRate,
-    bool IsActive
+    decimal OtMultiplierWeekday,
+    decimal OtMultiplierWeekend,
+    decimal OtMultiplierHoliday,
+    decimal StandardWorkingDays,
+    decimal LatePenaltyRule,
+    bool IsActive,
+    decimal OvertimeRate
 );

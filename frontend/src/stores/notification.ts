@@ -9,7 +9,11 @@ export const useNotificationStore = defineStore('notification', {
   }),
 
   getters: {
-    unreadCount: (state) => state.notifications.filter(n => !n.isRead).length
+    // ĐÃ FIX: Kiểm tra chắc chắn nó là Mảng (Array) thì mới đếm, nếu không thì trả về 0
+    unreadCount: (state) => {
+      if (!Array.isArray(state.notifications)) return 0;
+      return state.notifications.filter(n => !n.isRead).length;
+    }
   },
 
   actions: {
@@ -17,9 +21,11 @@ export const useNotificationStore = defineStore('notification', {
       this.loading = true
       try {
         const data = await notificationService.getMyNotifications()
-        this.notifications = data
+        // ĐÃ FIX: Chỉ gán data nếu nó thực sự là một mảng
+        this.notifications = Array.isArray(data) ? data : []
       } catch (error) {
         console.error('Failed to fetch notifications:', error)
+        this.notifications = [] // Reset về mảng rỗng nếu lỗi API
       } finally {
         this.loading = false
       }
@@ -28,9 +34,11 @@ export const useNotificationStore = defineStore('notification', {
     async markAsRead(id: string) {
       try {
         await notificationService.markAsRead(id)
-        const notif = this.notifications.find(n => n.id === id)
-        if (notif) {
-          notif.isRead = true
+        if (Array.isArray(this.notifications)) {
+          const notif = this.notifications.find(n => n.id === id)
+          if (notif) {
+            notif.isRead = true
+          }
         }
       } catch (error) {
         console.error('Failed to mark notification as read:', error)
@@ -40,9 +48,11 @@ export const useNotificationStore = defineStore('notification', {
     async markAllAsRead() {
       try {
         await notificationService.markAllAsRead()
-        this.notifications.forEach(n => {
-          n.isRead = true
-        })
+        if (Array.isArray(this.notifications)) {
+          this.notifications.forEach(n => {
+            n.isRead = true
+          })
+        }
       } catch (error) {
         console.error('Failed to mark all notifications as read:', error)
       }

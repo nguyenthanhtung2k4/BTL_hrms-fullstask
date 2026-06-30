@@ -29,8 +29,13 @@ public class PayrollRuleService : IPayrollRuleService
                 r.Name,
                 r.WorkDayHours,
                 r.PaidLeaveCountsAsWork,
-                r.OvertimeRate,
-                r.IsActive
+                r.OtMultiplierWeekday,
+                r.OtMultiplierWeekend,
+                r.OtMultiplierHoliday,
+                r.StandardWorkingDays,
+                r.LatePenaltyRule,
+                r.IsActive,
+                r.OvertimeRate
             ))
             .ToListAsync();
 
@@ -51,8 +56,13 @@ public class PayrollRuleService : IPayrollRuleService
             rule.Name,
             rule.WorkDayHours,
             rule.PaidLeaveCountsAsWork,
-            rule.OvertimeRate,
-            rule.IsActive
+            rule.OtMultiplierWeekday,
+            rule.OtMultiplierWeekend,
+            rule.OtMultiplierHoliday,
+            rule.StandardWorkingDays,
+            rule.LatePenaltyRule,
+            rule.IsActive,
+            rule.OvertimeRate
         );
 
         return Result<PayrollRuleDto>.Success(dto, "Successfully retrieved payroll rule.");
@@ -73,7 +83,11 @@ public class PayrollRuleService : IPayrollRuleService
             Name = dto.Name,
             WorkDayHours = dto.WorkDayHours,
             PaidLeaveCountsAsWork = dto.PaidLeaveCountsAsWork,
-            OvertimeRate = dto.OvertimeRate,
+            OtMultiplierWeekday = dto.OtMultiplierWeekday,
+            OtMultiplierWeekend = dto.OtMultiplierWeekend,
+            OtMultiplierHoliday = dto.OtMultiplierHoliday,
+            StandardWorkingDays = dto.StandardWorkingDays,
+            LatePenaltyRule = dto.LatePenaltyRule,
             IsActive = true
         };
 
@@ -86,8 +100,13 @@ public class PayrollRuleService : IPayrollRuleService
             rule.Name,
             rule.WorkDayHours,
             rule.PaidLeaveCountsAsWork,
-            rule.OvertimeRate,
-            rule.IsActive
+            rule.OtMultiplierWeekday,
+            rule.OtMultiplierWeekend,
+            rule.OtMultiplierHoliday,
+            rule.StandardWorkingDays,
+            rule.LatePenaltyRule,
+            rule.IsActive,
+            rule.OvertimeRate
         );
 
         return Result<PayrollRuleDto>.Success(resultDto, "Successfully created payroll rule.");
@@ -104,7 +123,11 @@ public class PayrollRuleService : IPayrollRuleService
         rule.Name = dto.Name;
         rule.WorkDayHours = dto.WorkDayHours;
         rule.PaidLeaveCountsAsWork = dto.PaidLeaveCountsAsWork;
-        rule.OvertimeRate = dto.OvertimeRate;
+        rule.OtMultiplierWeekday = dto.OtMultiplierWeekday;
+        rule.OtMultiplierWeekend = dto.OtMultiplierWeekend;
+        rule.OtMultiplierHoliday = dto.OtMultiplierHoliday;
+        rule.StandardWorkingDays = dto.StandardWorkingDays;
+        rule.LatePenaltyRule = dto.LatePenaltyRule;
         rule.IsActive = dto.IsActive;
 
         _dbContext.PayrollRules.Update(rule);
@@ -116,8 +139,13 @@ public class PayrollRuleService : IPayrollRuleService
             rule.Name,
             rule.WorkDayHours,
             rule.PaidLeaveCountsAsWork,
-            rule.OvertimeRate,
-            rule.IsActive
+            rule.OtMultiplierWeekday,
+            rule.OtMultiplierWeekend,
+            rule.OtMultiplierHoliday,
+            rule.StandardWorkingDays,
+            rule.LatePenaltyRule,
+            rule.IsActive,
+            rule.OvertimeRate
         );
 
         return Result<PayrollRuleDto>.Success(resultDto, "Successfully updated payroll rule.");
@@ -131,7 +159,6 @@ public class PayrollRuleService : IPayrollRuleService
             return Result.Failure("PayrollRuleNotFound", "Payroll rule not found.");
         }
 
-        // Check if there are periods referencing this rule
         var isReferenced = await _dbContext.PayrollPeriods.AnyAsync(p => p.PayrollRuleId == id);
         if (isReferenced)
         {

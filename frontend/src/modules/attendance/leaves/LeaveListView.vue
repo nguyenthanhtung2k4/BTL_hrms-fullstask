@@ -161,7 +161,15 @@ async function cancelLeave(l: LeaveRequest) {
   } catch (err: any) { toast.error(err?.response?.data?.message ?? 'Hủy thất bại') }
 }
 
-function fmt(d: string) { return new Date(d).toLocaleDateString('vi-VN') }
+// ĐÃ FIX: Hàm format thủ công đảm bảo luôn ra chuẩn dd/mm/yyyy
+function fmt(d: string) { 
+  if (!d) return '—'
+  const date = new Date(d)
+  const day = String(date.getDate()).padStart(2, '0')
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const year = date.getFullYear()
+  return `${day}/${month}/${year}`
+}
 
 const { currentPage, perPage, paginatedData, total } = usePagination(filtered)
 
@@ -179,9 +187,7 @@ onMounted(load)
       </template>
     </PageHeader>
 
-    <!-- Thanh tìm kiếm & bộ lọc -->
     <div class="flex flex-wrap items-center gap-4 mb-6 bg-slate-50 p-4 rounded-2xl border border-slate-150 shadow-sm">
-      <!-- Tìm kiếm -->
       <div class="flex-1 min-w-[280px]">
         <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">Tìm kiếm</label>
         <div class="relative">
@@ -197,7 +203,6 @@ onMounted(load)
         </div>
       </div>
 
-      <!-- Lọc phòng ban (chỉ hiển thị cho vai trò quản lý/HR/admin) -->
       <div v-if="auth.isManager" class="w-full sm:w-auto sm:min-w-[220px]">
         <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">Phòng ban</label>
         <div class="relative">
@@ -214,7 +219,6 @@ onMounted(load)
         </div>
       </div>
 
-      <!-- Lọc trạng thái -->
       <div class="w-full sm:w-auto sm:min-w-[180px]">
         <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">Trạng thái</label>
         <div class="relative">
@@ -247,12 +251,10 @@ onMounted(load)
         <td class="px-4 py-3"><AppBadge :status="(row as LeaveRequest).status" /></td>
         <td class="px-4 py-3 text-right">
           <div class="flex justify-end gap-1.5">
-            <!-- Manager/HR duyệt -->
             <template v-if="auth.isManager && (row as LeaveRequest).status === 'Pending'">
               <AppButton size="sm" variant="success" @click="approveTarget = row as LeaveRequest">Duyệt</AppButton>
               <AppButton size="sm" variant="danger" @click="rejectTarget = row as LeaveRequest">Từ chối</AppButton>
             </template>
-            <!-- Employee hủy đơn của mình -->
             <AppButton
               v-if="(row as LeaveRequest).employeeId === auth.employeeId && (row as LeaveRequest).status === 'Pending'"
               size="sm"
@@ -265,7 +267,6 @@ onMounted(load)
     </AppTable>
     <AppPagination :total="total" :current="currentPage" :per-page="perPage" @change="currentPage = $event" @per-page-change="perPage = $event" />
 
-    <!-- Create form modal -->
     <AppModal v-if="showCreateForm" title="Tạo đơn xin nghỉ phép" @close="showCreateForm = false">
       <div class="space-y-4">
         <div class="flex flex-col gap-1">
@@ -295,7 +296,6 @@ onMounted(load)
       </template>
     </AppModal>
 
-    <!-- Approve confirm -->
     <AppConfirm
       v-if="approveTarget"
       title="Duyệt đơn nghỉ phép"
@@ -306,7 +306,6 @@ onMounted(load)
       @cancel="approveTarget = null"
     />
 
-    <!-- Reject confirm -->
     <AppConfirm
       v-if="rejectTarget"
       title="Từ chối đơn nghỉ phép"
@@ -319,4 +318,3 @@ onMounted(load)
     />
   </div>
 </template>
-

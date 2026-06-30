@@ -25,6 +25,7 @@ public record CreatePayrollPeriodDto(
 );
 
 public record UpdatePayrollPeriodDto(
+    string Code,
     string Name,
     DateOnly FromDate,
     DateOnly ToDate,

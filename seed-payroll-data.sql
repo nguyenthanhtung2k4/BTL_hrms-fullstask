@@ -40,9 +40,8 @@ PRINT 'LeaveProjections synced';
 
 -- ── 3. Seed Payroll Rule & Periods ──────────────────────────
 IF NOT EXISTS (SELECT 1 FROM dbo.PayrollRules WHERE Code = 'RULE_STANDARD')
-    INSERT INTO dbo.PayrollRules (Id, Code, Name, WorkDayHours, PaidLeaveCountsAsWork, OvertimeRate, IsActive)
-    VALUES (NEWID(), 'RULE_STANDARD', N'Quy tắc lương chuẩn', 8.0, 1, 1.5, 1);
-
+   INSERT INTO dbo.PayrollRules (Id, Code, Name, WorkDayHours, PaidLeaveCountsAsWork, OvertimeRate, IsActive, OtMultiplierWeekday, OtMultiplierWeekend, OtMultiplierHoliday, StandardWorkingDays, LatePenaltyRule)
+VALUES (NEWID(), 'RULE_STANDARD', N'Quy tắc lương chuẩn', 8.0, 1, 1.5, 1, 1.5, 2.0, 3.0, 22, 0);
 DECLARE @RuleId UNIQUEIDENTIFIER = (SELECT TOP 1 Id FROM dbo.PayrollRules WHERE Code = 'RULE_STANDARD');
 
 -- May 2026
@@ -99,61 +98,61 @@ DECLARE @DedPenaltyId UNIQUEIDENTIFIER = (SELECT Id FROM dbo.DeductionTypes WHER
 DELETE FROM dbo.EmployeeAllowances WHERE PayrollPeriodId IN (@PeriodId_05, @PeriodId_06, @PeriodId_07);
 DELETE FROM dbo.EmployeeDeductions WHERE PayrollPeriodId IN (@PeriodId_05, @PeriodId_06, @PeriodId_07);
 
-INSERT INTO dbo.EmployeeAllowances(Id, EmployeeId, PayrollPeriodId, AllowanceTypeId, Amount, Note) VALUES
-(NEWID(), @NV002, @PeriodId_06, @AllowEatId, 680000, N'Ăn trưa T6/2026'),
-(NEWID(), @NV002, @PeriodId_06, @AllowFuelId, 300000, N'Đi lại T6/2026'),
-(NEWID(), @NV003, @PeriodId_06, @AllowEatId, 680000, N'Ăn trưa T6/2026'),
-(NEWID(), @NV003, @PeriodId_06, @AllowFuelId, 300000, N'Đi lại T6/2026'),
-(NEWID(), @NV003, @PeriodId_06, @AllowTelId, 200000, N'Điện thoại T6/2026'),
-(NEWID(), @NV004, @PeriodId_06, @AllowEatId, 680000, N'Ăn trưa T6/2026'),
-(NEWID(), @NV004, @PeriodId_06, @AllowFuelId, 300000, N'Đi lại T6/2026'),
-(NEWID(), @NV005, @PeriodId_06, @AllowEatId, 680000, N'Ăn trưa T6/2026'),
-(NEWID(), @NV005, @PeriodId_06, @AllowFuelId, 300000, N'Đi lại T6/2026'),
-(NEWID(), @NV006, @PeriodId_06, @AllowEatId, 680000, N'Ăn trưa T6/2026'),
-(NEWID(), @NV006, @PeriodId_06, @AllowFuelId, 300000, N'Đi lại T6/2026'),
-(NEWID(), @NV007, @PeriodId_06, @AllowEatId, 680000, N'Ăn trưa T6/2026'),
-(NEWID(), @NV007, @PeriodId_06, @AllowFuelId, 300000, N'Đi lại T6/2026'),
-(NEWID(), @NV008, @PeriodId_06, @AllowEatId, 680000, N'Ăn trưa T6/2026'),
-(NEWID(), @NV008, @PeriodId_06, @AllowFuelId, 300000, N'Đi lại T6/2026'),
-(NEWID(), @NV009, @PeriodId_06, @AllowEatId, 680000, N'Ăn trưa T6/2026'),
-(NEWID(), @NV009, @PeriodId_06, @AllowFuelId, 500000, N'Đi lại T6/2026'),
-(NEWID(), @NV009, @PeriodId_06, @AllowTelId, 500000, N'Điện thoại T6/2026');
+INSERT INTO dbo.EmployeeAllowances (Id, EmployeeId, PayrollPeriodId, AllowanceTypeId, Amount, Note, CreatedAt) VALUES
+(NEWID(), @NV002, @PeriodId_06, @AllowEatId, 680000, N'Ăn trưa T6/2026', GETDATE()),
+(NEWID(), @NV002, @PeriodId_06, @AllowFuelId, 300000, N'Đi lại T6/2026', GETDATE()),
+(NEWID(), @NV003, @PeriodId_06, @AllowEatId, 680000, N'Ăn trưa T6/2026', GETDATE()),
+(NEWID(), @NV003, @PeriodId_06, @AllowFuelId, 300000, N'Đi lại T6/2026', GETDATE()),
+(NEWID(), @NV003, @PeriodId_06, @AllowTelId, 200000, N'Điện thoại T6/2026', GETDATE()),
+(NEWID(), @NV004, @PeriodId_06, @AllowEatId, 680000, N'Ăn trưa T6/2026', GETDATE()),
+(NEWID(), @NV004, @PeriodId_06, @AllowFuelId, 300000, N'Đi lại T6/2026', GETDATE()),
+(NEWID(), @NV005, @PeriodId_06, @AllowEatId, 680000, N'Ăn trưa T6/2026', GETDATE()),
+(NEWID(), @NV005, @PeriodId_06, @AllowFuelId, 300000, N'Đi lại T6/2026', GETDATE()),
+(NEWID(), @NV006, @PeriodId_06, @AllowEatId, 680000, N'Ăn trưa T6/2026', GETDATE()),
+(NEWID(), @NV006, @PeriodId_06, @AllowFuelId, 300000, N'Đi lại T6/2026', GETDATE()),
+(NEWID(), @NV007, @PeriodId_06, @AllowEatId, 680000, N'Ăn trưa T6/2026', GETDATE()),
+(NEWID(), @NV007, @PeriodId_06, @AllowFuelId, 300000, N'Đi lại T6/2026', GETDATE()),
+(NEWID(), @NV008, @PeriodId_06, @AllowEatId, 680000, N'Ăn trưa T6/2026', GETDATE()),
+(NEWID(), @NV008, @PeriodId_06, @AllowFuelId, 300000, N'Đi lại T6/2026', GETDATE()),
+(NEWID(), @NV009, @PeriodId_06, @AllowEatId, 680000, N'Ăn trưa T6/2026', GETDATE()),
+(NEWID(), @NV009, @PeriodId_06, @AllowFuelId, 500000, N'Đi lại T6/2026', GETDATE()),
+(NEWID(), @NV009, @PeriodId_06, @AllowTelId, 500000, N'Điện thoại T6/2026', GETDATE());
 
-INSERT INTO dbo.EmployeeDeductions(Id, EmployeeId, PayrollPeriodId, DeductionTypeId, Amount, Note) VALUES
-(NEWID(), @NV002, @PeriodId_06, @DedInsId, 1800000, N'BHXH T6/2026'),
-(NEWID(), @NV002, @PeriodId_06, @DedTaxId, 0, N'Thuế TNCN T6/2026'),
-(NEWID(), @NV002, @PeriodId_06, @DedPenaltyId, 100000, N'Đi muộn ngày 16/6'),
-(NEWID(), @NV003, @PeriodId_06, @DedInsId, 2200000, N'BHXH T6/2026'),
-(NEWID(), @NV003, @PeriodId_06, @DedTaxId, 200000, N'Thuế TNCN T6/2026'),
-(NEWID(), @NV004, @PeriodId_06, @DedInsId, 2000000, N'BHXH T6/2026'),
-(NEWID(), @NV004, @PeriodId_06, @DedTaxId, 100000, N'Thuế TNCN T6/2026'),
-(NEWID(), @NV005, @PeriodId_06, @DedInsId, 1600000, N'BHXH T6/2026'),
-(NEWID(), @NV005, @PeriodId_06, @DedTaxId, 0, N'Thuế TNCN T6/2026'),
-(NEWID(), @NV006, @PeriodId_06, @DedInsId, 1500000, N'BHXH T6/2026'),
-(NEWID(), @NV006, @PeriodId_06, @DedTaxId, 0, N'Thuế TNCN T6/2026'),
-(NEWID(), @NV007, @PeriodId_06, @DedInsId, 1400000, N'BHXH T6/2026'),
-(NEWID(), @NV007, @PeriodId_06, @DedTaxId, 0, N'Thuế TNCN T6/2026'),
-(NEWID(), @NV008, @PeriodId_06, @DedInsId, 1300000, N'BHXH T6/2026'),
-(NEWID(), @NV008, @PeriodId_06, @DedTaxId, 0, N'Thuế TNCN T6/2026'),
-(NEWID(), @NV009, @PeriodId_06, @DedInsId, 2500000, N'BHXH T6/2026'),
-(NEWID(), @NV009, @PeriodId_06, @DedTaxId, 800000, N'Thuế TNCN T6/2026');
+INSERT INTO dbo.EmployeeDeductions(Id, EmployeeId, PayrollPeriodId, DeductionTypeId, Amount, Note, CreatedAt) VALUES
+(NEWID(), @NV002, @PeriodId_06, @DedInsId, 1800000, N'BHXH T6/2026', GETDATE()),
+(NEWID(), @NV002, @PeriodId_06, @DedTaxId, 0, N'Thuế TNCN T6/2026', GETDATE()),
+(NEWID(), @NV002, @PeriodId_06, @DedPenaltyId, 100000, N'Đi muộn ngày 16/6', GETDATE()),
+(NEWID(), @NV003, @PeriodId_06, @DedInsId, 22000000, N'BHXH T6/2026', GETDATE()),
+(NEWID(), @NV003, @PeriodId_06, @DedTaxId, 200000, N'Thuế TNCN T6/2026', GETDATE()),
+(NEWID(), @NV004, @PeriodId_06, @DedInsId, 2000000, N'BHXH T6/2026', GETDATE()),
+(NEWID(), @NV004, @PeriodId_06, @DedTaxId, 100000, N'Thuế TNCN T6/2026', GETDATE()),
+(NEWID(), @NV005, @PeriodId_06, @DedInsId, 1600000, N'BHXH T6/2026', GETDATE()),
+(NEWID(), @NV005, @PeriodId_06, @DedTaxId, 0, N'Thuế TNCN T6/2026', GETDATE()),
+(NEWID(), @NV006, @PeriodId_06, @DedInsId, 1500000, N'BHXH T6/2026', GETDATE()),
+(NEWID(), @NV006, @PeriodId_06, @DedTaxId, 0, N'Thuế TNCN T6/2026', GETDATE()),
+(NEWID(), @NV007, @PeriodId_06, @DedInsId, 1400000, N'BHXH T6/2026', GETDATE()),
+(NEWID(), @NV007, @PeriodId_06, @DedTaxId, 0, N'Thuế TNCN T6/2026', GETDATE()),
+(NEWID(), @NV008, @PeriodId_06, @DedInsId, 1300000, N'BHXH T6/2026', GETDATE()),
+(NEWID(), @NV008, @PeriodId_06, @DedTaxId, 0, N'Thuế TNCN T6/2026', GETDATE()),
+(NEWID(), @NV009, @PeriodId_06, @DedInsId, 2500000, N'BHXH T6/2026', GETDATE()),
+(NEWID(), @NV009, @PeriodId_06, @DedTaxId, 800000, N'Thuế TNCN T6/2026', GETDATE());
 
 -- Duplicate for May 2026
-INSERT INTO dbo.EmployeeAllowances (Id, EmployeeId, PayrollPeriodId, AllowanceTypeId, Amount, Note)
-SELECT NEWID(), EmployeeId, @PeriodId_05, AllowanceTypeId, Amount, REPLACE(Note, 'T6/2026', 'T5/2026')
+INSERT INTO dbo.EmployeeAllowances (Id, EmployeeId, PayrollPeriodId, AllowanceTypeId, Amount, Note, CreatedAt)
+SELECT NEWID(), EmployeeId, @PeriodId_05, AllowanceTypeId, Amount, REPLACE(Note, 'T6/2026', 'T5/2026'), GETDATE()
 FROM dbo.EmployeeAllowances WHERE PayrollPeriodId = @PeriodId_06;
 
-INSERT INTO dbo.EmployeeDeductions (Id, EmployeeId, PayrollPeriodId, DeductionTypeId, Amount, Note)
-SELECT NEWID(), EmployeeId, @PeriodId_05, DeductionTypeId, Amount, REPLACE(REPLACE(Note, 'T6/2026', 'T5/2026'), '16/6', '15/5')
+INSERT INTO dbo.EmployeeDeductions (Id, EmployeeId, PayrollPeriodId, DeductionTypeId, Amount, Note, CreatedAt)
+SELECT NEWID(), EmployeeId, @PeriodId_05, DeductionTypeId, Amount, REPLACE(REPLACE(Note, 'T6/2026', 'T5/2026'), '16/6', '15/5'), GETDATE()
 FROM dbo.EmployeeDeductions WHERE PayrollPeriodId = @PeriodId_06;
 
 -- Duplicate for July 2026
-INSERT INTO dbo.EmployeeAllowances (Id, EmployeeId, PayrollPeriodId, AllowanceTypeId, Amount, Note)
-SELECT NEWID(), EmployeeId, @PeriodId_07, AllowanceTypeId, Amount, REPLACE(Note, 'T6/2026', 'T7/2026')
+INSERT INTO dbo.EmployeeAllowances (Id, EmployeeId, PayrollPeriodId, AllowanceTypeId, Amount, Note, CreatedAt)
+SELECT NEWID(), EmployeeId, @PeriodId_07, AllowanceTypeId, Amount, REPLACE(Note, 'T6/2026', 'T7/2026'), GETDATE()
 FROM dbo.EmployeeAllowances WHERE PayrollPeriodId = @PeriodId_06;
 
-INSERT INTO dbo.EmployeeDeductions (Id, EmployeeId, PayrollPeriodId, DeductionTypeId, Amount, Note)
-SELECT NEWID(), EmployeeId, @PeriodId_07, DeductionTypeId, Amount, REPLACE(REPLACE(Note, 'T6/2026', 'T7/2026'), '16/6', '17/7')
+INSERT INTO dbo.EmployeeDeductions (Id, EmployeeId, PayrollPeriodId, DeductionTypeId, Amount, Note, CreatedAt)
+SELECT NEWID(), EmployeeId, @PeriodId_07, DeductionTypeId, Amount, REPLACE(REPLACE(Note, 'T6/2026', 'T7/2026'), '16/6', '17/7'), GETDATE()
 FROM dbo.EmployeeDeductions WHERE PayrollPeriodId = @PeriodId_06;
 
 PRINT 'Allowances & Deductions populated for all months';

@@ -122,7 +122,12 @@ const menuGroups = computed(() => {
   if (auth.isPayrollStaff) {
     payItems.push({ to: '/payroll/payslips', name: 'payroll-payslips', label: t('nav.allPayslips'), icon: ScrollText })
   }
-  payItems.push({ to: '/payroll/my-payslip', name: 'payroll-my-payslip', label: t('nav.myPayslip'), icon: BadgeDollarSign })
+  
+  // ---> TÔI ĐÃ THÊM DÒNG NÀY ĐỂ CHẶN ADMIN THẤY "PHIẾU LƯƠNG CỦA TÔI" <---
+  if (!auth.isAdmin) {
+    payItems.push({ to: '/payroll/my-payslip', name: 'payroll-my-payslip', label: t('nav.myPayslip'), icon: BadgeDollarSign })
+  }
+
   if (auth.hasAnyRole(['Admin', 'HR', 'PayrollStaff', 'Manager'])) {
     payItems.push({ to: '/payroll/reports', name: 'payroll-reports', label: t('nav.reports'), icon: BarChart3 })
   }

@@ -64,7 +64,9 @@ public static class DbInitializer
                 WorkDayHours = 8,
                 PaidLeaveCountsAsWork = true,
                 OvertimeRate = 1.5m,
-                IsActive = true
+                IsActive = true,
+                StandardWorkingDays = 22, // <--- TÔI ĐÃ THÊM DÒNG NÀY ĐỂ FIX LỖI SQL NULL
+               LatePenaltyRule = 0m
             });
         }
 
