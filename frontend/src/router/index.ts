@@ -125,7 +125,7 @@ export const router = createRouter({
           path: 'attendance/records',
           name: 'attendance-records',
           component: AttendanceListView,
-          meta: { roles: ['Admin', 'HR', 'Manager'] },
+          meta: { roles: ['Admin', 'HR', 'Manager', 'PayrollStaff'] },
         },
         {
           path: 'attendance/leaves',

@@ -27,6 +27,20 @@ public class WorkSchedulesController : ControllerBase
         [FromQuery] DateOnly? fromDate,
         [FromQuery] DateOnly? toDate)
     {
+        var isPrivileged = User.IsInRole("Admin") || User.IsInRole("HR") || User.IsInRole("Manager") || User.IsInRole("PayrollStaff");
+        if (!isPrivileged)
+        {
+            var employeeIdClaim = User.FindFirst("employeeId")?.Value;
+            if (Guid.TryParse(employeeIdClaim, out var claimEmpId))
+            {
+                employeeId = claimEmpId;
+            }
+            else
+            {
+                return Forbid();
+            }
+        }
+
         var result = await _scheduleService.GetSchedulesAsync(employeeId, fromDate, toDate);
         return Ok(ApiResponse<IEnumerable<WorkScheduleDto>>.Ok(result.Value!, result.Message));
     }
@@ -39,10 +53,22 @@ public class WorkSchedulesController : ControllerBase
         {
             return NotFound(ApiResponse<WorkScheduleDto>.Fail(result.Errors, result.Message));
         }
+
+        var isPrivileged = User.IsInRole("Admin") || User.IsInRole("HR") || User.IsInRole("Manager") || User.IsInRole("PayrollStaff");
+        if (!isPrivileged)
+        {
+            var employeeIdClaim = User.FindFirst("employeeId")?.Value;
+            if (!Guid.TryParse(employeeIdClaim, out var claimEmpId) || claimEmpId != result.Value!.EmployeeId)
+            {
+                return Forbid();
+            }
+        }
+
         return Ok(ApiResponse<WorkScheduleDto>.Ok(result.Value!, result.Message));
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin,HR,Manager")]
     public async Task<ActionResult<ApiResponse<WorkScheduleDto>>> Create([FromBody] CreateWorkScheduleDto dto)
     {
         var result = await _scheduleService.CreateAsync(dto);
@@ -54,6 +80,7 @@ public class WorkSchedulesController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Roles = "Admin,HR,Manager")]
     public async Task<ActionResult<ApiResponse<WorkScheduleDto>>> Update(Guid id, [FromBody] UpdateWorkScheduleDto dto)
     {
         var result = await _scheduleService.UpdateAsync(id, dto);
@@ -65,6 +92,7 @@ public class WorkSchedulesController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Roles = "Admin,HR,Manager")]
     public async Task<ActionResult<ApiResponse>> Delete(Guid id)
     {
         var result = await _scheduleService.DeleteAsync(id);

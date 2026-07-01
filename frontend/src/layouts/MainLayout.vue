@@ -118,7 +118,7 @@ const menuGroups = computed(() => {
     label: auth.isManager ? t('nav.workSchedules') : t('nav.myWorkSchedule'),
     icon: Calendar,
   })
-  if (auth.isManager) {
+  if (auth.isManager || auth.isPayrollStaff) {
     attItems.push({ to: '/attendance/records', name: 'attendance-records', label: t('nav.attendanceRecords'), icon: ClipboardList })
   }
   if (!auth.isAdmin) {

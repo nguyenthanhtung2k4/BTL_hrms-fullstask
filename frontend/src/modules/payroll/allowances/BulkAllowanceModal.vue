@@ -4,7 +4,7 @@
  * Áp dụng cùng 1 loại phụ cấp + số tiền cho nhiều nhân viên cùng lúc.
  * Luồng: Chọn kỳ → chọn loại + số tiền → tìm & chọn nhân viên → preview → tạo hàng loạt
  */
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import AppModal from '../../../components/ui/AppModal.vue'
 import AppButton from '../../../components/ui/AppButton.vue'
 import type { AllowanceType, CreateAllowanceDto, PayrollPeriod } from '../../../types/payroll.types'

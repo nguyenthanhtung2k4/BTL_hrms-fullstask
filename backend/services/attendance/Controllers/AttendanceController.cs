@@ -8,6 +8,9 @@ using Hrms.Shared.Domain;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
+using Hrms.Attendance.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
+
 namespace Hrms.Attendance.Controllers;
 
 [ApiController]
@@ -16,10 +19,12 @@ namespace Hrms.Attendance.Controllers;
 public class AttendanceController : ControllerBase
 {
     private readonly IAttendanceService _attendanceService;
+    private readonly AttendanceDbContext _dbContext;
 
-    public AttendanceController(IAttendanceService attendanceService)
+    public AttendanceController(IAttendanceService attendanceService, AttendanceDbContext dbContext)
     {
         _attendanceService = attendanceService;
+        _dbContext = dbContext;
     }
 
     [HttpPost("check-in")]
@@ -97,6 +102,47 @@ public class AttendanceController : ControllerBase
         [FromQuery] int? month,
         [FromQuery] int? year)
     {
+        var isPrivileged = User.IsInRole("Admin") || User.IsInRole("HR") || User.IsInRole("PayrollStaff");
+        var isManager = User.IsInRole("Manager");
+
+        if (!isPrivileged)
+        {
+            var currentEmpId = GetCurrentEmployeeId();
+            if (currentEmpId == Guid.Empty)
+            {
+                return BadRequest(ApiResponse<IEnumerable<AttendanceRecordDto>>.Fail("InvalidUser", "User must be associated with an active Employee account."));
+            }
+
+            if (isManager)
+            {
+                // Retrieve Manager's department
+                var managerEmp = await _dbContext.EmployeeProjections.FindAsync(currentEmpId);
+                var managerDeptId = managerEmp?.DepartmentId;
+
+                // Enforce that manager can only view their own department
+                if (departmentId.HasValue && departmentId.Value != managerDeptId)
+                {
+                    return Forbid();
+                }
+                departmentId = managerDeptId;
+
+                // Enforce target employee belongs to manager's department or reports directly
+                if (employeeId.HasValue)
+                {
+                    var targetEmp = await _dbContext.EmployeeProjections.FindAsync(employeeId.Value);
+                    if (targetEmp == null || (targetEmp.DepartmentId != managerDeptId && targetEmp.ManagerEmployeeId != currentEmpId))
+                    {
+                        return Forbid();
+                    }
+                }
+            }
+            else // Standard Employee is restricted to their own records only
+            {
+                employeeId = currentEmpId;
+                departmentId = null;
+            }
+        }
+
         if (month.HasValue && year.HasValue)
         {
             fromDate = new DateOnly(year.Value, month.Value, 1);

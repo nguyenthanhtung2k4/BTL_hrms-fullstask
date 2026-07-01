@@ -73,7 +73,6 @@ watch(previews, (val) => { previewList.value = val.map(p => ({ ...p })) }, { imm
 
 const selectedPreviews = computed(() => previewList.value.filter(p => p.selected && !p.isDuplicate))
 const allSelected = computed(() => previewList.value.filter(p => !p.isDuplicate).every(p => p.selected))
-const someSelected = computed(() => previewList.value.some(p => p.selected))
 
 function toggleAll() {
   const next = !allSelected.value

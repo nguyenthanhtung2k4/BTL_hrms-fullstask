@@ -48,6 +48,12 @@ export interface CreateWorkScheduleDto {
   workDate: string
 }
 
+export interface UpdateWorkScheduleDto {
+  shiftId: string
+  workDate: string
+  status: string
+}
+
 // ---
 
 export interface AttendanceRecord {
