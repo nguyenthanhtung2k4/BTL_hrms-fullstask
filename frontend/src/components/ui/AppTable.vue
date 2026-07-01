@@ -87,15 +87,18 @@ function goToPage(p: number) {
             :key="col.key"
             :class="[
               'app-table__th',
-              col.key !== 'actions' && col.key ? 'app-table__th--sortable' : '',
+              col.key !== 'actions' && col.key !== 'select' && col.key ? 'app-table__th--sortable' : '',
               col.class ?? '',
             ]"
-            @click="handleSort(col.key)"
+            @click="col.key !== 'select' ? handleSort(col.key) : undefined"
           >
             <div class="app-table__th-inner">
-              <span>{{ col.label }}</span>
-              <!-- Sort icons -->
-              <span v-if="col.key !== 'actions' && col.key" class="app-table__sort-icons">
+              <!-- Named slot per column header, falls back to label text -->
+              <slot :name="`header-${col.key}`">
+                <span>{{ col.label }}</span>
+              </slot>
+              <!-- Sort icons (skip for 'select' and 'actions') -->
+              <span v-if="col.key !== 'actions' && col.key !== 'select' && col.key" class="app-table__sort-icons">
                 <svg
                   class="app-table__sort-icon"
                   :class="{ 'app-table__sort-icon--active': sortKey === col.key && sortOrder === 'asc' }"
