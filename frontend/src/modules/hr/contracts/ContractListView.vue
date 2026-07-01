@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { contractService } from '../../../services/contract.service'
 import { employeeService } from '../../../services/employee.service'
@@ -14,6 +14,8 @@ import { usePagination } from '../../../composables/usePagination'
 import AppModal from '../../../components/ui/AppModal.vue'
 import AppInput from '../../../components/ui/AppInput.vue'
 import AppConfirm from '../../../components/ui/AppConfirm.vue'
+import { Eye, Download } from '@lucide/vue'
+import { getAttachmentUrl } from '../../../services/apiClient'
 const auth = useAuthStore()
 const toast = useToastStore()
 
@@ -39,7 +41,7 @@ const errors = ref<Record<string, string>>({})
 const columns = [
   { key: 'no', label: 'Số HĐ' }, { key: 'employee', label: 'Nhân viên' }, { key: 'type', label: 'Loại HĐ' },
   { key: 'salary', label: 'Lương cơ bản' }, { key: 'start', label: 'Từ ngày' }, { key: 'end', label: 'Đến ngày' },
-  { key: 'status', label: 'Trạng thái' }, { key: 'actions', label: '', class: 'text-right' },
+  { key: 'status', label: 'Trạng thái' }, { key: 'file', label: 'Tài liệu' }, { key: 'actions', label: '', class: 'text-right' },
 ]
 
 function handleFileChange(event: Event) {
@@ -74,7 +76,7 @@ function removeExistingFile() {
 function downloadFile(url: string) {
   // Tạo thẻ a ẩn và click để tải
   const link = document.createElement('a')
-  link.href = url
+  link.href = getAttachmentUrl(url)
   link.download = url.split('/').pop() || 'file'
   link.target = '_blank'
   document.body.appendChild(link)
@@ -254,6 +256,27 @@ onMounted(load)
         <td class="px-4 py-3">
           <AppBadge :status="(row as Contract).status" />
         </td>
+        <td class="px-4 py-3">
+          <div v-if="(row as Contract).attachmentUrl" class="flex gap-2">
+            <a 
+              :href="getAttachmentUrl((row as Contract).attachmentUrl!)" 
+              target="_blank" 
+              class="inline-flex items-center justify-center p-1 text-emerald-600 hover:bg-emerald-50 rounded transition-colors"
+              title="Xem trực tuyến"
+            >
+              <Eye class="h-4 w-4" />
+            </a>
+            <button 
+              type="button" 
+              @click="downloadFile((row as Contract).attachmentUrl!)"
+              class="inline-flex items-center justify-center p-1 text-slate-500 hover:bg-slate-100 rounded transition-colors"
+              title="Tải về"
+            >
+              <Download class="h-4 w-4" />
+            </button>
+          </div>
+          <span v-else class="text-xs text-slate-400 font-normal italic">—</span>
+        </td>
         <td class="px-4 py-3 text-right">
           <div class="flex justify-end gap-2">
             <AppButton v-if="auth.isHR" size="sm" variant="secondary" @click="openEdit(row as Contract)">Sửa</AppButton>
@@ -328,7 +351,7 @@ onMounted(load)
 
         <!-- File cũ -->
         <div v-if="editTarget && existingFileUrl" class="mt-2 flex items-center gap-2">
-          <a :href="existingFileUrl" target="_blank" download class="text-sm text-emerald-600 hover:underline"
+          <a :href="getAttachmentUrl(existingFileUrl)" target="_blank" download class="text-sm text-emerald-600 hover:underline"
             @click.prevent="downloadFile(existingFileUrl)">
             📎 {{ existingFileUrl.split('/').pop() || 'File đã tải lên' }}
           </a>

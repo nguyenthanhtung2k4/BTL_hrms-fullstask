@@ -6,7 +6,13 @@
  */
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axios'
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5005'
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5005'
+
+export function getAttachmentUrl(path?: string | null): string {
+  if (!path) return ''
+  if (path.startsWith('http://') || path.startsWith('https://')) return path
+  return `${API_BASE_URL.replace(/\/$/, '')}/${path.replace(/^\//, '')}`
+}
 
 // ─── Keys lưu trữ ────────────────────────────────────────────────────────────
 const TOKEN_KEY         = 'hrms_token'
@@ -14,7 +20,7 @@ const REFRESH_TOKEN_KEY = 'hrms_refresh_token'
 
 // ─── Axios instance chính ────────────────────────────────────────────────────
 export const apiClient: AxiosInstance = axios.create({
-  baseURL: BASE_URL,
+  baseURL: API_BASE_URL,
   timeout: 15000,
   headers: { 'Content-Type': 'application/json' },
 })
@@ -73,7 +79,7 @@ apiClient.interceptors.response.use(
 
       try {
         const response = await axios.post(
-          `${BASE_URL}/api/v1/hr/auth/refresh`,
+          `${API_BASE_URL}/api/v1/hr/auth/refresh`,
           { refreshToken },
           { headers: { 'Content-Type': 'application/json' } }
         )
