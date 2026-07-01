@@ -50,7 +50,7 @@ export const router = createRouter({
   history: createWebHistory(),
   routes: [
     // Public
-    { path: '/login', name: 'login', component: LoginView },
+    { path: '/', name: 'login', component: LoginView },
 
     // Protected
     {
@@ -59,7 +59,7 @@ export const router = createRouter({
       meta: { requiresAuth: true },
       children: [
         // Dashboard
-        { path: '', name: 'dashboard', component: DashboardView },
+        { path: 'dashboard', name: 'dashboard', component: DashboardView },
 
         // Notifications
         { path: 'notifications', name: 'notifications', component: NotificationListView },
@@ -231,6 +231,11 @@ router.beforeEach(async (to) => {
 
   // Đang ở login nhưng đã xác thực → về dashboard
   if (to.name === 'login' && auth.isAuthenticated) {
+    return { name: 'dashboard' }
+  }
+
+  // Ngăn Admin truy cập các chức năng check-in/check-out và chấm công cá nhân
+  if (auth.isAuthenticated && auth.isAdmin && (to.name === 'attendance-checkin' || to.name === 'attendance-my-attendance')) {
     return { name: 'dashboard' }
   }
 

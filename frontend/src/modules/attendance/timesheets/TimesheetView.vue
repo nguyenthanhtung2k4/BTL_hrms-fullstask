@@ -52,6 +52,9 @@ const columns = computed(() => [
   { key: 'status', label: t('common.status') },
 ])
 
+const isManagerOnly = computed(() => auth.hasRole('Manager') && !auth.isAdmin && !auth.isHR)
+
+
 const months = Array.from({ length: 12 }, (_, i) => ({ value: i + 1, label: `Tháng ${i + 1}` }))
 const years = [2024, 2025, 2026, 2027]
 
@@ -158,7 +161,7 @@ async function load() {
       const [ts, emps, depts] = await Promise.all([
         timesheetService.getAll(params),
         employeeService.getAll(),
-        departmentService.getAll(),
+        isManagerOnly.value ? departmentService.getMyDepartments() : departmentService.getAll(), // ← sửa
       ])
       resTimesheets = ts
       employees.value = emps
@@ -206,24 +209,33 @@ onMounted(load)
 
 <template>
   <div>
-    <PageHeader
-      :title="t('timesheet.title')"
+    <PageHeader :title="t('timesheet.title')"
       :subtitle="auth.isManager ? 'Tổng hợp chấm công hàng tháng' : 'Lịch chấm công của tôi'"
-      :breadcrumbs="[{ label: t('nav.attendance') }, { label: t('nav.timesheets') }]"
-    >
+      :breadcrumbs="[{ label: t('nav.attendance') }, { label: t('nav.timesheets') }]">
       <template #actions>
         <!-- View toggle (chỉ Manager/HR) -->
         <div v-if="auth.isManager" class="ts-view-toggle">
-          <button :class="['ts-toggle-btn', viewMode === 'table' ? 'ts-toggle-btn--active' : '']" @click="viewMode = 'table'">
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 6h18M3 14h18M3 18h18"/></svg>
+          <button :class="['ts-toggle-btn', viewMode === 'table' ? 'ts-toggle-btn--active' : '']"
+            @click="viewMode = 'table'">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M3 10h18M3 6h18M3 14h18M3 18h18" />
+            </svg>
           </button>
-          <button :class="['ts-toggle-btn', viewMode === 'calendar' ? 'ts-toggle-btn--active' : '']" @click="viewMode = 'calendar'">
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          <button :class="['ts-toggle-btn', viewMode === 'calendar' ? 'ts-toggle-btn--active' : '']"
+            @click="viewMode = 'calendar'">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
           </button>
         </div>
 
         <AppButton v-if="auth.isHR" :loading="calculating" variant="secondary" size="sm" @click="calculate">
-          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
           {{ t('timesheet.generate') }}
         </AppButton>
       </template>
@@ -233,7 +245,8 @@ onMounted(load)
     <div class="ts-filters">
       <div v-if="auth.isManager" class="ts-filter-field">
         <label>{{ t('common.search') }}</label>
-        <input v-model="searchEmployee" type="text" :placeholder="t('employee.fullName') + '...'" class="ts-filter-input" />
+        <input v-model="searchEmployee" type="text" :placeholder="t('employee.fullName') + '...'"
+          class="ts-filter-input" />
       </div>
       <div v-if="auth.isManager" class="ts-filter-field">
         <label>{{ t('nav.departments') }}</label>
@@ -281,11 +294,13 @@ onMounted(load)
           <td class="ts-td" style="color: var(--text-secondary);">{{ totalHours(row as Timesheet) }}</td>
           <td class="ts-td">{{ (row as Timesheet).paidLeaveDays > 0 ? (row as Timesheet).paidLeaveDays : '—' }}</td>
           <td class="ts-td">{{ (row as Timesheet).unpaidLeaveDays > 0 ? (row as Timesheet).unpaidLeaveDays : '—' }}</td>
-          <td class="ts-td"><AppBadge :status="(row as Timesheet).status" /></td>
+          <td class="ts-td">
+            <AppBadge :status="(row as Timesheet).status" />
+          </td>
         </template>
       </AppTable>
-      <AppPagination :total="total" :current="currentPage" :per-page="perPage"
-        @change="currentPage = $event" @per-page-change="perPage = $event" />
+      <AppPagination :total="total" :current="currentPage" :per-page="perPage" @change="currentPage = $event"
+        @per-page-change="perPage = $event" />
     </template>
 
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
@@ -330,20 +345,18 @@ onMounted(load)
       <div v-else class="cal-grid-container">
         <!-- Day headers -->
         <div class="cal-grid-header">
-          <div v-for="d in ['T2','T3','T4','T5','T6','T7','CN']" :key="d" class="cal-dow">{{ d }}</div>
+          <div v-for="d in ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN']" :key="d" class="cal-dow">{{ d }}</div>
         </div>
         <!-- Day cells -->
         <div class="cal-grid">
-          <div
-            v-for="day in calendarDays"
-            :key="day.date.toISOString()"
-            :class="getDayClass(day.date, day.isCurrentMonth)"
-            :title="getDayTooltip(day.date)"
-          >
+          <div v-for="day in calendarDays" :key="day.date.toISOString()"
+            :class="getDayClass(day.date, day.isCurrentMonth)" :title="getDayTooltip(day.date)">
             <span class="cal-day__num">{{ day.dayNum }}</span>
             <template v-if="day.isCurrentMonth && getRecordForDay(day.date)">
               <span class="cal-day__time">
-                {{ new Date(getRecordForDay(day.date)!.checkInAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) }}
+                {{ new Date(getRecordForDay(day.date)!.checkInAt).toLocaleTimeString('vi-VN', {
+                  hour: '2-digit', minute:
+                '2-digit' }) }}
               </span>
             </template>
           </div>
@@ -366,8 +379,22 @@ onMounted(load)
   background: var(--bg-subtle);
   margin-bottom: 1.25rem;
 }
-.ts-filter-field { display: flex; flex-direction: column; gap: 0.25rem; min-width: 9rem; }
-.ts-filter-field label { font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); }
+
+.ts-filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 9rem;
+}
+
+.ts-filter-field label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-tertiary);
+}
+
 .ts-filter-input {
   height: 2.25rem;
   border-radius: var(--radius-sm);
@@ -379,11 +406,22 @@ onMounted(load)
   outline: none;
   transition: border-color var(--transition-fast);
 }
-.ts-filter-input:focus { border-color: var(--color-primary); }
-.ts-filter-field--action { justify-content: flex-end; }
+
+.ts-filter-input:focus {
+  border-color: var(--color-primary);
+}
+
+.ts-filter-field--action {
+  justify-content: flex-end;
+}
 
 /* ── Table ──────────────────────────────────────────────────────────────────── */
-.ts-td { padding: 0.75rem 1.25rem; font-size: 0.875rem; border-bottom: 1px solid var(--border); color: var(--text-primary); }
+.ts-td {
+  padding: 0.75rem 1.25rem;
+  font-size: 0.875rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+}
 
 /* ── View toggle ────────────────────────────────────────────────────────────── */
 .ts-view-toggle {
@@ -392,6 +430,7 @@ onMounted(load)
   border-radius: var(--radius-sm);
   overflow: hidden;
 }
+
 .ts-toggle-btn {
   display: flex;
   align-items: center;
@@ -404,7 +443,11 @@ onMounted(load)
   cursor: pointer;
   transition: background var(--transition-fast), color var(--transition-fast);
 }
-.ts-toggle-btn--active { background: var(--color-primary); color: white; }
+
+.ts-toggle-btn--active {
+  background: var(--color-primary);
+  color: white;
+}
 
 /* ── Calendar Stats ─────────────────────────────────────────────────────────── */
 .cal-stats {
@@ -417,9 +460,27 @@ onMounted(load)
   background: var(--bg-surface);
   margin-bottom: 1rem;
 }
-.cal-stat { display: flex; flex-direction: column; gap: 0.25rem; min-width: 6rem; }
-.cal-stat__label { font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); }
-.cal-stat__val { font-size: 1.375rem; font-weight: 700; color: var(--text-primary); }
+
+.cal-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 6rem;
+}
+
+.cal-stat__label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-tertiary);
+}
+
+.cal-stat__val {
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
 
 /* ── Legend ─────────────────────────────────────────────────────────────────── */
 .cal-legend {
@@ -430,18 +491,43 @@ onMounted(load)
   font-size: 0.75rem;
   color: var(--text-secondary);
 }
-.cal-legend-item { display: flex; align-items: center; gap: 0.375rem; }
+
+.cal-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
 .cal-dot {
   width: 0.75rem;
   height: 0.75rem;
   border-radius: 50%;
 }
-.cal-dot--full    { background: var(--color-success); }
-.cal-dot--late    { background: var(--color-warning); }
-.cal-dot--half    { background: var(--color-info); }
-.cal-dot--partial { background: hsl(270, 60%, 60%); }
-.cal-dot--empty   { background: var(--color-danger); }
-.cal-dot--weekend { background: var(--bg-muted); border: 1px solid var(--border-strong); }
+
+.cal-dot--full {
+  background: var(--color-success);
+}
+
+.cal-dot--late {
+  background: var(--color-warning);
+}
+
+.cal-dot--half {
+  background: var(--color-info);
+}
+
+.cal-dot--partial {
+  background: hsl(270, 60%, 60%);
+}
+
+.cal-dot--empty {
+  background: var(--color-danger);
+}
+
+.cal-dot--weekend {
+  background: var(--bg-muted);
+  border: 1px solid var(--border-strong);
+}
 
 /* ── Calendar Grid ──────────────────────────────────────────────────────────── */
 .cal-grid-container {
@@ -450,11 +536,17 @@ onMounted(load)
   background: var(--bg-surface);
   overflow: hidden;
 }
-.cal-grid-header, .cal-grid {
+
+.cal-grid-header,
+.cal-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
 }
-.cal-grid-header { border-bottom: 1px solid var(--border); }
+
+.cal-grid-header {
+  border-bottom: 1px solid var(--border);
+}
+
 .cal-dow {
   padding: 0.5rem;
   text-align: center;
@@ -473,7 +565,10 @@ onMounted(load)
   cursor: default;
   transition: background-color var(--transition-fast);
 }
-.cal-day:nth-child(7n) { border-right: none; }
+
+.cal-day:nth-child(7n) {
+  border-right: none;
+}
 
 .cal-day__num {
   display: block;
@@ -482,6 +577,7 @@ onMounted(load)
   color: var(--text-primary);
   margin-bottom: 0.25rem;
 }
+
 .cal-day__time {
   display: block;
   font-size: 0.625rem;
@@ -490,27 +586,44 @@ onMounted(load)
 }
 
 /* Variants */
-.cal-day--out { background: var(--bg-page); }
-.cal-day--out .cal-day__num { color: var(--text-tertiary); opacity: 0.4; }
+.cal-day--out {
+  background: var(--bg-page);
+}
 
-.cal-day--weekend { background: var(--bg-subtle); }
-.cal-day--weekend .cal-day__num { color: var(--text-tertiary); }
+.cal-day--out .cal-day__num {
+  color: var(--text-tertiary);
+  opacity: 0.4;
+}
 
-.cal-day--empty:hover { background: color-mix(in srgb, var(--color-danger) 5%, transparent); }
+.cal-day--weekend {
+  background: var(--bg-subtle);
+}
+
+.cal-day--weekend .cal-day__num {
+  color: var(--text-tertiary);
+}
+
+.cal-day--empty:hover {
+  background: color-mix(in srgb, var(--color-danger) 5%, transparent);
+}
+
 .cal-day--full {
   background: color-mix(in srgb, var(--color-success) 8%, var(--bg-surface));
   border-left: 3px solid var(--color-success);
 }
+
 .cal-day--late {
   background: color-mix(in srgb, var(--color-warning) 10%, var(--bg-surface));
   border-left: 3px solid var(--color-warning);
 }
+
 .cal-day--half {
   background: color-mix(in srgb, var(--color-info) 8%, var(--bg-surface));
   border-left: 3px solid var(--color-info);
 }
+
 .cal-day--partial {
-  background: color-mix(in srgb, hsl(270,60%,60%) 8%, var(--bg-surface));
+  background: color-mix(in srgb, hsl(270, 60%, 60%) 8%, var(--bg-surface));
   border-left: 3px solid hsl(270, 60%, 60%);
 }
 
@@ -522,6 +635,7 @@ onMounted(load)
   border-radius: var(--radius-lg);
   overflow: hidden;
 }
+
 .cal-skeleton__cell {
   height: 4rem;
   border-right: 1px solid var(--border);
@@ -529,5 +643,16 @@ onMounted(load)
   background: var(--bg-muted);
   animation: pulse 1.5s ease-in-out infinite;
 }
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1
+  }
+
+  50% {
+    opacity: .5
+  }
+}
 </style>

@@ -52,6 +52,8 @@ builder.Services.AddHostedService<Hrms.HrCore.Application.Services.ContractExpir
 
 var app = builder.Build();
 
+app.UseStaticFiles();
+
 // Seed Database on Startup
 using (var scope = app.Services.CreateScope())
 {

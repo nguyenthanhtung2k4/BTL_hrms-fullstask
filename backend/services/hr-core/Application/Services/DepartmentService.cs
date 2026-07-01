@@ -196,6 +196,22 @@ public class DepartmentService : IDepartmentService
         return Result.Success("Department deleted successfully.");
     }
 
+    public async Task<Result<IEnumerable<DepartmentDto>>> GetMyDepartmentsAsync(Guid managerId)
+    {
+        // Lấy department mà Manager này thuộc về
+        var employee = await _dbContext.Employees.FindAsync(managerId);
+        if (employee == null)
+            return Result<IEnumerable<DepartmentDto>>.Failure("Employee not found.");
+
+        var departments = await _dbContext.Departments
+            .Include(d => d.ParentDepartment)
+            .Include(d => d.ManagerEmployee)
+            .Where(d => d.Id == employee.DepartmentId && d.IsActive)
+            .ToListAsync();
+
+        return Result<IEnumerable<DepartmentDto>>.Success(departments.Select(MapToDto));
+    }
+
     private static DepartmentDto MapToDto(Department d)
     {
         return new DepartmentDto(

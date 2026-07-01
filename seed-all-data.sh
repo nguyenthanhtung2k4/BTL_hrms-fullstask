@@ -24,7 +24,7 @@ if [ $? -ne 0 ]; then
 fi
 echo
 
-echo "[3/6] Seeding Master/Demo Data via REST API Gateway (port 5000)..."
+echo "[3/6] Seeding Master/Demo Data via REST API Gateway (port 5005)..."
 echo "Note: This requires the Backend Microservices (Gateway, HR-Core, etc.) to be running."
 echo "If they are not running, this step will show connection errors."
 echo

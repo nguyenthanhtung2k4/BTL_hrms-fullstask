@@ -59,12 +59,12 @@ public class EmployeeService : IEmployeeService
             return Result<EmployeeDto>.Failure("EmployeeCode, FullName, and Email are required.");
         }
 
-        if (await _dbContext.Employees.AnyAsync(e => e.EmployeeCode == dto.EmployeeCode))
+        if (await _dbContext.Employees.IgnoreQueryFilters().AnyAsync(e => e.EmployeeCode == dto.EmployeeCode))
         {
             return Result<EmployeeDto>.Failure($"Employee with code '{dto.EmployeeCode}' already exists.");
         }
 
-        if (await _dbContext.Employees.AnyAsync(e => e.Email == dto.Email))
+        if (await _dbContext.Employees.IgnoreQueryFilters().AnyAsync(e => e.Email == dto.Email))
         {
             return Result<EmployeeDto>.Failure($"Employee with email '{dto.Email}' already exists.");
         }
@@ -279,11 +279,27 @@ public class EmployeeService : IEmployeeService
         var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.EmployeeId == id);
         if (user != null)
         {
-            _dbContext.Users.Remove(user);
+            user.IsActive = false;
         }
 
-        _dbContext.Employees.Remove(employee);
+        employee.IsDeleted = true;
+        employee.Status = "Resigned";
+        
         await _dbContext.SaveChangesAsync();
+
+        // Publish Employee Deleted event
+        var payload = new EmployeeDeletedPayload(EmployeeId: id);
+        var integrationEvent = new IntegrationEvent<EmployeeDeletedPayload>(
+            EventId: Guid.NewGuid(),
+            EventName: EventNames.EmployeeDeleted,
+            Version: 1,
+            OccurredAt: DateTimeOffset.UtcNow,
+            SourceService: "hr-core",
+            CorrelationId: null,
+            Payload: payload
+        );
+
+        await _publishEndpoint.Publish(integrationEvent);
 
         return Result.Success("Employee deleted successfully.");
     }
@@ -311,4 +327,50 @@ public class EmployeeService : IEmployeeService
         );
     }
 
+    public async Task<Result> DeleteMultipleAsync(IEnumerable<Guid> ids)
+    {
+        // Validate all first
+        foreach (var id in ids)
+        {
+            if (await _dbContext.Contracts.AnyAsync(c => c.EmployeeId == id))
+            {
+                var employee = await _dbContext.Employees.FindAsync(id);
+                var name = employee?.FullName ?? id.ToString();
+                return Result.Failure($"Không thể xóa nhân viên '{name}' vì đã có thông tin hợp đồng.");
+            }
+        }
+
+        // Perform soft deletes and publish events
+        foreach (var id in ids)
+        {
+            var employee = await _dbContext.Employees.FindAsync(id);
+            if (employee != null)
+            {
+                employee.IsDeleted = true;
+                employee.Status = "Resigned";
+
+                var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.EmployeeId == id);
+                if (user != null)
+                {
+                    user.IsActive = false;
+                }
+
+                var payload = new EmployeeDeletedPayload(EmployeeId: id);
+                var integrationEvent = new IntegrationEvent<EmployeeDeletedPayload>(
+                    EventId: Guid.NewGuid(),
+                    EventName: EventNames.EmployeeDeleted,
+                    Version: 1,
+                    OccurredAt: DateTimeOffset.UtcNow,
+                    SourceService: "hr-core",
+                    CorrelationId: null,
+                    Payload: payload
+                );
+
+                await _publishEndpoint.Publish(integrationEvent);
+            }
+        }
+
+        await _dbContext.SaveChangesAsync();
+        return Result.Success("Employees deleted successfully.");
+    }
 }

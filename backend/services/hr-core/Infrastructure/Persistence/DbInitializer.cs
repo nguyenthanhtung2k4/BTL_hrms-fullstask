@@ -14,6 +14,22 @@ public static class DbInitializer
         // Ensure database is created or migrated
         await context.Database.EnsureCreatedAsync();
 
+        // Add IsDeleted column to Employees table if it doesn't exist (Soft delete support)
+        await context.Database.ExecuteSqlRawAsync(
+            "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Employees') AND name = 'IsDeleted') " +
+            "BEGIN " +
+            "    ALTER TABLE dbo.Employees ADD IsDeleted BIT NOT NULL DEFAULT 0; " +
+            "END"
+        );
+
+        // Add AttachmentUrl column to Contracts table if it doesn't exist
+        await context.Database.ExecuteSqlRawAsync(
+            "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Contracts') AND name = 'AttachmentUrl') " +
+            "BEGIN " +
+            "    ALTER TABLE dbo.Contracts ADD AttachmentUrl NVARCHAR(MAX) NULL; " +
+            "END"
+        );
+
         // Create Notifications table if not exists
         await context.Database.ExecuteSqlRawAsync(
             "IF OBJECT_ID('dbo.Notifications', 'U') IS NULL " +

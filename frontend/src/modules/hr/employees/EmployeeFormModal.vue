@@ -2,6 +2,7 @@
 import { ref, watch } from 'vue'
 import { employeeService } from '../../../services/employee.service'
 import { userService } from '../../../services/user.service'
+import { extractError } from '../../../services/apiClient'
 import { useToastStore } from '../../../stores/toast'
 import type { Employee, CreateEmployeeDto, UpdateEmployeeDto, Department, Position } from '../../../types/hr.types'
 import AppModal from '../../../components/ui/AppModal.vue'
@@ -144,12 +145,12 @@ async function save() {
           })
           toast.success(`Đã cấp tài khoản truy cập cho ${form.value.fullName}`)
         } catch (err: any) {
-          toast.error(`Nhân viên đã tạo nhưng lỗi khi cấp tài khoản: ${err?.response?.data?.message ?? 'Lỗi không xác định'}`)
+          toast.error(`Nhân viên đã tạo nhưng lỗi khi cấp tài khoản: ${extractError(err, 'Lỗi không xác định')}`)
         }
       }
     }
     emit('saved')
-  } catch (err: any) { toast.error(err?.response?.data?.message ?? 'Lưu thất bại') }
+  } catch (err: any) { toast.error(extractError(err, 'Lưu thất bại')) }
   finally { saving.value = false }
 }
 </script>
@@ -165,9 +166,9 @@ async function save() {
         <label class="text-sm font-medium text-slate-700">Giới tính</label>
         <select v-model="form.gender" class="h-9 rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-500 bg-white">
           <option value="">-- Chọn --</option>
-          <option value="Nam">Nam</option>
-          <option value="Nữ">Nữ</option>
-          <option value="Khác">Khác</option>
+          <option value="Male">Nam</option>
+          <option value="Female">Nữ</option>
+          <option value="Other">Khác</option>
         </select>
       </div>
       <AppInput id="emp-dob" v-model="form.dateOfBirth" label="Ngày sinh" type="date" />

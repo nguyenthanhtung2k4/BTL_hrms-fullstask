@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { employeeService } from '../../../services/employee.service'
 import { contractService } from '../../../services/contract.service'
 import { userService } from '../../../services/user.service'
+import { extractError, getAttachmentUrl } from '../../../services/apiClient'
 import { useAuthStore } from '../../../stores/auth'
 import { useToastStore } from '../../../stores/toast'
 import type { Employee, Contract } from '../../../types/hr.types'
@@ -14,7 +15,7 @@ import AppButton from '../../../components/ui/AppButton.vue'
 import GrantAccountModal from './GrantAccountModal.vue'
 import ResetPasswordModal from './ResetPasswordModal.vue'
 import EditRolesModal from './EditRolesModal.vue'
-import { KeyRound, Shield, UserPlus, Lock, Unlock, RefreshCw } from '@lucide/vue'
+import { KeyRound, Shield, UserPlus, Lock, Unlock, RefreshCw, FileText, Download, Eye, Paperclip } from '@lucide/vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -35,14 +36,20 @@ const showEditRolesModal = ref(false)
 const changingStatus = ref(false)
 
 async function load() {
+  const id = route.params.id as string
   try {
-    const id = route.params.id as string
     employee.value = await employeeService.getById(id)
-    const all = await contractService.getAll()
-    contracts.value = all.filter((c) => c.employeeId === id)
   } catch {
     toast.error('Không tìm thấy nhân viên')
     router.push('/hr/employees')
+    loading.value = false
+    return
+  }
+
+  try {
+    contracts.value = await contractService.getByEmployeeId(id)
+  } catch (err) {
+    console.error('Lỗi tải danh sách hợp đồng:', err)
   } finally {
     loading.value = false
   }
@@ -76,7 +83,7 @@ async function toggleStatus() {
     toast.success(newStatus ? 'Đã kích hoạt tài khoản' : 'Đã tạm khóa tài khoản')
     await loadAccount()
   } catch (err: any) {
-    toast.error(err?.response?.data?.message ?? 'Thao tác thất bại')
+    toast.error(extractError(err, 'Thao tác thất bại'))
   } finally {
     changingStatus.value = false
   }
@@ -108,6 +115,16 @@ const roleLabels: Record<string, string> = {
   Manager: 'Quản lý bộ phận',
   PayrollStaff: 'Kế toán lương',
   Employee: 'Nhân viên',
+}
+
+function downloadFile(url: string) {
+  const link = document.createElement('a')
+  link.href = getAttachmentUrl(url)
+  link.download = url.split('/').pop() || 'file'
+  link.target = '_blank'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
 }
 
 onMounted(load)
@@ -168,17 +185,86 @@ onMounted(load)
 
       <!-- Tab: Contracts -->
       <div v-else-if="activeTab === 'contracts'">
-        <div v-if="contracts.length === 0" class="rounded-xl border border-slate-200 bg-white py-12 text-center text-slate-400">Chưa có hợp đồng nào</div>
-        <div v-else class="space-y-3">
-          <div v-for="c in contracts" :key="c.id" class="rounded-xl border border-slate-200 bg-white p-4">
-            <div class="flex items-center justify-between">
-              <div>
-                <div class="font-semibold text-slate-900">{{ c.contractNumber }}</div>
-                <div class="text-xs text-slate-500">{{ c.contractType }} · {{ fmt(c.startDate) }} → {{ c.endDate ? fmt(c.endDate) : 'Không thời hạn' }}</div>
+        <div v-if="contracts.length === 0" class="rounded-xl border border-slate-200 bg-white py-12 text-center text-slate-400">
+          Chưa có hợp đồng nào
+        </div>
+        <div v-else class="space-y-4">
+          <div 
+            v-for="c in contracts" 
+            :key="c.id" 
+            class="group relative rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-all duration-200 border-l-4"
+            :class="{
+              'border-l-emerald-500': c.status === 'Active',
+              'border-l-amber-500': c.status === 'Expired',
+              'border-l-rose-500': c.status === 'Terminated'
+            }"
+          >
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <!-- Contract details -->
+              <div class="flex items-start gap-4">
+                <div class="p-3 rounded-lg bg-slate-50 text-slate-400 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
+                  <FileText class="h-6 w-6" />
+                </div>
+                <div class="space-y-1">
+                  <div class="flex items-center gap-2">
+                    <span class="font-bold text-slate-900 text-base">{{ c.contractNumber }}</span>
+                    <span 
+                      class="px-2 py-0.5 text-xs font-semibold rounded-full"
+                      :class="{
+                        'bg-emerald-50 text-emerald-700 border border-emerald-200': c.status === 'Active',
+                        'bg-amber-50 text-amber-700 border border-amber-200': c.status === 'Expired',
+                        'bg-rose-50 text-rose-700 border border-rose-200': c.status === 'Terminated'
+                      }"
+                    >
+                      {{ c.status === 'Active' ? 'Hiệu lực' : c.status === 'Expired' ? 'Hết hạn' : 'Chấm dứt' }}
+                    </span>
+                  </div>
+                  <div class="text-sm text-slate-600 font-medium">
+                    Loại hợp đồng: <span class="text-slate-800">{{ c.contractType }}</span>
+                  </div>
+                  <div class="text-xs text-slate-500 flex items-center gap-1">
+                    <span class="font-medium text-slate-700">{{ fmt(c.startDate) }}</span>
+                    <span>→</span>
+                    <span class="font-medium text-slate-700">{{ c.endDate ? fmt(c.endDate) : 'Không thời hạn' }}</span>
+                  </div>
+                </div>
               </div>
-              <div class="text-right">
-                <div class="text-lg font-bold text-emerald-700">{{ fmtMoney(c.baseSalary) }}</div>
-                <AppBadge :status="c.status" />
+
+              <!-- Salary & Action Buttons -->
+              <div class="flex flex-col sm:flex-row sm:items-center gap-4 md:text-right md:justify-end">
+                <div class="bg-emerald-50/50 px-3.5 py-2 rounded-lg border border-emerald-100/50">
+                  <div class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Lương cơ bản</div>
+                  <div class="text-xl font-bold text-emerald-700 mt-0.5">{{ fmtMoney(c.baseSalary) }}</div>
+                </div>
+
+                <div class="flex gap-2">
+                  <template v-if="c.attachmentUrl">
+                    <!-- View online -->
+                     <a 
+                      :href="getAttachmentUrl(c.attachmentUrl)" 
+                      target="_blank" 
+                      class="inline-flex items-center justify-center h-10 px-4 text-xs font-semibold text-emerald-700 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors border border-emerald-200/50 gap-1.5"
+                    >
+                      <Eye class="h-4 w-4" />
+                      Xem Online
+                    </a>
+                    <!-- Download -->
+                    <button 
+                      type="button" 
+                      @click="downloadFile(c.attachmentUrl)"
+                      class="inline-flex items-center justify-center h-10 px-4 text-xs font-semibold text-slate-700 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors border border-slate-200 gap-1.5"
+                    >
+                      <Download class="h-4 w-4" />
+                      Tải Xuống
+                    </button>
+                  </template>
+                  <template v-else>
+                    <span class="inline-flex items-center gap-1 text-xs text-slate-400 font-medium px-3 py-2 bg-slate-50 rounded-lg border border-slate-100">
+                      <Paperclip class="h-3.5 w-3.5" />
+                      Không có file đính kèm
+                    </span>
+                  </template>
+                </div>
               </div>
             </div>
           </div>

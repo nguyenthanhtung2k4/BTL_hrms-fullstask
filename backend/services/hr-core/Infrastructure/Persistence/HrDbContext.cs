@@ -83,6 +83,7 @@ public class HrDbContext : DbContext
         {
             entity.ToTable("Employees");
             entity.HasKey(e => e.Id);
+            entity.HasQueryFilter(e => !e.IsDeleted);
             entity.HasIndex(e => e.EmployeeCode).IsUnique();
             entity.HasIndex(e => e.Email).IsUnique();
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");

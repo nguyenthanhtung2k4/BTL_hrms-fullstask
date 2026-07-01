@@ -23,7 +23,7 @@ public static class DependencyInjection
             options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
         // Register MassTransit RabbitMQ
-        services.AddSharedMassTransit(configuration, x =>
+        services.AddSharedMassTransit(configuration, "hr-core", x =>
         {
             x.AddConsumer<Hrms.HrCore.Infrastructure.Messaging.Consumers.LeaveApprovedConsumer>();
             x.AddConsumer<Hrms.HrCore.Infrastructure.Messaging.Consumers.PayrollClosedConsumer>();

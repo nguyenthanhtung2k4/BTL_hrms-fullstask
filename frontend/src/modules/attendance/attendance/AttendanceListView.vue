@@ -10,6 +10,7 @@ import PageHeader from '../../../components/layout/PageHeader.vue'
 import AppTable from '../../../components/ui/AppTable.vue'
 import AppPagination from '../../../components/ui/AppPagination.vue'
 import { usePagination } from '../../../composables/usePagination'
+import { useAuthStore } from '../../../stores/auth.ts'
 
 const toast = useToastStore()
 const records = ref<AttendanceRecord[]>([])
@@ -34,13 +35,16 @@ const columns = [
 const months = Array.from({ length: 12 }, (_, i) => ({ value: i + 1, label: `Tháng ${i + 1}` }))
 const years = [2024, 2025, 2026]
 
+const authStore = useAuthStore()
+const isManagerOnly = computed(() => authStore.hasRole('Manager') && !authStore.isAdmin && !authStore.isHR)
+
 async function load() {
   loading.value = true
   try {
     const [resRecords, resEmployees, resDepts] = await Promise.all([
       attendanceService.getAll({ employeeId: filterEmployee.value || undefined, month: filterMonth.value, year: filterYear.value }),
       employeeService.getAll(),
-      departmentService.getAll(),
+      isManagerOnly.value ? departmentService.getMyDepartments() : departmentService.getAll(), // ← thay đổi
     ])
     records.value = resRecords
     employees.value = resEmployees

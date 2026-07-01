@@ -25,6 +25,11 @@ public class AttendanceController : ControllerBase
     [HttpPost("check-in")]
     public async Task<ActionResult<ApiResponse<AttendanceRecordDto>>> CheckIn([FromBody] CheckInRequest request)
     {
+        if (User.IsInRole("Admin"))
+        {
+            return BadRequest(ApiResponse<AttendanceRecordDto>.Fail("AdminForbidden", "Administrators are not permitted to perform check-in."));
+        }
+
         var employeeId = GetCurrentEmployeeId();
         if (employeeId == Guid.Empty)
         {
@@ -43,6 +48,11 @@ public class AttendanceController : ControllerBase
     [HttpPost("check-out")]
     public async Task<ActionResult<ApiResponse<AttendanceRecordDto>>> CheckOut()
     {
+        if (User.IsInRole("Admin"))
+        {
+            return BadRequest(ApiResponse<AttendanceRecordDto>.Fail("AdminForbidden", "Administrators are not permitted to perform check-out."));
+        }
+
         var employeeId = GetCurrentEmployeeId();
         if (employeeId == Guid.Empty)
         {
@@ -63,6 +73,11 @@ public class AttendanceController : ControllerBase
         [FromQuery] DateOnly? fromDate,
         [FromQuery] DateOnly? toDate)
     {
+        if (User.IsInRole("Admin"))
+        {
+            return BadRequest(ApiResponse<IEnumerable<AttendanceRecordDto>>.Fail("AdminForbidden", "Administrators do not have personal attendance records."));
+        }
+
         var employeeId = GetCurrentEmployeeId();
         if (employeeId == Guid.Empty)
         {

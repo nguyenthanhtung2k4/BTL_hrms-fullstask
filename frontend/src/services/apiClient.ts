@@ -6,7 +6,13 @@
  */
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axios'
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5005'
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5005'
+
+export function getAttachmentUrl(path?: string | null): string {
+  if (!path) return ''
+  if (path.startsWith('http://') || path.startsWith('https://')) return path
+  return `${API_BASE_URL.replace(/\/$/, '')}/${path.replace(/^\//, '')}`
+}
 
 // ─── Keys lưu trữ ────────────────────────────────────────────────────────────
 const TOKEN_KEY         = 'hrms_token'
@@ -14,7 +20,7 @@ const REFRESH_TOKEN_KEY = 'hrms_refresh_token'
 
 // ─── Axios instance chính ────────────────────────────────────────────────────
 export const apiClient: AxiosInstance = axios.create({
-  baseURL: BASE_URL,
+  baseURL: API_BASE_URL,
   timeout: 15000,
   headers: { 'Content-Type': 'application/json' },
 })
@@ -73,7 +79,7 @@ apiClient.interceptors.response.use(
 
       try {
         const response = await axios.post(
-          `${BASE_URL}/api/v1/hr/auth/refresh`,
+          `${API_BASE_URL}/api/v1/hr/auth/refresh`,
           { refreshToken },
           { headers: { 'Content-Type': 'application/json' } }
         )
@@ -104,8 +110,8 @@ apiClient.interceptors.response.use(
 function handleLogout() {
   localStorage.removeItem(TOKEN_KEY)
   localStorage.removeItem(REFRESH_TOKEN_KEY)
-  if (!window.location.pathname.includes('/login')) {
-    window.location.href = '/login'
+  if (window.location.pathname !== '/') {
+    window.location.href = '/'
   }
 }
 
@@ -117,10 +123,23 @@ export function extractData<T>(response: { data: { data: T } }): T {
 // ─── Helper: trích xuất chi tiết lỗi từ ApiResponse ──────────────────────────
 export function extractError(err: any, fallback: string = 'Thao tác thất bại'): string {
   const apiData = err?.response?.data
-  if (apiData?.errors && Array.isArray(apiData.errors) && apiData.errors.length > 0) {
-    return apiData.errors.join(', ')
+  if (!apiData) return err?.message || fallback
+
+  // 1. Kiểm tra mảng errors (camelCase hoặc PascalCase)
+  const errors = apiData.errors || apiData.Errors
+  if (errors && Array.isArray(errors) && errors.length > 0) {
+    return errors.join(', ')
   }
-  return apiData?.message || fallback
+
+  // 2. Kiểm tra detail/Detail (lỗi chi tiết từ ExceptionMiddleware)
+  const detail = apiData.detail || apiData.Detail
+  if (detail) return detail
+
+  // 3. Kiểm tra message/Message
+  const message = apiData.message || apiData.Message
+  if (message) return message
+
+  return fallback
 }
 
 // ─── Export helpers ───────────────────────────────────────────────────────────

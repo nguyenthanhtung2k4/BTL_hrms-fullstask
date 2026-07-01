@@ -19,6 +19,14 @@ public static class DbInitializer
             "ALTER TABLE dbo.EmployeeProjections ADD HireDate DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME();"
         );
 
+        // Migrate IsDeleted column if it does not exist
+        await context.Database.ExecuteSqlRawAsync(
+            "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.EmployeeProjections') AND name = 'IsDeleted') " +
+            "BEGIN " +
+            "    ALTER TABLE dbo.EmployeeProjections ADD IsDeleted BIT NOT NULL DEFAULT 0; " +
+            "END"
+        );
+
         // 1. Seed Allowance Types
         var allowanceTypes = new[]
         {

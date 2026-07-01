@@ -38,12 +38,17 @@ public class ExceptionMiddleware
 
         var response = new
         {
-            StatusCode = context.Response.StatusCode,
-            Message = "Internal Server Error. Please try again later.",
-            Detail = exception.Message
+            statusCode = context.Response.StatusCode,
+            message = exception.Message,
+            detail = exception.InnerException?.Message ?? exception.Message
         };
 
-        var json = JsonSerializer.Serialize(response);
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
+
+        var json = JsonSerializer.Serialize(response, options);
         return context.Response.WriteAsync(json);
     }
 }

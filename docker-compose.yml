@@ -38,6 +38,8 @@ services:
     depends_on:
       - sqlserver
       - rabbitmq
+    volumes:
+      - ./backend/services/hr-core/wwwroot/uploads:/app/wwwroot/uploads
 
   attendance:
     image: hrms-attendance:latest

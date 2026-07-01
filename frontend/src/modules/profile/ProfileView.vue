@@ -11,9 +11,11 @@ import { employeeService } from '../../services/employee.service'
 import PageHeader from '../../components/layout/PageHeader.vue'
 import AppButton from '../../components/ui/AppButton.vue'
 import AppInput from '../../components/ui/AppInput.vue'
-import type { Employee } from '../../types/hr.types'
+import type { Employee, Contract } from '../../types/hr.types'
 import { contractService } from '../../services/contract.service'
 import { useFormGuard } from '../../composables/useFormGuard'
+import { FileText, Eye, Download, Paperclip } from '@lucide/vue'
+import { getAttachmentUrl } from '../../services/apiClient'
 
 const { t } = useI18n()
 const auth = useAuthStore()
@@ -23,6 +25,17 @@ const toast = useToastStore()
 const employee = ref<Employee | null>(null)
 const baseSalary = ref<number | null>(null)
 const loadingEmployee = ref(false)
+const contracts = ref<Contract[]>([])
+
+function downloadFile(url: string) {
+  const link = document.createElement('a')
+  link.href = getAttachmentUrl(url)
+  link.download = url.split('/').pop() || 'file'
+  link.target = '_blank'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
 
 async function loadEmployee() {
   if (!auth.employeeId) return
@@ -31,9 +44,9 @@ async function loadEmployee() {
     const emp = await employeeService.getById(auth.employeeId)
     employee.value = emp
 
-    // Load active contract for base salary
-    const contracts = await contractService.getAll()
-    const activeContract = contracts.find(c => c.employeeId === emp.id && c.status === 'Active')
+    // Load active contract for base salary and populate contracts list
+    contracts.value = await contractService.getByEmployeeId(emp.id)
+    const activeContract = contracts.value.find(c => c.status === 'Active')
     if (activeContract) {
       baseSalary.value = activeContract.baseSalary
     }
@@ -260,6 +273,95 @@ onMounted(loadEmployee)
             <div class="profile-info-field sm:col-span-2">
               <span class="profile-info-label">{{ t('employee.address') }}</span>
               <span class="profile-info-value">{{ employee.address || '—' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- My Contracts Card -->
+        <div class="profile-card">
+          <h3 class="profile-section-title flex items-center gap-2">
+            <FileText class="h-5 w-5 text-emerald-600" />
+            Hợp đồng của tôi
+          </h3>
+          
+          <div v-if="contracts.length === 0" class="py-6 text-center text-sm text-slate-450">
+            Bạn chưa có hợp đồng nào được đăng ký trên hệ thống.
+          </div>
+          
+          <div v-else class="mt-4 space-y-3">
+            <div 
+              v-for="c in contracts" 
+              :key="c.id" 
+              class="group relative rounded-xl border border-slate-200 bg-slate-50/30 p-4 shadow-sm hover:shadow transition-all duration-205 border-l-4"
+              :class="{
+                'border-l-emerald-500': c.status === 'Active',
+                'border-l-amber-500': c.status === 'Expired',
+                'border-l-rose-500': c.status === 'Terminated'
+              }"
+            >
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div class="flex items-start gap-3">
+                  <div class="p-2 rounded-lg bg-white text-slate-400 group-hover:text-emerald-600 transition-colors border border-slate-100 shadow-sm">
+                    <FileText class="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <span class="font-bold text-slate-900 text-sm">{{ c.contractNumber }}</span>
+                      <span 
+                        class="px-2 py-0.5 text-[10px] font-semibold rounded-full"
+                        :class="{
+                          'bg-emerald-50 text-emerald-700 border border-emerald-200': c.status === 'Active',
+                          'bg-amber-50 text-amber-700 border border-amber-200': c.status === 'Expired',
+                          'bg-rose-50 text-rose-700 border border-rose-200': c.status === 'Terminated'
+                        }"
+                      >
+                        {{ c.status === 'Active' ? 'Hiệu lực' : c.status === 'Expired' ? 'Hết hạn' : 'Chấm dứt' }}
+                      </span>
+                    </div>
+                    <div class="text-xs text-slate-500 mt-1">
+                      {{ c.contractType }} · {{ formatDate(c.startDate) }} → {{ c.endDate ? formatDate(c.endDate) : 'Không thời hạn' }}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-3 justify-between sm:justify-end">
+                  <div class="text-right">
+                    <span class="text-[10px] text-slate-400 block uppercase tracking-wider font-semibold">Lương cơ bản</span>
+                    <span class="text-sm font-bold text-emerald-700 font-mono">{{ formatCurrency(c.baseSalary) }}</span>
+                  </div>
+
+                  <div class="flex gap-1.5">
+                    <template v-if="c.attachmentUrl">
+                      <!-- View online -->
+                      <a 
+                        :href="getAttachmentUrl(c.attachmentUrl)" 
+                        target="_blank" 
+                        class="inline-flex items-center justify-center h-8 px-2.5 text-xs font-semibold text-emerald-700 bg-white rounded-lg hover:bg-emerald-50 transition-colors border border-emerald-200/50 gap-1"
+                        title="Xem trực tuyến"
+                      >
+                        <Eye class="h-3.5 w-3.5" />
+                        Xem
+                      </a>
+                      <!-- Download -->
+                      <button 
+                        type="button" 
+                        @click="downloadFile(c.attachmentUrl)"
+                        class="inline-flex items-center justify-center h-8 px-2.5 text-xs font-semibold text-slate-700 bg-white rounded-lg hover:bg-slate-50 transition-colors border border-slate-200 gap-1"
+                        title="Tải xuống"
+                      >
+                        <Download class="h-3.5 w-3.5" />
+                        Tải
+                      </button>
+                    </template>
+                    <template v-else>
+                      <span class="inline-flex items-center gap-1 text-[10px] text-slate-400 bg-slate-100/50 px-2 py-1 rounded border border-slate-200/40">
+                        <Paperclip class="h-3 w-3" />
+                        Không có file
+                      </span>
+                    </template>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
