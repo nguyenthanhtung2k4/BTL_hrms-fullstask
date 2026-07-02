@@ -40,6 +40,7 @@ public class ShiftsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin,HR,Manager")]
     public async Task<ActionResult<ApiResponse<ShiftDto>>> Create([FromBody] CreateShiftDto dto)
     {
         var result = await _shiftService.CreateAsync(dto);
@@ -51,6 +52,7 @@ public class ShiftsController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Roles = "Admin,HR,Manager")]
     public async Task<ActionResult<ApiResponse<ShiftDto>>> Update(Guid id, [FromBody] UpdateShiftDto dto)
     {
         var result = await _shiftService.UpdateAsync(id, dto);
@@ -62,6 +64,7 @@ public class ShiftsController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Roles = "Admin,HR,Manager")]
     public async Task<ActionResult<ApiResponse>> Delete(Guid id)
     {
         var result = await _shiftService.DeleteAsync(id);

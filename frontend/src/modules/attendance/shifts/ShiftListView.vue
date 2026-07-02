@@ -83,7 +83,7 @@ onMounted(load)
   <div>
     <PageHeader title="Ca làm việc" subtitle="Quản lý các ca làm việc" :breadcrumbs="[{ label: 'Chấm công' }, { label: 'Ca làm việc' }]">
       <template #actions>
-        <AppButton v-if="auth.isHR" @click="openCreate">
+        <AppButton v-if="auth.isManager" @click="openCreate">
           <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
           Thêm ca
         </AppButton>
@@ -100,8 +100,8 @@ onMounted(load)
         <td class="px-4 py-3"><AppBadge :status="(row as Shift).isActive ? 'Active' : 'Inactive'" /></td>
         <td class="px-4 py-3 text-right">
           <div class="flex justify-end gap-2">
-            <AppButton v-if="auth.isHR" size="sm" variant="secondary" @click="openEdit(row as Shift)">Sửa</AppButton>
-            <AppButton v-if="auth.isAdmin" size="sm" variant="danger" @click="deleteTarget = row as Shift">Xóa</AppButton>
+            <AppButton v-if="auth.isManager" size="sm" variant="secondary" @click="openEdit(row as Shift)">Sửa</AppButton>
+            <AppButton v-if="auth.isManager" size="sm" variant="danger" @click="deleteTarget = row as Shift">Xóa</AppButton>
           </div>
         </td>
       </template>

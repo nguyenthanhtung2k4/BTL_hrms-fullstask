@@ -154,10 +154,10 @@ async function load() {
     const params = {
       month: filterMonth.value,
       year: filterYear.value,
-      employeeId: auth.isManager ? undefined : auth.employeeId ?? undefined,
+      employeeId: (auth.isManager || auth.isPayrollStaff) ? undefined : auth.employeeId ?? undefined,
     }
     let resTimesheets
-    if (auth.isManager) {
+    if (auth.isManager || auth.isPayrollStaff) {
       const [ts, emps, depts] = await Promise.all([
         timesheetService.getAll(params),
         employeeService.getAll(),
@@ -201,8 +201,8 @@ async function calculate() {
   }
 }
 
-// Switch view: Employee default calendar; Manager/HR default table
-if (auth.isManager) viewMode.value = 'table'
+// Switch view: Employee default calendar; Manager/HR/PayrollStaff default table
+if (auth.isManager || auth.isPayrollStaff) viewMode.value = 'table'
 
 onMounted(load)
 </script>
@@ -210,11 +210,11 @@ onMounted(load)
 <template>
   <div>
     <PageHeader :title="t('timesheet.title')"
-      :subtitle="auth.isManager ? 'Tổng hợp chấm công hàng tháng' : 'Lịch chấm công của tôi'"
+      :subtitle="(auth.isManager || auth.isPayrollStaff) ? 'Tổng hợp chấm công hàng tháng' : 'Lịch chấm công của tôi'"
       :breadcrumbs="[{ label: t('nav.attendance') }, { label: t('nav.timesheets') }]">
       <template #actions>
-        <!-- View toggle (chỉ Manager/HR) -->
-        <div v-if="auth.isManager" class="ts-view-toggle">
+        <!-- View toggle (chỉ Manager/HR/PayrollStaff) -->
+        <div v-if="auth.isManager || auth.isPayrollStaff" class="ts-view-toggle">
           <button :class="['ts-toggle-btn', viewMode === 'table' ? 'ts-toggle-btn--active' : '']"
             @click="viewMode = 'table'">
             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -243,19 +243,19 @@ onMounted(load)
 
     <!-- ── Bộ lọc ─────────────────────────────────────────────────────────── -->
     <div class="ts-filters">
-      <div v-if="auth.isManager" class="ts-filter-field">
+      <div v-if="auth.isManager || auth.isPayrollStaff" class="ts-filter-field">
         <label>{{ t('common.search') }}</label>
         <input v-model="searchEmployee" type="text" :placeholder="t('employee.fullName') + '...'"
           class="ts-filter-input" />
       </div>
-      <div v-if="auth.isManager" class="ts-filter-field">
+      <div v-if="auth.isManager || auth.isPayrollStaff" class="ts-filter-field">
         <label>{{ t('nav.departments') }}</label>
         <select v-model="filterDept" class="ts-filter-input">
           <option value="">{{ t('common.all') }}</option>
           <option v-for="d in departments" :key="d.id" :value="d.id">{{ d.name }}</option>
         </select>
       </div>
-      <div v-if="auth.isManager" class="ts-filter-field">
+      <div v-if="auth.isManager || auth.isPayrollStaff" class="ts-filter-field">
         <label>{{ t('common.status') }}</label>
         <select v-model="filterStatus" class="ts-filter-input">
           <option value="">{{ t('common.all') }}</option>

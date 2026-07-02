@@ -8,6 +8,9 @@ using Hrms.Shared.Domain;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
+using Hrms.Attendance.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
+
 namespace Hrms.Attendance.Controllers;
 
 [ApiController]
@@ -16,10 +19,12 @@ namespace Hrms.Attendance.Controllers;
 public class TimesheetsController : ControllerBase
 {
     private readonly ITimesheetService _timesheetService;
+    private readonly AttendanceDbContext _dbContext;
 
-    public TimesheetsController(ITimesheetService timesheetService)
+    public TimesheetsController(ITimesheetService timesheetService, AttendanceDbContext dbContext)
     {
         _timesheetService = timesheetService;
+        _dbContext = dbContext;
     }
 
     [HttpGet("me")]
@@ -42,11 +47,50 @@ public class TimesheetsController : ControllerBase
         [FromQuery] Guid? departmentId,
         [FromQuery] Guid? employeeId)
     {
+        var isPrivileged = User.IsInRole("Admin") || User.IsInRole("HR") || User.IsInRole("PayrollStaff");
+        var isManager = User.IsInRole("Manager");
+
+        if (!isPrivileged)
+        {
+            if (isManager)
+            {
+                var currentEmpId = GetCurrentEmployeeId();
+                if (currentEmpId == Guid.Empty)
+                {
+                    return BadRequest(ApiResponse<IEnumerable<TimesheetDto>>.Fail("InvalidUser", "User must be associated with an active Employee account."));
+                }
+
+                var managerEmp = await _dbContext.EmployeeProjections.FindAsync(currentEmpId);
+                var managerDeptId = managerEmp?.DepartmentId;
+
+                if (departmentId.HasValue && departmentId.Value != managerDeptId)
+                {
+                    return Forbid();
+                }
+                departmentId = managerDeptId;
+
+                if (employeeId.HasValue)
+                {
+                    var targetEmp = await _dbContext.EmployeeProjections.FindAsync(employeeId.Value);
+                    if (targetEmp == null || (targetEmp.DepartmentId != managerDeptId && targetEmp.ManagerEmployeeId != currentEmpId))
+                    {
+                        return Forbid();
+                    }
+                }
+            }
+            else
+            {
+                // Employees are forbidden from viewing global timesheets
+                return Forbid();
+            }
+        }
+
         var result = await _timesheetService.GetTimesheetsAsync(year, month, departmentId, employeeId);
         return Ok(ApiResponse<IEnumerable<TimesheetDto>>.Ok(result.Value!, result.Message));
     }
 
     [HttpPost("recalculate")]
+    [Authorize(Roles = "Admin,HR,PayrollStaff")]
     public async Task<ActionResult<ApiResponse>> Recalculate(
         [FromQuery] int year,
         [FromQuery] int month)
