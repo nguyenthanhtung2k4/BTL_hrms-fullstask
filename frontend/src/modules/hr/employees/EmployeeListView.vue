@@ -230,9 +230,6 @@ onMounted(load)
   <div>
     <PageHeader title="Nhân viên" subtitle="Quản lý hồ sơ nhân viên" :breadcrumbs="[{ label: 'Nhân sự' }, { label: 'Nhân viên' }]">
       <template #actions>
-        <AppButton v-if="auth.isHR || auth.isAdmin" variant="danger" :disabled="selectedIds.length === 0" @click="confirmBulkDelete" class="mr-2">
-          Xóa đã chọn ({{ selectedIds.length }})
-        </AppButton>
         <input type="file" ref="fileInput" accept=".xlsx, .xls" class="hidden" @change="handleFileUpload" />
         <AppButton v-if="auth.isHR || auth.isAdmin" variant="secondary" @click="fileInput?.click()" class="mr-2" :loading="importLoading">
           <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
@@ -246,7 +243,7 @@ onMounted(load)
     </PageHeader>
 
     <!-- Filters -->
-    <div class="mb-4 flex flex-wrap gap-3">
+    <div class="mb-4 flex flex-wrap items-center gap-3">
       <input v-model="search" type="text" placeholder="Tìm theo tên, mã NV, email..." class="h-9 w-full max-w-xs rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-500" />
       <select v-model="filterDept" class="h-9 rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-500 bg-white">
         <option value="">Tất cả phòng ban</option>
@@ -260,8 +257,21 @@ onMounted(load)
         <option value="Resigned">Đã nghỉ</option>
       </select>
       <AppButton variant="ghost" size="sm" @click="search = ''; filterDept = ''; filterStatus = ''">Reset</AppButton>
-      <AppButton variant="ghost" size="sm" @click="selectAll">Chọn tất cả trang này</AppButton>
+      <AppButton variant="ghost" size="sm" @click="selectAll">Chọn tất cả</AppButton>
     </div>
+
+    <!-- Bulk Actions -->
+    <Transition name="fade-slide">
+      <div v-if="selectedIds.length > 0 && (auth.isHR || auth.isAdmin)" class="mb-4 flex items-center justify-end rounded-lg bg-red-50 p-3 border border-red-100">
+        <div class="flex items-center gap-4">
+          <button class="text-sm font-medium text-slate-500 hover:text-slate-800 underline" @click="selectedIds = []">Bỏ chọn</button>
+          <AppButton variant="danger" size="sm" @click="confirmBulkDelete">
+            <svg class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-7 0a1 1 0 011-1h4a1 1 0 011 1m-7 0H5m14 0h-2" /></svg>
+            Xóa
+          </AppButton>
+        </div>
+      </div>
+    </Transition>
 
     <!-- Table -->
     <AppTable :page-size="10" :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Chưa có nhân viên nào">
@@ -296,3 +306,14 @@ onMounted(load)
   </div>
 </template>
 
+<style scoped>
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.fade-slide-enter-from,
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateX(-8px);
+}
+</style>
