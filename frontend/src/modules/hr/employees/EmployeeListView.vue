@@ -114,11 +114,21 @@ function toggleSelect(id: string) {
   else selectedIds.value.push(id)
 }
 
+const isAllSelected = computed(() => {
+  return paginatedData.value.length > 0 && paginatedData.value.every(e => selectedIds.value.includes(e.id))
+})
+
+const isIndeterminate = computed(() => {
+  const checkedCount = paginatedData.value.filter(e => selectedIds.value.includes(e.id)).length
+  return checkedCount > 0 && checkedCount < paginatedData.value.length
+})
+
 function selectAll() {
-  if (selectedIds.value.length === paginatedData.value.length && paginatedData.value.length > 0) {
-    selectedIds.value = []
+  if (isAllSelected.value) {
+    selectedIds.value = selectedIds.value.filter(id => !paginatedData.value.some(e => e.id === id))
   } else {
-    selectedIds.value = paginatedData.value.map(e => e.id)
+    const idsToAdd = paginatedData.value.map(e => e.id).filter(id => !selectedIds.value.includes(id))
+    selectedIds.value.push(...idsToAdd)
   }
 }
 
@@ -244,12 +254,12 @@ onMounted(load)
 
     <!-- Filters -->
     <div class="mb-4 flex flex-wrap items-center gap-3">
-      <input v-model="search" type="text" placeholder="Tìm theo tên, mã NV, email..." class="h-9 w-full max-w-xs rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-500" />
-      <select v-model="filterDept" class="h-9 rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-500 bg-white">
+      <input v-model="search" type="text" placeholder="Tìm theo tên, mã NV, email..." class="h-9 w-full max-w-xs rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-500 bg-white text-slate-700" />
+      <select v-model="filterDept" class="h-9 rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-500 bg-white text-slate-700">
         <option value="">Tất cả phòng ban</option>
         <option v-for="d in departments" :key="d.id" :value="d.id">{{ d.name }}</option>
       </select>
-      <select v-model="filterStatus" class="h-9 rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-500 bg-white">
+      <select v-model="filterStatus" class="h-9 rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-500 bg-white text-slate-700">
         <option value="">Tất cả trạng thái</option>
         <option value="Active">Đang làm</option>
         <option value="Inactive">Ngưng</option>
@@ -257,24 +267,30 @@ onMounted(load)
         <option value="Resigned">Đã nghỉ</option>
       </select>
       <AppButton variant="ghost" size="sm" @click="search = ''; filterDept = ''; filterStatus = ''">Reset</AppButton>
-      <AppButton variant="ghost" size="sm" @click="selectAll">Chọn tất cả</AppButton>
-    </div>
 
-    <!-- Bulk Actions -->
-    <Transition name="fade-slide">
-      <div v-if="selectedIds.length > 0 && (auth.isHR || auth.isAdmin)" class="mb-4 flex items-center justify-end rounded-lg bg-red-50 p-3 border border-red-100">
-        <div class="flex items-center gap-4">
-          <button class="text-sm font-medium text-slate-500 hover:text-slate-800 underline" @click="selectedIds = []">Bỏ chọn</button>
+      <Transition name="fade-slide">
+        <div v-if="selectedIds.length > 0 && (auth.isHR || auth.isAdmin)" class="flex items-center gap-2">
           <AppButton variant="danger" size="sm" @click="confirmBulkDelete">
             <svg class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-7 0a1 1 0 011-1h4a1 1 0 011 1m-7 0H5m14 0h-2" /></svg>
-            Xóa
+            Xóa đã chọn
           </AppButton>
+          <button class="text-sm text-slate-500 hover:text-slate-800 underline" @click="selectedIds = []">Bỏ chọn</button>
         </div>
-      </div>
-    </Transition>
+      </Transition>
+    </div>
 
     <!-- Table -->
     <AppTable :page-size="10" :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Chưa có nhân viên nào">
+      <template #header-select>
+        <input 
+          type="checkbox" 
+          :checked="isAllSelected" 
+          :indeterminate="isIndeterminate"
+          @change="selectAll" 
+          class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer" 
+        />
+      </template>
+
       <template #default="{ row }">
         <td class="px-4 py-3 text-center">
           <input type="checkbox" :checked="selectedIds.includes((row as Employee).id)" @change="toggleSelect((row as Employee).id)" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer" />
