@@ -9,8 +9,6 @@ import type { AttendanceRecord, AttendanceAdjustment } from '../../../types/atte
 import type { Employee, Department } from '../../../types/hr.types'
 import PageHeader from '../../../components/layout/PageHeader.vue'
 import AppTable from '../../../components/ui/AppTable.vue'
-import AppPagination from '../../../components/ui/AppPagination.vue'
-import { usePagination } from '../../../composables/usePagination'
 import { useAuthStore } from '../../../stores/auth.ts'
 import AppButton from '../../../components/ui/AppButton.vue'
 
@@ -194,9 +192,6 @@ function handleExport() {
   }
 }
 
-const { currentPage, perPage, paginatedData, total } = usePagination(filteredRecords)
-const { currentPage: adjPage, perPage: adjPerPage, paginatedData: paginatedAdjs, total: adjTotal } = usePagination(adjustments)
-
 onMounted(load)
 </script>
 
@@ -233,154 +228,121 @@ onMounted(load)
       </nav>
     </div>
 
-    <!-- TAB 1: Daily Records List -->
     <div v-if="activeMainTab === 'records'" class="space-y-6">
-      <!-- Summary Widgets / KPI Cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex items-center gap-4">
-          <div class="h-12 w-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
-            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-          </div>
-          <div>
-            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Đang làm việc</span>
-            <h3 class="text-2xl font-bold text-slate-800 mt-0.5">{{ stats.active }} nhân sự</h3>
-          </div>
-        </div>
 
-        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex items-center gap-4">
-          <div class="h-12 w-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
-            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-          </div>
-          <div>
-            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Hoàn thành công</span>
-            <h3 class="text-2xl font-bold text-slate-800 mt-0.5">{{ stats.completed }} lượt</h3>
-          </div>
-        </div>
+      <!-- Filters & Action Bar (Compact & Space-Optimized) -->
+      <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm mb-4">
+        <div class="flex flex-wrap items-end gap-3 justify-between">
+          <!-- Filter Fields Grid -->
+          <div class="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
+            <!-- Nhân viên -->
+            <div class="flex flex-col min-w-[140px] flex-1 sm:max-w-xs">
+              <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Nhân viên</label>
+              <div class="relative">
+                <select
+                  v-model="filterEmployee"
+                  class="h-9 w-full rounded-xl border border-slate-250 bg-slate-50/50 px-3 pr-8 text-xs outline-none transition-all focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 appearance-none text-slate-700 font-medium"
+                >
+                  <option value="">Tất cả nhân viên</option>
+                  <option v-for="e in employees" :key="e.id" :value="e.id">{{ e.fullName }}</option>
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400">
+                  <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                </div>
+              </div>
+            </div>
 
-        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex items-center gap-4">
-          <div class="h-12 w-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100">
-            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-          </div>
-          <div>
-            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Đi trễ / Giải trình</span>
-            <h3 class="text-2xl font-bold text-slate-800 mt-0.5">{{ stats.late }} lượt</h3>
-          </div>
-        </div>
+            <!-- Phòng ban -->
+            <div class="flex flex-col min-w-[130px] flex-1 sm:max-w-[200px]">
+              <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Phòng ban</label>
+              <div class="relative">
+                <select
+                  v-model="filterDept"
+                  class="h-9 w-full rounded-xl border border-slate-250 bg-slate-50/50 px-3 pr-8 text-xs outline-none transition-all focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 appearance-none text-slate-700 font-medium"
+                >
+                  <option value="">Tất cả phòng ban</option>
+                  <option v-for="d in departments" :key="d.id" :value="d.id">{{ d.name }}</option>
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400">
+                  <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                </div>
+              </div>
+            </div>
 
-        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex items-center gap-4">
-          <div class="h-12 w-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100">
-            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-          </div>
-          <div>
-            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Giờ làm trung bình</span>
-            <h3 class="text-2xl font-bold text-slate-800 mt-0.5">{{ stats.avgHours }} giờ/lượt</h3>
-          </div>
-        </div>
-      </div>
+            <!-- Trạng thái -->
+            <div class="flex flex-col min-w-[120px] flex-1 sm:max-w-[160px]">
+              <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Trạng thái</label>
+              <div class="relative">
+                <select
+                  v-model="filterStatus"
+                  class="h-9 w-full rounded-xl border border-slate-250 bg-slate-50/50 px-3 pr-8 text-xs outline-none transition-all focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 appearance-none text-slate-700 font-medium"
+                >
+                  <option value="">Tất cả trạng thái</option>
+                  <option value="Completed">Hoàn thành</option>
+                  <option value="CheckedIn">Đang làm</option>
+                  <option value="Absent">Vắng mặt</option>
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400">
+                  <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                </div>
+              </div>
+            </div>
 
-      <!-- Filters & Action Bar -->
-      <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          <!-- Nhân viên -->
-          <div class="flex flex-col">
-            <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Nhân viên</label>
-            <div class="relative">
-              <select
-                v-model="filterEmployee"
-                class="h-10 w-full rounded-xl border border-slate-300 bg-white px-3 pr-10 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 appearance-none"
-              >
-                <option value="">Tất cả nhân viên</option>
-                <option v-for="e in employees" :key="e.id" :value="e.id">{{ e.fullName }}</option>
-              </select>
-              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
-                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+            <!-- Tháng -->
+            <div class="flex flex-col min-w-[80px] flex-1 sm:max-w-[120px]">
+              <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tháng</label>
+              <div class="relative">
+                <select
+                  v-model="filterMonth"
+                  class="h-9 w-full rounded-xl border border-slate-250 bg-slate-50/50 px-3 pr-8 text-xs outline-none transition-all focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 appearance-none text-slate-700 font-medium"
+                >
+                  <option v-for="m in months" :key="m.value" :value="m.value">{{ m.label }}</option>
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400">
+                  <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- Năm -->
+            <div class="flex flex-col min-w-[70px] flex-1 sm:max-w-[100px]">
+              <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Năm</label>
+              <div class="relative">
+                <select
+                  v-model="filterYear"
+                  class="h-9 w-full rounded-xl border border-slate-250 bg-slate-50/50 px-3 pr-8 text-xs outline-none transition-all focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 appearance-none text-slate-700 font-medium"
+                >
+                  <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400">
+                  <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Phòng ban -->
-          <div class="flex flex-col">
-            <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Phòng ban</label>
-            <div class="relative">
-              <select
-                v-model="filterDept"
-                class="h-10 w-full rounded-xl border border-slate-300 bg-white px-3 pr-10 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 appearance-none"
-              >
-                <option value="">Tất cả phòng ban</option>
-                <option v-for="d in departments" :key="d.id" :value="d.id">{{ d.name }}</option>
-              </select>
-              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
-                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-              </div>
-            </div>
+          <!-- Buttons -->
+          <div class="flex items-center gap-2 mt-2 sm:mt-0">
+            <button
+              @click="handleExport"
+              class="h-9 inline-flex items-center justify-center px-4 rounded-xl border border-slate-250 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors gap-1.5"
+            >
+              <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+              Xuất Excel
+            </button>
+            <button
+              @click="load"
+              class="h-9 inline-flex items-center justify-center px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-xs font-semibold text-white transition-colors"
+            >
+              Lọc dữ liệu
+            </button>
           </div>
-
-          <!-- Trạng thái -->
-          <div class="flex flex-col">
-            <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Trạng thái</label>
-            <div class="relative">
-              <select
-                v-model="filterStatus"
-                class="h-10 w-full rounded-xl border border-slate-300 bg-white px-3 pr-10 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 appearance-none"
-              >
-                <option value="">Tất cả trạng thái</option>
-                <option value="Completed">Hoàn thành</option>
-                <option value="CheckedIn">Đang làm</option>
-                <option value="Absent">Vắng mặt</option>
-              </select>
-              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
-                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-              </div>
-            </div>
-          </div>
-
-          <!-- Tháng -->
-          <div class="flex flex-col">
-            <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Tháng</label>
-            <div class="relative">
-              <select
-                v-model="filterMonth"
-                class="h-10 w-full rounded-xl border border-slate-300 bg-white px-3 pr-10 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 appearance-none"
-              >
-                <option v-for="m in months" :key="m.value" :value="m.value">{{ m.label }}</option>
-              </select>
-              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
-                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-              </div>
-            </div>
-          </div>
-
-          <!-- Năm -->
-          <div class="flex flex-col">
-            <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Năm</label>
-            <div class="relative">
-              <select
-                v-model="filterYear"
-                class="h-10 w-full rounded-xl border border-slate-300 bg-white px-3 pr-10 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 appearance-none"
-              >
-                <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
-              </select>
-              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
-                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="flex flex-col sm:flex-row justify-end gap-3 pt-2">
-          <AppButton variant="secondary" @click="handleExport" class="w-full sm:w-auto">
-            <svg class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-            Xuất Excel
-          </AppButton>
-          <AppButton variant="primary" @click="load" class="w-full sm:w-auto">
-            Lọc dữ liệu
-          </AppButton>
         </div>
       </div>
 
       <!-- Table -->
       <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm animate-fade-in">
-        <AppTable :page-size="10" :columns="recordColumns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Không có dữ liệu chấm công">
+        <AppTable :page-size="10" :columns="recordColumns" :rows="filteredRecords" :loading="loading" row-key="id" empty-text="Không có dữ liệu chấm công">
           <template #default="{ row }">
             <td class="px-5 py-4 text-sm font-semibold text-slate-900">{{ (row as AttendanceRecord).employeeName }}</td>
             <td class="px-5 py-4 text-sm text-slate-650 font-medium">{{ fmtDate((row as AttendanceRecord).workDate) }}</td>
@@ -412,9 +374,6 @@ onMounted(load)
             </td>
           </template>
         </AppTable>
-        <div class="px-5 py-4 border-t border-slate-150">
-          <AppPagination :total="total" :current="currentPage" :per-page="perPage" @change="currentPage = $event" @per-page-change="perPage = $event" />
-        </div>
       </div>
     </div>
 
@@ -470,7 +429,7 @@ onMounted(load)
 
       <!-- Table -->
       <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm animate-fade-in">
-        <AppTable :page-size="10" :columns="adjustmentColumns" :rows="paginatedAdjs" :loading="loading" row-key="id" empty-text="Không có đơn giải trình nào phù hợp">
+        <AppTable :page-size="10" :columns="adjustmentColumns" :rows="adjustments" :loading="loading" row-key="id" empty-text="Không có đơn giải trình nào phù hợp">
           <template #default="{ row }">
             <td class="px-5 py-4 text-sm font-semibold text-slate-900">{{ (row as AttendanceAdjustment).employeeName }}</td>
             <td class="px-5 py-4 text-sm text-slate-650 font-medium">{{ fmtDate((row as AttendanceAdjustment).workDate) }}</td>
@@ -518,9 +477,6 @@ onMounted(load)
             </td>
           </template>
         </AppTable>
-        <div class="px-5 py-4 border-t border-slate-150">
-          <AppPagination :total="adjTotal" :current="adjPage" :per-page="adjPerPage" @change="adjPage = $event" @per-page-change="adjPerPage = $event" />
-        </div>
       </div>
     </div>
   </div>
