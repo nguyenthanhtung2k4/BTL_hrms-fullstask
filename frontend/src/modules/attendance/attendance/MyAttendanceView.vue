@@ -5,7 +5,7 @@ import { shiftService } from '../../../services/shift.service'
 import { workScheduleService } from '../../../services/workSchedule.service'
 import { useAuthStore } from '../../../stores/auth'
 import { useToastStore } from '../../../stores/toast'
-import type { AttendanceRecord, Shift } from '../../../types/attendance.types'
+import type { AttendanceRecord, Shift, AttendanceAdjustment } from '../../../types/attendance.types'
 import AppButton from '../../../components/ui/AppButton.vue'
 import AppTable from '../../../components/ui/AppTable.vue'
 
@@ -20,12 +20,27 @@ const todaySchedule = ref<any>(null)
 const loading = ref(true)
 const actionLoading = ref(false)
 
+const activeTab = ref<'history' | 'adjustments'>('history')
+const myAdjustments = ref<AttendanceAdjustment[]>([])
+
+// Late/Early Check Reason
+const checkReason = ref('')
+
 const historyColumns = [
   { key: 'workDate', label: 'Ngày làm việc' },
   { key: 'shiftName', label: 'Ca làm việc' },
   { key: 'checkInAt', label: 'Giờ Check-in' },
   { key: 'checkOutAt', label: 'Giờ Check-out' },
   { key: 'workedMinutes', label: 'Tổng giờ làm' },
+  { key: 'status', label: 'Trạng thái' },
+]
+
+const adjustmentColumns = [
+  { key: 'workDate', label: 'Ngày giải trình' },
+  { key: 'shiftName', label: 'Ca đề xuất' },
+  { key: 'proposedCheckIn', label: 'Check-in đề xuất' },
+  { key: 'proposedCheckOut', label: 'Check-out đề xuất' },
+  { key: 'reason', label: 'Lý do' },
   { key: 'status', label: 'Trạng thái' },
 ]
 
@@ -68,6 +83,40 @@ const workMinutes = computed(() => {
   return todayRecord.value.workedMinutes
 })
 
+// Late/Early detection
+const selectedShift = computed(() => {
+  return shifts.value.find((s) => s.code === selectedShiftCode.value)
+})
+
+const isLate = computed(() => {
+  if (checkStatus.value !== 'not_checked_in' || !selectedShift.value) return false
+  const [hour, minute] = selectedShift.value.startTime.split(':').map(Number)
+  const shiftStart = new Date()
+  shiftStart.setHours(hour, minute, 0, 0)
+  // 15 mins buffer
+  shiftStart.setMinutes(shiftStart.getMinutes() + 15)
+  return currentTime.value > shiftStart
+})
+
+const isEarly = computed(() => {
+  if (checkStatus.value !== 'checked_in' || !todayRecord.value) return false
+  const activeShift = shifts.value.find((s) => s.name === todayRecord.value?.shiftName)
+  if (!activeShift) return false
+  const [hour, minute] = activeShift.endTime.split(':').map(Number)
+  const shiftEnd = new Date()
+  shiftEnd.setHours(hour, minute, 0, 0)
+  return currentTime.value < shiftEnd
+})
+
+// Adjustment Modal Form State
+const showAdjustmentModal = ref(false)
+const adjDate = ref(new Date().toISOString().split('T')[0])
+const adjShiftId = ref('')
+const adjCheckInTime = ref('')
+const adjCheckOutTime = ref('')
+const adjReason = ref('')
+const adjSubmitting = ref(false)
+
 async function load() {
   if (!employeeId.value) {
     loading.value = false
@@ -82,15 +131,16 @@ async function load() {
       return `${y}-${m}-${day}`
     })()
 
-    // Load today attendance & shifts & schedule in parallel
-    const [myRecords, allShifts] = await Promise.all([
+    const [myRecords, allShifts, adjs] = await Promise.all([
       attendanceService.getMyToday(),
       shiftService.getAll(),
+      attendanceService.getMyAdjustments(),
     ])
 
     todayRecord.value = Array.isArray(myRecords) && myRecords.length > 0 ? myRecords[myRecords.length - 1] : null
     history.value = Array.isArray(myRecords) ? myRecords.slice(0, 10) : []
     shifts.value = allShifts.filter((s) => s.isActive)
+    myAdjustments.value = adjs
 
     // Load schedule for today to auto-select shift
     try {
@@ -127,10 +177,16 @@ async function doCheckIn() {
     toast.error('Vui lòng chọn ca làm việc để Check-in')
     return
   }
+  if (isLate.value && !checkReason.value.trim()) {
+    toast.error('Vui lòng nhập lý do đi muộn để Check-in!')
+    return
+  }
+
   actionLoading.value = true
   try {
-    await attendanceService.checkIn(selectedShiftCode.value)
+    await attendanceService.checkIn(selectedShiftCode.value, checkReason.value.trim() || undefined)
     toast.success('Check-in thành công!')
+    checkReason.value = ''
     await load()
   } catch (err: any) {
     toast.error(err?.response?.data?.message ?? 'Check-in thất bại')
@@ -141,15 +197,67 @@ async function doCheckIn() {
 
 async function doCheckOut() {
   if (!employeeId.value) return
+  if (isEarly.value && !checkReason.value.trim()) {
+    toast.error('Vui lòng nhập lý do về sớm để Check-out!')
+    return
+  }
+
   actionLoading.value = true
   try {
-    await attendanceService.checkOut()
+    await attendanceService.checkOut(checkReason.value.trim() || undefined)
     toast.success('Check-out thành công!')
+    checkReason.value = ''
     await load()
   } catch (err: any) {
     toast.error(err?.response?.data?.message ?? 'Check-out thất bại')
   } finally {
     actionLoading.value = false
+  }
+}
+
+function openAdjustmentModal() {
+  adjDate.value = new Date().toISOString().split('T')[0]
+  adjShiftId.value = shifts.value[0]?.id || ''
+  adjCheckInTime.value = ''
+  adjCheckOutTime.value = ''
+  adjReason.value = ''
+  showAdjustmentModal.value = true
+}
+
+async function submitAdjustment() {
+  if (!adjShiftId.value) {
+    toast.error('Vui lòng chọn ca làm việc')
+    return
+  }
+  if (!adjReason.value.trim()) {
+    toast.error('Vui lòng nhập lý do giải trình')
+    return
+  }
+  if (!adjCheckInTime.value && !adjCheckOutTime.value) {
+    toast.error('Vui lòng nhập ít nhất giờ vào hoặc giờ ra đề xuất')
+    return
+  }
+
+  adjSubmitting.value = true
+  try {
+    const proposedIn = adjCheckInTime.value ? `${adjDate.value}T${adjCheckInTime.value}:00` : undefined
+    const proposedOut = adjCheckOutTime.value ? `${adjDate.value}T${adjCheckOutTime.value}:00` : undefined
+
+    await attendanceService.createAdjustment({
+      workDate: adjDate.value,
+      shiftId: adjShiftId.value,
+      proposedCheckIn: proposedIn,
+      proposedCheckOut: proposedOut,
+      reason: adjReason.value.trim(),
+    })
+
+    toast.success('Gửi đơn giải trình chấm công thành công!')
+    showAdjustmentModal.value = false
+    await load()
+  } catch (err: any) {
+    toast.error(err?.response?.data?.message ?? 'Gửi đơn giải trình thất bại')
+  } finally {
+    adjSubmitting.value = false
   }
 }
 
@@ -167,6 +275,10 @@ function fmtMinutes(m: number) {
 
 const sortedHistory = computed(() => {
   return [...history.value].sort((a, b) => new Date(b.workDate).getTime() - new Date(a.workDate).getTime())
+})
+
+const sortedAdjustments = computed(() => {
+  return [...myAdjustments.value].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 })
 
 onMounted(() => {
@@ -284,6 +396,17 @@ onUnmounted(() => {
           </div>
         </div>
 
+        <!-- Late/Early checkout Warnings and Inputs -->
+        <div v-if="isLate" class="p-4 bg-amber-50 border border-amber-200 rounded-2xl space-y-2">
+          <label class="text-xs font-bold text-amber-800 block">Bạn đang Check-in muộn hơn thời gian quy định. Vui lòng điền lý do:</label>
+          <textarea v-model="checkReason" placeholder="Ví dụ: Kẹt xe, hỏng xe, sự cố gia đình..." class="w-full text-sm p-3 rounded-xl border border-slate-200 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100" rows="2"></textarea>
+        </div>
+
+        <div v-if="isEarly" class="p-4 bg-amber-50 border border-amber-200 rounded-2xl space-y-2">
+          <label class="text-xs font-bold text-amber-800 block">Bạn đang Check-out sớm trước giờ tan làm quy định. Vui lòng điền lý do:</label>
+          <textarea v-model="checkReason" placeholder="Ví dụ: Về sớm có việc đột xuất, đi công tác khách hàng..." class="w-full text-sm p-3 rounded-xl border border-slate-200 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100" rows="2"></textarea>
+        </div>
+
         <hr class="border-slate-100" />
 
         <!-- Checkin Details and Actions -->
@@ -324,7 +447,6 @@ onUnmounted(() => {
             <AppButton
               v-if="checkStatus === 'checked_in'"
               size="lg"
-              variant="secondary"
               class="w-full sm:w-auto px-8 bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-750 hover:to-indigo-750 border-0 font-semibold shadow-lg hover:shadow-blue-650/10 transition-all rounded-xl"
               :loading="actionLoading"
               @click="doCheckOut"
@@ -337,39 +459,153 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- History list table -->
-    <div class="space-y-3">
-      <h2 class="text-lg font-bold text-slate-800">Lịch sử chấm công gần đây</h2>
-      <AppTable :page-size="10"
-        :columns="historyColumns"
-        :rows="sortedHistory"
-        :loading="loading"
-        row-key="id"
-        empty-text="Chưa ghi nhận lịch sử chấm công nào trong tháng này."
-      >
-        <template #default="{ row: r }">
-          <td class="px-5 py-4 font-medium text-slate-900">{{ fmtDate(r.workDate) }}</td>
-          <td class="px-5 py-4 text-slate-700 font-medium">{{ r.shiftName || '—' }}</td>
-          <td class="px-5 py-4 text-emerald-700 font-mono font-semibold">{{ fmtTime(r.checkInAt) }}</td>
-          <td class="px-5 py-4 text-blue-700 font-mono font-semibold">{{ fmtTime(r.checkOutAt) }}</td>
-          <td class="px-5 py-4 text-slate-800 font-semibold">
-            {{ r.workedMinutes > 0 ? fmtMinutes(r.workedMinutes) : '—' }}
-          </td>
-          <td class="px-5 py-4">
-            <span
-              class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border"
-              :class="[
-                r.status === 'Completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
-                r.status === 'CheckedIn' ? 'bg-amber-50 text-amber-700 border-amber-100' :
-                'bg-slate-50 text-slate-600 border-slate-100'
-              ]"
-            >
-              {{ r.status === 'Completed' ? 'Hoàn thành' : r.status === 'CheckedIn' ? 'Đang làm' : r.status }}
-            </span>
-          </td>
-        </template>
-      </AppTable>
+    <!-- Tab bar & list -->
+    <div class="space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-200">
+        <div class="flex gap-6">
+          <button
+            @click="activeTab = 'history'"
+            :class="['pb-3 text-sm font-bold border-b-2 transition-all outline-none', activeTab === 'history' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-slate-500 hover:text-slate-800']"
+          >
+            Lịch sử chấm công gần đây
+          </button>
+          <button
+            @click="activeTab = 'adjustments'"
+            :class="['pb-3 text-sm font-bold border-b-2 transition-all outline-none', activeTab === 'adjustments' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-slate-500 hover:text-slate-800']"
+          >
+            Đơn giải trình / Sửa công ({{ myAdjustments.length }})
+          </button>
+        </div>
+        <AppButton size="sm" variant="secondary" @click="openAdjustmentModal">
+          <svg class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+          Tạo đơn giải trình
+        </AppButton>
+      </div>
+
+      <!-- History Table -->
+      <div v-if="activeTab === 'history'">
+        <AppTable :page-size="10"
+          :columns="historyColumns"
+          :rows="sortedHistory"
+          :loading="loading"
+          row-key="id"
+          empty-text="Chưa ghi nhận lịch sử chấm công nào trong tháng này."
+        >
+          <template #default="{ row: r }">
+            <td class="px-5 py-4 font-medium text-slate-900">{{ fmtDate(r.workDate) }}</td>
+            <td class="px-5 py-4 text-slate-700 font-medium">{{ r.shiftName || '—' }}</td>
+            <td class="px-5 py-4">
+              <div>
+                <span class="text-emerald-700 font-mono font-semibold">{{ fmtTime(r.checkInAt) }}</span>
+                <p v-if="r.checkInReason" class="text-[11px] text-slate-400 italic mt-0.5" :title="r.checkInReason">Lý do: {{ r.checkInReason }}</p>
+              </div>
+            </td>
+            <td class="px-5 py-4">
+              <div>
+                <span class="text-blue-700 font-mono font-semibold">{{ fmtTime(r.checkOutAt) }}</span>
+                <p v-if="r.checkOutReason" class="text-[11px] text-slate-400 italic mt-0.5" :title="r.checkOutReason">Lý do: {{ r.checkOutReason }}</p>
+              </div>
+            </td>
+            <td class="px-5 py-4 text-slate-800 font-semibold">
+              {{ r.workedMinutes > 0 ? fmtMinutes(r.workedMinutes) : '—' }}
+            </td>
+            <td class="px-5 py-4">
+              <span
+                class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border"
+                :class="[
+                  r.status === 'Completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                  r.status === 'CheckedIn' ? 'bg-amber-50 text-amber-700 border-amber-100' :
+                  'bg-slate-50 text-slate-600 border-slate-100'
+                ]"
+              >
+                {{ r.status === 'Completed' ? 'Hoàn thành' : r.status === 'CheckedIn' ? 'Đang làm' : r.status }}
+              </span>
+            </td>
+          </template>
+        </AppTable>
+      </div>
+
+      <!-- Adjustments Table -->
+      <div v-else>
+        <AppTable :page-size="10"
+          :columns="adjustmentColumns"
+          :rows="sortedAdjustments"
+          :loading="loading"
+          row-key="id"
+          empty-text="Bạn chưa gửi đơn giải trình chấm công nào."
+        >
+          <template #default="{ row: a }">
+            <td class="px-5 py-4 font-medium text-slate-900">{{ fmtDate(a.workDate) }}</td>
+            <td class="px-5 py-4 text-slate-700 font-medium">{{ a.shiftName }}</td>
+            <td class="px-5 py-4 font-mono font-semibold text-slate-700">{{ a.proposedCheckIn ? fmtTime(a.proposedCheckIn) : '—' }}</td>
+            <td class="px-5 py-4 font-mono font-semibold text-slate-700">{{ a.proposedCheckOut ? fmtTime(a.proposedCheckOut) : '—' }}</td>
+            <td class="px-5 py-4 text-sm text-slate-600 max-w-[200px] truncate" :title="a.reason">{{ a.reason }}</td>
+            <td class="px-5 py-4">
+              <span
+                class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border"
+                :class="[
+                  a.status === 'Approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                  a.status === 'Pending' ? 'bg-amber-50 text-amber-700 border-amber-100' :
+                  'bg-rose-50 text-rose-700 border-rose-100'
+                ]"
+              >
+                {{ a.status === 'Approved' ? 'Đã duyệt' : a.status === 'Pending' ? 'Chờ duyệt' : 'Từ chối' }}
+              </span>
+              <p v-if="a.handledByName" class="text-[10px] text-slate-400 mt-1">Duyệt bởi: {{ a.handledByName }}</p>
+            </td>
+          </template>
+        </AppTable>
+      </div>
+    </div>
+
+    <!-- Attendance Correction Modal -->
+    <div v-if="showAdjustmentModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+      <div class="w-full max-w-lg bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100 animate-scale-in">
+        <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+          <h3 class="text-lg font-bold text-slate-900">Đơn giải trình chấm công</h3>
+          <button @click="showAdjustmentModal = false" class="text-slate-400 hover:text-slate-600 transition-colors">
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+        
+        <form @submit.prevent="submitAdjustment" class="p-6 space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div class="flex flex-col">
+              <label class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Ngày giải trình</label>
+              <input type="date" v-model="adjDate" class="h-10 rounded-xl border border-slate-300 px-3 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none" required />
+            </div>
+            
+            <div class="flex flex-col">
+              <label class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Ca làm việc</label>
+              <select v-model="adjShiftId" class="h-10 rounded-xl border border-slate-300 px-3 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none" required>
+                <option v-for="s in shifts" :key="s.id" :value="s.id">{{ s.name }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div class="flex flex-col">
+              <label class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Giờ Check-in đề xuất</label>
+              <input type="time" v-model="adjCheckInTime" class="h-10 rounded-xl border border-slate-300 px-3 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none" />
+            </div>
+
+            <div class="flex flex-col">
+              <label class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Giờ Check-out đề xuất</label>
+              <input type="time" v-model="adjCheckOutTime" class="h-10 rounded-xl border border-slate-300 px-3 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none" />
+            </div>
+          </div>
+
+          <div class="flex flex-col">
+            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Lý do giải trình</label>
+            <textarea v-model="adjReason" placeholder="Ví dụ: Quên check-in buổi sáng do vội họp, đi công tác ngoài..." class="w-full text-sm p-3 rounded-xl border border-slate-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none" rows="3" required></textarea>
+          </div>
+
+          <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
+            <AppButton type="button" variant="secondary" @click="showAdjustmentModal = false">Hủy</AppButton>
+            <AppButton type="submit" variant="primary" :loading="adjSubmitting">Gửi đơn</AppButton>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 </template>
-

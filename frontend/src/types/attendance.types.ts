@@ -70,6 +70,8 @@ export interface AttendanceRecord {
   status: string
   createdAt: string
   updatedAt?: string
+  checkInReason?: string
+  checkOutReason?: string
 }
 
 // ---
@@ -124,5 +126,32 @@ export interface Timesheet {
   status: string
   createdAt: string
   updatedAt?: string
+}
+
+// ---
+
+export interface AttendanceAdjustment {
+  id: string
+  employeeId: string
+  employeeName: string
+  workDate: string
+  shiftId: string
+  shiftName: string
+  proposedCheckIn?: string
+  proposedCheckOut?: string
+  reason: string
+  status: 'Pending' | 'Approved' | 'Rejected'
+  handledByEmployeeId?: string
+  handledByName?: string
+  handledAt?: string
+  createdAt: string
+}
+
+export interface CreateAdjustmentDto {
+  workDate: string
+  shiftId: string
+  proposedCheckIn?: string
+  proposedCheckOut?: string
+  reason: string
 }
 

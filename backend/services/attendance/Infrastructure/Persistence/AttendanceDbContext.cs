@@ -19,6 +19,7 @@ public class AttendanceDbContext : DbContext
     public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
     public DbSet<Timesheet> Timesheets => Set<Timesheet>();
     public DbSet<LeaveBalance> LeaveBalances => Set<LeaveBalance>();
+    public DbSet<AttendanceAdjustment> AttendanceAdjustments => Set<AttendanceAdjustment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -190,6 +191,30 @@ public class AttendanceDbContext : DbContext
             entity.HasOne(e => e.Employee)
                 .WithMany()
                 .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // AttendanceAdjustment
+        modelBuilder.Entity<AttendanceAdjustment>(entity =>
+        {
+            entity.ToTable("AttendanceAdjustments");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Status).HasMaxLength(30).IsRequired();
+            entity.Property(e => e.Reason).HasMaxLength(500).IsRequired();
+
+            entity.HasOne(e => e.Employee)
+                .WithMany()
+                .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Shift)
+                .WithMany()
+                .HasForeignKey(e => e.ShiftId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.HandledBy)
+                .WithMany()
+                .HasForeignKey(e => e.HandledByEmployeeId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }

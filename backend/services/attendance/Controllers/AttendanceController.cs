@@ -41,7 +41,7 @@ public class AttendanceController : ControllerBase
             return BadRequest(ApiResponse<AttendanceRecordDto>.Fail("InvalidUser", "User must be associated with an active Employee account."));
         }
 
-        var result = await _attendanceService.CheckInAsync(employeeId, request.ShiftCode);
+        var result = await _attendanceService.CheckInAsync(employeeId, request.ShiftCode, request.Reason);
         if (result.IsFailure)
         {
             return BadRequest(ApiResponse<AttendanceRecordDto>.Fail(result.Errors, result.Message));
@@ -51,7 +51,7 @@ public class AttendanceController : ControllerBase
     }
 
     [HttpPost("check-out")]
-    public async Task<ActionResult<ApiResponse<AttendanceRecordDto>>> CheckOut()
+    public async Task<ActionResult<ApiResponse<AttendanceRecordDto>>> CheckOut([FromBody] CheckOutRequest? request)
     {
         if (User.IsInRole("Admin"))
         {
@@ -64,7 +64,7 @@ public class AttendanceController : ControllerBase
             return BadRequest(ApiResponse<AttendanceRecordDto>.Fail("InvalidUser", "User must be associated with an active Employee account."));
         }
 
-        var result = await _attendanceService.CheckOutAsync(employeeId);
+        var result = await _attendanceService.CheckOutAsync(employeeId, request?.Reason);
         if (result.IsFailure)
         {
             return BadRequest(ApiResponse<AttendanceRecordDto>.Fail(result.Errors, result.Message));

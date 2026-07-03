@@ -68,6 +68,42 @@ using (var scope = app.Services.CreateScope())
         "ALTER TABLE dbo.EmployeeProjections ADD HireDate DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME();"
     );
     await context.Database.ExecuteSqlRawAsync(
+        "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.AttendanceRecords') AND name = 'CheckInReason') " +
+        "BEGIN " +
+        "    ALTER TABLE dbo.AttendanceRecords ADD CheckInReason NVARCHAR(MAX) NULL; " +
+        "END"
+    );
+    await context.Database.ExecuteSqlRawAsync(
+        "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.AttendanceRecords') AND name = 'CheckOutReason') " +
+        "BEGIN " +
+        "    ALTER TABLE dbo.AttendanceRecords ADD CheckOutReason NVARCHAR(MAX) NULL; " +
+        "END"
+    );
+    await context.Database.ExecuteSqlRawAsync(
+        "IF OBJECT_ID('dbo.AttendanceAdjustments', 'U') IS NULL " +
+        "BEGIN " +
+        "    CREATE TABLE dbo.AttendanceAdjustments ( " +
+        "        Id UNIQUEIDENTIFIER NOT NULL PRIMARY KEY, " +
+        "        EmployeeId UNIQUEIDENTIFIER NOT NULL, " +
+        "        WorkDate DATE NOT NULL, " +
+        "        ShiftId UNIQUEIDENTIFIER NOT NULL, " +
+        "        ProposedCheckIn DATETIME2 NULL, " +
+        "        ProposedCheckOut DATETIME2 NULL, " +
+        "        Reason NVARCHAR(500) NOT NULL, " +
+        "        Status NVARCHAR(30) NOT NULL, " +
+        "        HandledByEmployeeId UNIQUEIDENTIFIER NULL, " +
+        "        HandledAt DATETIME2 NULL, " +
+        "        CreatedAt DATETIME2 NOT NULL, " +
+        "        CreatedBy NVARCHAR(max) NULL, " +
+        "        UpdatedAt DATETIME2 NULL, " +
+        "        UpdatedBy NVARCHAR(max) NULL, " +
+        "        CONSTRAINT FK_AttendanceAdjustments_EmployeeProjections_EmployeeId FOREIGN KEY (EmployeeId) REFERENCES dbo.EmployeeProjections(EmployeeId), " +
+        "        CONSTRAINT FK_AttendanceAdjustments_Shifts_ShiftId FOREIGN KEY (ShiftId) REFERENCES dbo.Shifts(Id), " +
+        "        CONSTRAINT FK_AttendanceAdjustments_EmployeeProjections_HandledByEmployeeId FOREIGN KEY (HandledByEmployeeId) REFERENCES dbo.EmployeeProjections(EmployeeId) " +
+        "    ); " +
+        "END"
+    );
+    await context.Database.ExecuteSqlRawAsync(
         "IF OBJECT_ID('dbo.LeaveBalances', 'U') IS NULL " +
         "BEGIN " +
         "    CREATE TABLE dbo.LeaveBalances ( " +

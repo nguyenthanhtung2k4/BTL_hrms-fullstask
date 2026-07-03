@@ -24,7 +24,7 @@ public class AttendanceService : IAttendanceService
         _publishEndpoint = publishEndpoint;
     }
 
-    public async Task<Result<AttendanceRecordDto>> CheckInAsync(Guid employeeId, string shiftCode)
+    public async Task<Result<AttendanceRecordDto>> CheckInAsync(Guid employeeId, string shiftCode, string? reason = null)
     {
         // 1. Validate employee
         var employee = await _dbContext.EmployeeProjections.FindAsync(employeeId);
@@ -64,7 +64,8 @@ public class AttendanceService : IAttendanceService
             CheckInAt = DateTime.UtcNow,
             CheckOutAt = null,
             WorkedMinutes = 0,
-            Status = "CheckedIn"
+            Status = "CheckedIn",
+            CheckInReason = reason
         };
 
         _dbContext.AttendanceRecords.Add(record);
@@ -94,7 +95,7 @@ public class AttendanceService : IAttendanceService
         return await GetRecordDtoByIdAsync(record.Id);
     }
 
-    public async Task<Result<AttendanceRecordDto>> CheckOutAsync(Guid employeeId)
+    public async Task<Result<AttendanceRecordDto>> CheckOutAsync(Guid employeeId, string? reason = null)
     {
         var today = GetVietnamToday();
 
@@ -137,6 +138,7 @@ public class AttendanceService : IAttendanceService
         record.CheckOutAt = checkOutTime;
         record.WorkedMinutes = workedMinutes;
         record.Status = "Completed";
+        record.CheckOutReason = reason;
 
         await _dbContext.SaveChangesAsync();
 
@@ -227,7 +229,9 @@ public class AttendanceService : IAttendanceService
             r.WorkedMinutes,
             r.Status,
             DateTime.SpecifyKind(r.CreatedAt, DateTimeKind.Utc),
-            r.UpdatedAt.HasValue ? DateTime.SpecifyKind(r.UpdatedAt.Value, DateTimeKind.Utc) : null
+            r.UpdatedAt.HasValue ? DateTime.SpecifyKind(r.UpdatedAt.Value, DateTimeKind.Utc) : null,
+            r.CheckInReason,
+            r.CheckOutReason
         );
     }
 

@@ -4,39 +4,64 @@ import { attendanceService } from '../../../services/attendance.service'
 import { employeeService } from '../../../services/employee.service'
 import { departmentService } from '../../../services/department.service'
 import { useToastStore } from '../../../stores/toast'
-import type { AttendanceRecord } from '../../../types/attendance.types'
+import { exportToExcel } from '../../../utils/excel'
+import type { AttendanceRecord, AttendanceAdjustment } from '../../../types/attendance.types'
 import type { Employee, Department } from '../../../types/hr.types'
 import PageHeader from '../../../components/layout/PageHeader.vue'
 import AppTable from '../../../components/ui/AppTable.vue'
 import AppPagination from '../../../components/ui/AppPagination.vue'
 import { usePagination } from '../../../composables/usePagination'
 import { useAuthStore } from '../../../stores/auth.ts'
+import AppButton from '../../../components/ui/AppButton.vue'
 
 const toast = useToastStore()
 const records = ref<AttendanceRecord[]>([])
 const employees = ref<Employee[]>([])
 const departments = ref<Department[]>([])
 const loading = ref(false)
+
+// Tabs: records (Bảng chấm công) or adjustments (Duyệt giải trình)
+const activeMainTab = ref<'records' | 'adjustments'>('records')
+
+// Records filters
 const filterEmployee = ref('')
 const filterDept = ref('')
 const filterStatus = ref('')
 const filterMonth = ref(new Date().getMonth() + 1)
 const filterYear = ref(new Date().getFullYear())
 
-const columns = [
-  { key: 'employee', label: 'Nhân viên' },
-  { key: 'workDate', label: 'Ngày' },
-  { key: 'shiftName', label: 'Ca' },
-  { key: 'checkInAt', label: 'Giờ vào' },
-  { key: 'checkOutAt', label: 'Giờ ra' },
-  { key: 'workedMinutes', label: 'Tổng giờ' },
-]
+// Adjustments state & filters
+const adjustments = ref<AttendanceAdjustment[]>([])
+const adjFilterStatus = ref('Pending')
+const adjFilterEmployee = ref('')
+const adjActionLoading = ref<Record<string, boolean>>({})
 
 const months = Array.from({ length: 12 }, (_, i) => ({ value: i + 1, label: `Tháng ${i + 1}` }))
 const years = [2024, 2025, 2026]
 
 const authStore = useAuthStore()
 const isManagerOnly = computed(() => authStore.hasRole('Manager') && !authStore.isAdmin && !authStore.isHR)
+const canApprove = computed(() => authStore.isAdmin || authStore.isHR || authStore.hasRole('Manager'))
+
+const recordColumns = [
+  { key: 'employee', label: 'Nhân viên' },
+  { key: 'workDate', label: 'Ngày làm việc' },
+  { key: 'shiftName', label: 'Ca làm việc' },
+  { key: 'checkInAt', label: 'Giờ vào / Lý do' },
+  { key: 'checkOutAt', label: 'Giờ ra / Lý do' },
+  { key: 'workedMinutes', label: 'Tổng giờ làm' },
+  { key: 'status', label: 'Trạng thái' }
+]
+
+const adjustmentColumns = [
+  { key: 'employee', label: 'Nhân viên' },
+  { key: 'workDate', label: 'Ngày giải trình' },
+  { key: 'shiftName', label: 'Ca đề xuất' },
+  { key: 'proposedCheckIn', label: 'Check-in đề xuất' },
+  { key: 'proposedCheckOut', label: 'Check-out đề xuất' },
+  { key: 'reason', label: 'Lý do giải trình' },
+  { key: 'status', label: 'Trạng thái / Thao tác' }
+]
 
 async function load() {
   loading.value = true
@@ -44,15 +69,56 @@ async function load() {
     const [resRecords, resEmployees, resDepts] = await Promise.all([
       attendanceService.getAll({ employeeId: filterEmployee.value || undefined, month: filterMonth.value, year: filterYear.value }),
       employeeService.getAll(),
-      isManagerOnly.value ? departmentService.getMyDepartments() : departmentService.getAll(), // ← thay đổi
+      isManagerOnly.value ? departmentService.getMyDepartments() : departmentService.getAll(),
     ])
     records.value = resRecords
     employees.value = resEmployees
     departments.value = resDepts
+
+    if (canApprove.value) {
+      await loadAdjustments()
+    }
   } catch {
     toast.error('Không thể tải dữ liệu')
   } finally {
     loading.value = false
+  }
+}
+
+async function loadAdjustments() {
+  try {
+    adjustments.value = await attendanceService.getAdjustments({
+      employeeId: adjFilterEmployee.value || undefined,
+      status: adjFilterStatus.value || undefined
+    })
+  } catch {
+    // Ignored
+  }
+}
+
+async function approveAdj(id: string) {
+  adjActionLoading.value[id] = true
+  try {
+    await attendanceService.approveAdjustment(id)
+    toast.success('Phê duyệt đơn giải trình thành công!')
+    await load()
+  } catch (err: any) {
+    toast.error(err?.response?.data?.message ?? 'Phê duyệt đơn thất bại')
+  } finally {
+    adjActionLoading.value[id] = false
+  }
+}
+
+async function rejectAdj(id: string) {
+  adjActionLoading.value[id] = true
+  try {
+    await attendanceService.rejectAdjustment(id)
+    toast.success('Từ chối đơn giải trình thành công!')
+    await load()
+  } catch (err: any) {
+    toast.error(err?.response?.data?.message ?? 'Từ chối đơn thất bại')
+  } finally {
+    adjActionLoading.value[id] = false
   }
 }
 
@@ -85,123 +151,377 @@ const filteredRecords = computed(() => {
   return result
 })
 
+// Dynamic stats calculations
+const stats = computed(() => {
+  const list = filteredRecords.value
+  const active = list.filter((r) => r.status === 'CheckedIn').length
+  const completed = list.filter((r) => r.status === 'Completed').length
+  const late = list.filter((r) => !!r.checkInReason).length
+  const totalMinutes = list.reduce((sum, r) => sum + r.workedMinutes, 0)
+  const avgHours = list.length > 0 ? (totalMinutes / list.length / 60).toFixed(1) : '0'
+
+  return {
+    active,
+    completed,
+    late,
+    avgHours
+  }
+})
+
+function handleExport() {
+  if (filteredRecords.value.length === 0) {
+    toast.error('Không có dữ liệu để xuất Excel.')
+    return
+  }
+
+  const exportData = filteredRecords.value.map((r) => ({
+    'Họ Tên': r.employeeName,
+    'Ngày Làm Việc': fmtDate(r.workDate),
+    'Ca Làm': r.shiftName || '—',
+    'Giờ Check-in': fmtTime(r.checkInAt),
+    'Lý do Check-in': r.checkInReason || '—',
+    'Giờ Check-out': fmtTime(r.checkOutAt),
+    'Lý do Check-out': r.checkOutReason || '—',
+    'Số Giờ Làm': (r.workedMinutes / 60).toFixed(2),
+    'Trạng Thái': r.status === 'Completed' ? 'Hoàn thành' : r.status === 'CheckedIn' ? 'Đang làm' : r.status
+  }))
+
+  try {
+    exportToExcel(exportData, `Bang_Cham_Cong_Thang_${filterMonth.value}_${filterYear.value}`, 'Bảng Chấm Công')
+    toast.success('Xuất file Excel thành công!')
+  } catch (err: any) {
+    toast.error(err.message || 'Xuất Excel thất bại.')
+  }
+}
+
 const { currentPage, perPage, paginatedData, total } = usePagination(filteredRecords)
+const { currentPage: adjPage, perPage: adjPerPage, paginatedData: paginatedAdjs, total: adjTotal } = usePagination(adjustments)
 
 onMounted(load)
 </script>
 
 <template>
-  <div>
-    <PageHeader title="Bảng chấm công" subtitle="Lịch sử chấm công toàn bộ nhân viên" :breadcrumbs="[{ label: 'Chấm công' }, { label: 'Chấm công' }]" />
-    <!-- Thanh tìm kiếm & bộ lọc -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6 bg-slate-50 p-4 rounded-2xl border border-slate-150 shadow-sm">
-      <!-- Nhân viên -->
-      <div class="flex flex-col">
-        <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Nhân viên</label>
-        <div class="relative">
-          <select
-            v-model="filterEmployee"
-            class="h-10 w-full rounded-xl border border-slate-300 bg-white px-3 pr-10 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 appearance-none"
-          >
-            <option value="">Tất cả nhân viên</option>
-            <option v-for="e in employees" :key="e.id" :value="e.id">{{ e.fullName }}</option>
-          </select>
-          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-          </div>
-        </div>
-      </div>
+  <div class="space-y-6">
+    <PageHeader title="Bảng chấm công" subtitle="Quản lý lịch sử chấm công & giải trình của nhân viên" :breadcrumbs="[{ label: 'Chấm công' }, { label: 'Bảng công' }]" />
 
-      <!-- Phòng ban -->
-      <div class="flex flex-col">
-        <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Phòng ban</label>
-        <div class="relative">
-          <select
-            v-model="filterDept"
-            class="h-10 w-full rounded-xl border border-slate-300 bg-white px-3 pr-10 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 appearance-none"
-          >
-            <option value="">Tất cả phòng ban</option>
-            <option v-for="d in departments" :key="d.id" :value="d.id">{{ d.name }}</option>
-          </select>
-          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-          </div>
-        </div>
-      </div>
-
-      <!-- Trạng thái -->
-      <div class="flex flex-col">
-        <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Trạng thái</label>
-        <div class="relative">
-          <select
-            v-model="filterStatus"
-            class="h-10 w-full rounded-xl border border-slate-300 bg-white px-3 pr-10 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 appearance-none"
-          >
-            <option value="">Tất cả trạng thái</option>
-            <option value="Completed">Hoàn thành</option>
-            <option value="CheckedIn">Đang làm</option>
-            <option value="Absent">Vắng mặt</option>
-          </select>
-          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-          </div>
-        </div>
-      </div>
-
-      <!-- Tháng -->
-      <div class="flex flex-col">
-        <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Tháng</label>
-        <div class="relative">
-          <select
-            v-model="filterMonth"
-            class="h-10 w-full rounded-xl border border-slate-300 bg-white px-3 pr-10 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 appearance-none"
-          >
-            <option v-for="m in months" :key="m.value" :value="m.value">{{ m.label }}</option>
-          </select>
-          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-          </div>
-        </div>
-      </div>
-
-      <!-- Năm -->
-      <div class="flex flex-col">
-        <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Năm</label>
-        <div class="relative">
-          <select
-            v-model="filterYear"
-            class="h-10 w-full rounded-xl border border-slate-300 bg-white px-3 pr-10 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 appearance-none"
-          >
-            <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
-          </select>
-          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-          </div>
-        </div>
-      </div>
-
-      <!-- Hành động -->
-      <div class="flex flex-col justify-end">
+    <!-- Main Navigation Tabs -->
+    <div class="border-b border-slate-200">
+      <nav class="flex space-x-6" aria-label="Tabs">
         <button
-          class="h-10 w-full rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-medium text-sm hover:from-emerald-700 hover:to-teal-700 transition-all shadow-md active:scale-[0.98]"
-          @click="load"
+          @click="activeMainTab = 'records'"
+          :class="[
+            'pb-4 px-1 text-sm font-bold border-b-2 transition-all outline-none',
+            activeMainTab === 'records'
+              ? 'border-emerald-600 text-emerald-600'
+              : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+          ]"
         >
-          Lọc dữ liệu
+          Bảng chấm công
         </button>
+        <button
+          v-if="canApprove"
+          @click="activeMainTab = 'adjustments'"
+          :class="[
+            'pb-4 px-1 text-sm font-bold border-b-2 transition-all outline-none',
+            activeMainTab === 'adjustments'
+              ? 'border-emerald-600 text-emerald-600'
+              : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+          ]"
+        >
+          Duyệt đơn giải trình
+        </button>
+      </nav>
+    </div>
+
+    <!-- TAB 1: Daily Records List -->
+    <div v-if="activeMainTab === 'records'" class="space-y-6">
+      <!-- Summary Widgets / KPI Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex items-center gap-4">
+          <div class="h-12 w-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          </div>
+          <div>
+            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Đang làm việc</span>
+            <h3 class="text-2xl font-bold text-slate-800 mt-0.5">{{ stats.active }} nhân sự</h3>
+          </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex items-center gap-4">
+          <div class="h-12 w-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+          </div>
+          <div>
+            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Hoàn thành công</span>
+            <h3 class="text-2xl font-bold text-slate-800 mt-0.5">{{ stats.completed }} lượt</h3>
+          </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex items-center gap-4">
+          <div class="h-12 w-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100">
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+          </div>
+          <div>
+            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Đi trễ / Giải trình</span>
+            <h3 class="text-2xl font-bold text-slate-800 mt-0.5">{{ stats.late }} lượt</h3>
+          </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex items-center gap-4">
+          <div class="h-12 w-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100">
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          </div>
+          <div>
+            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Giờ làm trung bình</span>
+            <h3 class="text-2xl font-bold text-slate-800 mt-0.5">{{ stats.avgHours }} giờ/lượt</h3>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filters & Action Bar -->
+      <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <!-- Nhân viên -->
+          <div class="flex flex-col">
+            <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Nhân viên</label>
+            <div class="relative">
+              <select
+                v-model="filterEmployee"
+                class="h-10 w-full rounded-xl border border-slate-300 bg-white px-3 pr-10 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 appearance-none"
+              >
+                <option value="">Tất cả nhân viên</option>
+                <option v-for="e in employees" :key="e.id" :value="e.id">{{ e.fullName }}</option>
+              </select>
+              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Phòng ban -->
+          <div class="flex flex-col">
+            <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Phòng ban</label>
+            <div class="relative">
+              <select
+                v-model="filterDept"
+                class="h-10 w-full rounded-xl border border-slate-300 bg-white px-3 pr-10 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 appearance-none"
+              >
+                <option value="">Tất cả phòng ban</option>
+                <option v-for="d in departments" :key="d.id" :value="d.id">{{ d.name }}</option>
+              </select>
+              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Trạng thái -->
+          <div class="flex flex-col">
+            <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Trạng thái</label>
+            <div class="relative">
+              <select
+                v-model="filterStatus"
+                class="h-10 w-full rounded-xl border border-slate-300 bg-white px-3 pr-10 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 appearance-none"
+              >
+                <option value="">Tất cả trạng thái</option>
+                <option value="Completed">Hoàn thành</option>
+                <option value="CheckedIn">Đang làm</option>
+                <option value="Absent">Vắng mặt</option>
+              </select>
+              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tháng -->
+          <div class="flex flex-col">
+            <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Tháng</label>
+            <div class="relative">
+              <select
+                v-model="filterMonth"
+                class="h-10 w-full rounded-xl border border-slate-300 bg-white px-3 pr-10 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 appearance-none"
+              >
+                <option v-for="m in months" :key="m.value" :value="m.value">{{ m.label }}</option>
+              </select>
+              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Năm -->
+          <div class="flex flex-col">
+            <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Năm</label>
+            <div class="relative">
+              <select
+                v-model="filterYear"
+                class="h-10 w-full rounded-xl border border-slate-300 bg-white px-3 pr-10 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 appearance-none"
+              >
+                <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
+              </select>
+              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row justify-end gap-3 pt-2">
+          <AppButton variant="secondary" @click="handleExport" class="w-full sm:w-auto">
+            <svg class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+            Xuất Excel
+          </AppButton>
+          <AppButton variant="primary" @click="load" class="w-full sm:w-auto">
+            Lọc dữ liệu
+          </AppButton>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm animate-fade-in">
+        <AppTable :page-size="10" :columns="recordColumns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Không có dữ liệu chấm công">
+          <template #default="{ row }">
+            <td class="px-5 py-4 text-sm font-semibold text-slate-900">{{ (row as AttendanceRecord).employeeName }}</td>
+            <td class="px-5 py-4 text-sm text-slate-650 font-medium">{{ fmtDate((row as AttendanceRecord).workDate) }}</td>
+            <td class="px-5 py-4 text-sm text-slate-600 font-medium">{{ (row as AttendanceRecord).shiftName ?? '—' }}</td>
+            <td class="px-5 py-4">
+              <div>
+                <span class="text-sm text-emerald-700 font-mono font-semibold">{{ fmtTime((row as AttendanceRecord).checkInAt) }}</span>
+                <p v-if="(row as AttendanceRecord).checkInReason" class="text-[11px] text-amber-700 italic mt-0.5 font-medium max-w-[180px] truncate" :title="(row as AttendanceRecord).checkInReason">Lý do: {{ (row as AttendanceRecord).checkInReason }}</p>
+              </div>
+            </td>
+            <td class="px-5 py-4">
+              <div>
+                <span class="text-sm text-blue-700 font-mono font-semibold">{{ fmtTime((row as AttendanceRecord).checkOutAt) }}</span>
+                <p v-if="(row as AttendanceRecord).checkOutReason" class="text-[11px] text-amber-700 italic mt-0.5 font-medium max-w-[180px] truncate" :title="(row as AttendanceRecord).checkOutReason">Lý do: {{ (row as AttendanceRecord).checkOutReason }}</p>
+              </div>
+            </td>
+            <td class="px-5 py-4 text-sm font-bold text-slate-800">{{ (row as AttendanceRecord).workedMinutes > 0 ? fmtMin((row as AttendanceRecord).workedMinutes) : '—' }}</td>
+            <td class="px-5 py-4 text-sm">
+              <span
+                class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border"
+                :class="[
+                  (row as AttendanceRecord).status === 'Completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                  (row as AttendanceRecord).status === 'CheckedIn' ? 'bg-amber-50 text-amber-700 border-amber-100' :
+                  'bg-slate-50 text-slate-600 border-slate-100'
+                ]"
+              >
+                {{ (row as AttendanceRecord).status === 'Completed' ? 'Hoàn thành' : (row as AttendanceRecord).status === 'CheckedIn' ? 'Đang làm' : (row as AttendanceRecord).status }}
+              </span>
+            </td>
+          </template>
+        </AppTable>
+        <div class="px-5 py-4 border-t border-slate-150">
+          <AppPagination :total="total" :current="currentPage" :per-page="perPage" @change="currentPage = $event" @per-page-change="perPage = $event" />
+        </div>
       </div>
     </div>
 
-    <AppTable :page-size="10" :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Không có dữ liệu chấm công">
-      <template #default="{ row }">
-        <td class="px-5 py-4 text-sm font-medium text-slate-900">{{ (row as AttendanceRecord).employeeName }}</td>
-        <td class="px-5 py-4 text-sm text-slate-650 font-medium">{{ fmtDate((row as AttendanceRecord).workDate) }}</td>
-        <td class="px-5 py-4 text-sm text-slate-600">{{ (row as AttendanceRecord).shiftName ?? '—' }}</td>
-        <td class="px-5 py-4 text-sm text-emerald-700 font-mono font-semibold">{{ fmtTime((row as AttendanceRecord).checkInAt) }}</td>
-        <td class="px-5 py-4 text-sm text-blue-700 font-mono font-semibold">{{ fmtTime((row as AttendanceRecord).checkOutAt) }}</td>
-        <td class="px-5 py-4 text-sm font-semibold text-slate-800">{{ (row as AttendanceRecord).workedMinutes > 0 ? fmtMin((row as AttendanceRecord).workedMinutes) : '—' }}</td>
-      </template>
-    </AppTable>
-    <AppPagination :total="total" :current="currentPage" :per-page="perPage" @change="currentPage = $event" @per-page-change="perPage = $event" />
+    <!-- TAB 2: Correction Requests Approval List -->
+    <div v-else-if="canApprove" class="space-y-6">
+      <!-- Filters -->
+      <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <!-- Nhân viên -->
+          <div class="flex flex-col">
+            <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Nhân viên</label>
+            <div class="relative">
+              <select
+                v-model="adjFilterEmployee"
+                class="h-10 w-full rounded-xl border border-slate-300 bg-white px-3 pr-10 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 appearance-none"
+              >
+                <option value="">Tất cả nhân viên</option>
+                <option v-for="e in employees" :key="e.id" :value="e.id">{{ e.fullName }}</option>
+              </select>
+              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Trạng thái -->
+          <div class="flex flex-col">
+            <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Trạng thái giải trình</label>
+            <div class="relative">
+              <select
+                v-model="adjFilterStatus"
+                class="h-10 w-full rounded-xl border border-slate-300 bg-white px-3 pr-10 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 appearance-none"
+              >
+                <option value="">Tất cả trạng thái</option>
+                <option value="Pending">Chờ duyệt</option>
+                <option value="Approved">Đã duyệt</option>
+                <option value="Rejected">Từ chối</option>
+              </select>
+              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Filter Action -->
+          <div class="flex flex-col justify-end">
+            <AppButton variant="primary" @click="loadAdjustments" class="h-10 w-full">
+              Lọc danh sách
+            </AppButton>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm animate-fade-in">
+        <AppTable :page-size="10" :columns="adjustmentColumns" :rows="paginatedAdjs" :loading="loading" row-key="id" empty-text="Không có đơn giải trình nào phù hợp">
+          <template #default="{ row }">
+            <td class="px-5 py-4 text-sm font-semibold text-slate-900">{{ (row as AttendanceAdjustment).employeeName }}</td>
+            <td class="px-5 py-4 text-sm text-slate-650 font-medium">{{ fmtDate((row as AttendanceAdjustment).workDate) }}</td>
+            <td class="px-5 py-4 text-sm text-slate-600 font-medium">{{ (row as AttendanceAdjustment).shiftName }}</td>
+            <td class="px-5 py-4 text-sm text-emerald-700 font-mono font-semibold">
+              {{ (row as AttendanceAdjustment).proposedCheckIn ? fmtTime((row as AttendanceAdjustment).proposedCheckIn) : '—' }}
+            </td>
+            <td class="px-5 py-4 text-sm text-blue-700 font-mono font-semibold">
+              {{ (row as AttendanceAdjustment).proposedCheckOut ? fmtTime((row as AttendanceAdjustment).proposedCheckOut) : '—' }}
+            </td>
+            <td class="px-5 py-4 text-sm text-slate-600 max-w-[220px] truncate" :title="(row as AttendanceAdjustment).reason">
+              {{ (row as AttendanceAdjustment).reason }}
+            </td>
+            <td class="px-5 py-4 text-sm">
+              <div v-if="(row as AttendanceAdjustment).status === 'Pending'" class="flex gap-2">
+                <AppButton
+                  size="sm"
+                  class="bg-emerald-600 text-white border-0 hover:bg-emerald-700 py-1 px-3 rounded-lg text-xs"
+                  :loading="adjActionLoading[(row as AttendanceAdjustment).id]"
+                  @click="approveAdj((row as AttendanceAdjustment).id)"
+                >
+                  Duyệt
+                </AppButton>
+                <AppButton
+                  size="sm"
+                  class="bg-rose-600 text-white border-0 hover:bg-rose-700 py-1 px-3 rounded-lg text-xs"
+                  :loading="adjActionLoading[(row as AttendanceAdjustment).id]"
+                  @click="rejectAdj((row as AttendanceAdjustment).id)"
+                >
+                  Từ chối
+                </AppButton>
+              </div>
+              <div v-else>
+                <span
+                  class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border"
+                  :class="[
+                    (row as AttendanceAdjustment).status === 'Approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                    'bg-rose-50 text-rose-700 border-rose-100'
+                  ]"
+                >
+                  {{ (row as AttendanceAdjustment).status === 'Approved' ? 'Đã duyệt' : 'Đã từ chối' }}
+                </span>
+                <p v-if="(row as AttendanceAdjustment).handledByName" class="text-[10px] text-slate-400 mt-1">Duyệt bởi: {{ (row as AttendanceAdjustment).handledByName }}</p>
+              </div>
+            </td>
+          </template>
+        </AppTable>
+        <div class="px-5 py-4 border-t border-slate-150">
+          <AppPagination :total="adjTotal" :current="adjPage" :per-page="adjPerPage" @change="adjPage = $event" @per-page-change="adjPerPage = $event" />
+        </div>
+      </div>
+    </div>
   </div>
 </template>
-

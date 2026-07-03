@@ -14,6 +14,7 @@ public static class DependencyInjection
         services.AddScoped<IAttendanceService, AttendanceService>();
         services.AddScoped<ILeaveRequestService, LeaveRequestService>();
         services.AddScoped<ITimesheetService, TimesheetService>();
+        services.AddScoped<IAttendanceAdjustmentService, AttendanceAdjustmentService>();
         
         return services;
     }
