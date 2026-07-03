@@ -80,8 +80,15 @@ public class TimesheetsController : ControllerBase
             }
             else
             {
-                // Employees are forbidden from viewing global timesheets
-                return Forbid();
+                var currentEmpId = GetCurrentEmployeeId();
+                if (currentEmpId == Guid.Empty)
+                {
+                    return BadRequest(ApiResponse<IEnumerable<TimesheetDto>>.Fail("InvalidUser", "User must be associated with an active Employee account."));
+                }
+
+                // Standard Employee is restricted to their own records only
+                employeeId = currentEmpId;
+                departmentId = null;
             }
         }
 
@@ -90,7 +97,7 @@ public class TimesheetsController : ControllerBase
     }
 
     [HttpPost("recalculate")]
-    [Authorize(Roles = "Admin,HR,PayrollStaff")]
+    [Authorize(Roles = "Admin,PayrollStaff")]
     public async Task<ActionResult<ApiResponse>> Recalculate(
         [FromQuery] int year,
         [FromQuery] int month)

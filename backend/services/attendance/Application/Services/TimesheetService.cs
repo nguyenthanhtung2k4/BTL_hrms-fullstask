@@ -68,7 +68,8 @@ public class TimesheetService : ITimesheetService
         {
             // 1. Get all completed attendance records for this month
             var records = await _dbContext.AttendanceRecords
-                .Where(r => r.EmployeeId == employee.Id && r.WorkDate >= startOfMonth && r.WorkDate <= endOfMonth && r.Status == "Completed")
+                .Where(r => r.EmployeeId == employee.Id && r.WorkDate >= startOfMonth && r.WorkDate <= endOfMonth && 
+                       (r.Status == "Completed" || r.Status == "CheckedOut" || r.Status == "Late"))
                 .ToListAsync();
 
             var totalWorkedMinutes = records.Sum(r => r.WorkedMinutes);

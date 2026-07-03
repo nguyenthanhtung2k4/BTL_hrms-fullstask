@@ -168,7 +168,7 @@ public class PayslipService : IPayslipService
 
         // Get all completed attendance records for this period window
         var attendances = await _dbContext.AttendanceProjections
-            .Where(a => a.Status == "Completed" && a.WorkDate >= period.FromDate && a.WorkDate <= period.ToDate)
+            .Where(a => (a.Status == "Completed" || a.Status == "CheckedOut" || a.Status == "Late") && a.WorkDate >= period.FromDate && a.WorkDate <= period.ToDate)
             .ToListAsync();
 
         // Get all leave projections for this period window

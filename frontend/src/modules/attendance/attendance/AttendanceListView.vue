@@ -41,6 +41,14 @@ const authStore = useAuthStore()
 const isManagerOnly = computed(() => authStore.hasRole('Manager') && !authStore.isAdmin && !authStore.isHR)
 const canApprove = computed(() => authStore.isAdmin || authStore.isHR || authStore.hasRole('Manager'))
 
+const filteredEmployees = computed(() => {
+  if (isManagerOnly.value) {
+    const myDeptIds = departments.value.map((d) => d.id)
+    return employees.value.filter((e) => myDeptIds.includes(e.departmentId))
+  }
+  return employees.value
+})
+
 const recordColumns = [
   { key: 'employee', label: 'Nhân viên' },
   { key: 'workDate', label: 'Ngày làm việc' },
@@ -244,7 +252,7 @@ onMounted(load)
                   class="h-9 w-full rounded-xl border border-slate-250 bg-slate-50/50 px-3 pr-8 text-xs outline-none transition-all focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 appearance-none text-slate-700 font-medium"
                 >
                   <option value="">Tất cả nhân viên</option>
-                  <option v-for="e in employees" :key="e.id" :value="e.id">{{ e.fullName }}</option>
+                  <option v-for="e in filteredEmployees" :key="e.id" :value="e.id">{{ e.fullName }}</option>
                 </select>
                 <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400">
                   <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
@@ -391,7 +399,7 @@ onMounted(load)
                 class="h-10 w-full rounded-xl border border-slate-300 bg-white px-3 pr-10 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 appearance-none"
               >
                 <option value="">Tất cả nhân viên</option>
-                <option v-for="e in employees" :key="e.id" :value="e.id">{{ e.fullName }}</option>
+                <option v-for="e in filteredEmployees" :key="e.id" :value="e.id">{{ e.fullName }}</option>
               </select>
               <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>

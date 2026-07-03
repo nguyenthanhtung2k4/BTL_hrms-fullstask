@@ -231,7 +231,7 @@ onMounted(load)
           </button>
         </div>
 
-        <AppButton v-if="auth.isHR" :loading="calculating" variant="secondary" size="sm" @click="calculate">
+        <AppButton v-if="auth.isPayrollStaff" :loading="calculating" variant="secondary" size="sm" @click="calculate">
           <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z" />
