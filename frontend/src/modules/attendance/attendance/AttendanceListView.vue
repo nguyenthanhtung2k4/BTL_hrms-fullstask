@@ -157,22 +157,7 @@ const filteredRecords = computed(() => {
   return result
 })
 
-// Dynamic stats calculations
-const stats = computed(() => {
-  const list = filteredRecords.value
-  const active = list.filter((r) => r.status === 'CheckedIn').length
-  const completed = list.filter((r) => r.status === 'Completed').length
-  const late = list.filter((r) => !!r.checkInReason).length
-  const totalMinutes = list.reduce((sum, r) => sum + r.workedMinutes, 0)
-  const avgHours = list.length > 0 ? (totalMinutes / list.length / 60).toFixed(1) : '0'
 
-  return {
-    active,
-    completed,
-    late,
-    avgHours
-  }
-})
 
 function handleExport() {
   if (filteredRecords.value.length === 0) {

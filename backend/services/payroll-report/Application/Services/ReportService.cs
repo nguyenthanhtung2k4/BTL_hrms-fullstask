@@ -7,6 +7,7 @@ using Hrms.PayrollReport.Application.Interfaces;
 using Hrms.PayrollReport.Infrastructure.Persistence;
 using Hrms.Shared.Domain;
 using Microsoft.EntityFrameworkCore;
+using Hrms.PayrollReport.Domain.Entities;
 
 namespace Hrms.PayrollReport.Application.Services;
 
@@ -19,7 +20,7 @@ public class ReportService : IReportService
         _dbContext = dbContext;
     }
 
-    public async Task<Result<PayrollSummaryReportDto>> GetSummaryReportAsync(Guid periodId)
+    public async Task<Result<PayrollSummaryReportDto>> GetSummaryReportAsync(Guid periodId, Guid? departmentId = null)
     {
         var period = await _dbContext.PayrollPeriods.FindAsync(periodId);
         if (period == null)
@@ -34,8 +35,20 @@ public class ReportService : IReportService
             .Where(p => p.PayrollPeriodId == periodId)
             .ToListAsync();
 
+        if (departmentId.HasValue)
+        {
+            payslips = payslips
+                .Where(p => p.Employee != null && p.Employee.DepartmentId == departmentId.Value)
+                .ToList();
+        }
+
         // Get all departments to make sure we represent them all
         var departments = await _dbContext.DepartmentProjections.ToListAsync();
+
+        if (departmentId.HasValue)
+        {
+            departments = departments.Where(d => d.Id == departmentId.Value).ToList();
+        }
 
         var deptSummaries = new List<DepartmentSummaryDto>();
 
@@ -71,10 +84,14 @@ public class ReportService : IReportService
             ));
         }
 
-        // Include any payslips that don't have a department projection mapping just in case
-        var unassignedPayslips = payslips
-            .Where(p => p.Employee == null || !p.Employee.DepartmentId.HasValue || !departments.Any(d => d.Id == p.Employee.DepartmentId.Value))
-            .ToList();
+        // Include any payslips that don't have a department projection mapping just in case (only if no specific department filter)
+        var unassignedPayslips = new List<Payslip>();
+        if (!departmentId.HasValue)
+        {
+            unassignedPayslips = payslips
+                .Where(p => p.Employee == null || !p.Employee.DepartmentId.HasValue || !departments.Any(d => d.Id == p.Employee.DepartmentId.Value))
+                .ToList();
+        }
 
         if (unassignedPayslips.Count > 0)
         {

@@ -147,7 +147,7 @@ const menuGroups = computed(() => {
       { to: '/payroll/rules', name: 'payroll-rules', label: t('nav.rules'), icon: Settings2 },
     )
   }
-  if (auth.hasAnyRole(['Admin', 'PayrollStaff', 'HR', 'Manager'])) {
+  if (auth.hasAnyRole(['Admin', 'PayrollStaff', 'HR'])) {
     payItems.push(
       { to: '/payroll/allowances', name: 'payroll-allowances', label: t('nav.allowances'), icon: PiggyBank },
       { to: '/payroll/deductions', name: 'payroll-deductions', label: t('nav.deductions'), icon: Wallet },

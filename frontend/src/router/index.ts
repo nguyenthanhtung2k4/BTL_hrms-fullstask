@@ -162,13 +162,13 @@ export const router = createRouter({
           path: 'payroll/allowances',
           name: 'payroll-allowances',
           component: AllowanceListView,
-          meta: { roles: ['Admin', 'PayrollStaff', 'HR', 'Manager'] },
+          meta: { roles: ['Admin', 'PayrollStaff', 'HR'] },
         },
         {
           path: 'payroll/deductions',
           name: 'payroll-deductions',
           component: DeductionListView,
-          meta: { roles: ['Admin', 'PayrollStaff', 'HR', 'Manager'] },
+          meta: { roles: ['Admin', 'PayrollStaff', 'HR'] },
         },
         {
           path: 'payroll/payslips',

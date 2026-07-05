@@ -12,7 +12,7 @@ namespace Hrms.PayrollReport.Controllers;
 
 [ApiController]
 [Route("api/v1/payroll/payroll-periods")]
-[Authorize]
+[Authorize(Roles = "Admin,PayrollStaff")]
 public class PayrollPeriodsController : ControllerBase
 {
     private readonly IPayrollPeriodService _periodService;

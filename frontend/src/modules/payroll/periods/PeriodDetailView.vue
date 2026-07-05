@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { payrollPeriodService } from '../../../services/payrollPeriod.service'
@@ -23,6 +23,28 @@ const loading = ref(true)
 const calculating = ref(false)
 const closing = ref(false)
 const showCloseConfirm = ref(false)
+const savingSlipId = ref<string | null>(null)
+
+async function updatePayslipRow(slip: Payslip) {
+  savingSlipId.value = slip.id
+  try {
+    const updated = await payslipService.update(slip.id, {
+      workedDays: Number(slip.workedDays) || 0,
+      paidLeaveDays: Number(slip.paidLeaveDays) || 0,
+    })
+    toast.success(`Đã cập nhật công/phép của ${slip.fullName}`)
+    slip.workedDays = updated.workedDays
+    slip.paidLeaveDays = updated.paidLeaveDays
+    slip.grossSalary = updated.grossSalary
+    slip.totalDeduction = updated.totalDeduction
+    slip.netSalary = updated.netSalary
+  } catch (err: any) {
+    toast.error(err?.response?.data?.message ?? 'Cập nhật thất bại')
+    await load()
+  } finally {
+    savingSlipId.value = null
+  }
+}
 
 const columns = [
   { key: 'employee', label: 'Nhân viên' }, { key: 'code', label: 'Mã NV' },
@@ -110,8 +132,40 @@ onMounted(load)
       <template #default="{ row }">
         <td class="px-4 py-3 text-sm font-medium">{{ (row as Payslip).fullName }}</td>
         <td class="px-4 py-3 text-sm text-slate-500">{{ (row as Payslip).employeeCode }}</td>
-        <td class="px-4 py-3 text-sm font-semibold text-emerald-700">{{ (row as Payslip).workedDays.toFixed(1) }}</td>
-        <td class="px-4 py-3 text-sm">{{ (row as Payslip).paidLeaveDays > 0 ? (row as Payslip).paidLeaveDays : '—' }}</td>
+        <td class="px-4 py-2 text-sm font-semibold text-emerald-700">
+          <template v-if="period && period.status !== 'Closed'">
+            <input
+              type="number"
+              v-model.number="(row as Payslip).workedDays"
+              step="0.5"
+              min="0"
+              class="w-20 rounded-lg border border-slate-200 px-2 py-1 text-center font-semibold text-emerald-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 bg-slate-50/50 transition-all hover:bg-white"
+              :disabled="savingSlipId === (row as Payslip).id"
+              @change="updatePayslipRow(row as Payslip)"
+              @keydown.enter="($event.target as HTMLInputElement).blur()"
+            />
+          </template>
+          <template v-else>
+            {{ (row as Payslip).workedDays.toFixed(1) }}
+          </template>
+        </td>
+        <td class="px-4 py-2 text-sm">
+          <template v-if="period && period.status !== 'Closed'">
+            <input
+              type="number"
+              v-model.number="(row as Payslip).paidLeaveDays"
+              step="0.5"
+              min="0"
+              class="w-20 rounded-lg border border-slate-200 px-2 py-1 text-center text-slate-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 bg-slate-50/50 transition-all hover:bg-white"
+              :disabled="savingSlipId === (row as Payslip).id"
+              @change="updatePayslipRow(row as Payslip)"
+              @keydown.enter="($event.target as HTMLInputElement).blur()"
+            />
+          </template>
+          <template v-else>
+            {{ (row as Payslip).paidLeaveDays > 0 ? (row as Payslip).paidLeaveDays : '—' }}
+          </template>
+        </td>
         <td class="px-4 py-3 text-sm font-medium">{{ fmtMoney((row as Payslip).grossSalary) }}</td>
         <td class="px-4 py-3 text-sm text-red-600">{{ (row as Payslip).totalDeduction > 0 ? fmtMoney((row as Payslip).totalDeduction) : '—' }}</td>
         <td class="px-4 py-3 text-sm font-bold text-emerald-700">{{ fmtMoney((row as Payslip).netSalary) }}</td>

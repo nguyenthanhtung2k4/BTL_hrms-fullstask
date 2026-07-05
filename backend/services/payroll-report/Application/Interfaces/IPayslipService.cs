@@ -12,4 +12,5 @@ public interface IPayslipService
     Task<Result<PayslipDto>> GetByIdAsync(Guid id);
     Task<Result<PayslipDto>> GetMyPayslipAsync(Guid employeeId, Guid periodId);
     Task<Result> CalculatePeriodPayslipsAsync(Guid periodId);
+    Task<Result<PayslipDto>> UpdatePayslipAsync(Guid id, UpdatePayslipDto dto);
 }

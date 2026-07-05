@@ -7,5 +7,5 @@ namespace Hrms.PayrollReport.Application.Interfaces;
 
 public interface IReportService
 {
-    Task<Result<PayrollSummaryReportDto>> GetSummaryReportAsync(Guid periodId);
+    Task<Result<PayrollSummaryReportDto>> GetSummaryReportAsync(Guid periodId, Guid? departmentId = null);
 }

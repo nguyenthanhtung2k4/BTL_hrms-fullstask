@@ -454,6 +454,265 @@ public class PayslipService : IPayslipService
         return Result.Success("Successfully calculated payslips for the period.");
     }
 
+    public async Task<Result<PayslipDto>> UpdatePayslipAsync(Guid id, UpdatePayslipDto dto)
+    {
+        var payslip = await _dbContext.Payslips
+            .Include(p => p.Items)
+            .Include(p => p.Employee)
+            .Include(p => p.PayrollPeriod)
+            .ThenInclude(pp => pp!.PayrollRule)
+            .FirstOrDefaultAsync(p => p.Id == id);
+
+        if (payslip == null)
+        {
+            return Result<PayslipDto>.Failure("PayslipNotFound", "Payslip not found.");
+        }
+
+        if (payslip.PayrollPeriod == null)
+        {
+            return Result<PayslipDto>.Failure("PayrollPeriodNotFound", "Payroll period not found.");
+        }
+
+        if (payslip.PayrollPeriod.Status == "Closed")
+        {
+            return Result<PayslipDto>.Failure("PeriodClosed", "Cannot edit a payslip in a closed payroll period.");
+        }
+
+        var rule = payslip.PayrollPeriod.PayrollRule;
+        if (rule == null)
+        {
+            return Result<PayslipDto>.Failure("PayrollRuleNotFound", "Payroll rule not assigned to this period.");
+        }
+
+        payslip.WorkedDays = dto.WorkedDays;
+        payslip.PaidLeaveDays = dto.PaidLeaveDays;
+
+        var baseSalary = payslip.BaseSalary;
+
+        // Apply rule logic: paid leave counts as work
+        var totalEffectiveWorkedDays = dto.WorkedDays;
+        if (rule.PaidLeaveCountsAsWork)
+        {
+            totalEffectiveWorkedDays += dto.PaidLeaveDays;
+        }
+
+        // Cap effective worked days at standard work days
+        if (totalEffectiveWorkedDays > payslip.PayrollPeriod.StandardWorkDays)
+        {
+            totalEffectiveWorkedDays = payslip.PayrollPeriod.StandardWorkDays;
+        }
+
+        // Calculate base salary by work
+        decimal baseSalaryByWork = 0;
+        if (payslip.PayrollPeriod.StandardWorkDays > 0)
+        {
+            baseSalaryByWork = baseSalary * (totalEffectiveWorkedDays / payslip.PayrollPeriod.StandardWorkDays);
+        }
+
+        // Gather allowances and deductions for this employee & period
+        var periodAllowances = await _dbContext.EmployeeAllowances
+            .Include(a => a.AllowanceType)
+            .Where(a => a.PayrollPeriodId == payslip.PayrollPeriodId && a.EmployeeId == payslip.EmployeeId)
+            .ToListAsync();
+        decimal totalAllowance = periodAllowances.Sum(a => a.Amount);
+
+        // Seniority allowance
+        decimal seniorityAllowanceAmt = 0;
+        int seniorityYears = 0;
+        if (payslip.Employee != null && payslip.Employee.HireDate < payslip.PayrollPeriod.ToDate.ToDateTime(TimeOnly.MinValue))
+        {
+            var seniorityDays = (payslip.PayrollPeriod.ToDate.ToDateTime(TimeOnly.MinValue) - payslip.Employee.HireDate).TotalDays;
+            seniorityYears = (int)Math.Floor(seniorityDays / 365.25);
+            if (seniorityYears >= 1)
+            {
+                seniorityAllowanceAmt = seniorityYears * 200000m;
+            }
+        }
+        totalAllowance += seniorityAllowanceAmt;
+
+        // Calculate Social Insurances (BHXH: 8%, BHYT: 1.5%, BHTN: 1%)
+        decimal insuranceSalaryForSocialAndHealth = Math.Min(baseSalary, 46800000m);
+        decimal insuranceSalaryForUnemployment = Math.Min(baseSalary, 99200000m);
+
+        decimal bhxhAmount = Math.Round(insuranceSalaryForSocialAndHealth * 0.08m, 0);
+        decimal bhytAmount = Math.Round(insuranceSalaryForSocialAndHealth * 0.015m, 0);
+        decimal bhtnAmount = Math.Round(insuranceSalaryForUnemployment * 0.01m, 0);
+        decimal totalInsuranceDeduction = bhxhAmount + bhytAmount + bhtnAmount;
+
+        // Calculate Personal Income Tax (PIT)
+        decimal grossSalary = baseSalaryByWork + totalAllowance;
+        decimal personalDeduction = 11000000m;
+        
+        decimal assessableIncome = grossSalary - totalInsuranceDeduction - personalDeduction;
+        if (assessableIncome < 0) assessableIncome = 0;
+        decimal pitAmount = CalculatePIT(assessableIncome);
+
+        // Gather other custom deductions
+        var periodDeductions = await _dbContext.EmployeeDeductions
+            .Include(d => d.DeductionType)
+            .Where(d => d.PayrollPeriodId == payslip.PayrollPeriodId && d.EmployeeId == payslip.EmployeeId)
+            .ToListAsync();
+        decimal otherDeductions = periodDeductions.Sum(d => d.Amount);
+
+        decimal totalDeduction = totalInsuranceDeduction + pitAmount + otherDeductions;
+        decimal netSalary = grossSalary - totalDeduction;
+        if (netSalary < 0) netSalary = 0;
+
+        payslip.GrossSalary = grossSalary;
+        payslip.TotalDeduction = totalDeduction;
+        payslip.NetSalary = netSalary;
+        payslip.UpdatedAt = DateTime.UtcNow;
+
+        // Clear existing payslip items and save first to avoid concurrency/tracking conflicts
+        var existingItems = await _dbContext.PayslipItems.Where(pi => pi.PayslipId == payslip.Id).ToListAsync();
+        _dbContext.PayslipItems.RemoveRange(existingItems);
+        payslip.Items.Clear();
+        await _dbContext.SaveChangesAsync();
+
+        // Re-generate basic salary item
+        payslip.Items.Add(new PayslipItem
+        {
+            Id = Guid.NewGuid(),
+            PayslipId = payslip.Id,
+            ItemType = "BasicSalary",
+            Code = "BASIC_SALARY",
+            Name = "Lương cơ bản theo ngày công",
+            Amount = baseSalaryByWork,
+            SourceType = null,
+            CreatedAt = DateTime.UtcNow
+        });
+
+        // Allowance items
+        foreach (var allowance in periodAllowances)
+        {
+            payslip.Items.Add(new PayslipItem
+            {
+                Id = Guid.NewGuid(),
+                PayslipId = payslip.Id,
+                ItemType = "Allowance",
+                Code = allowance.AllowanceType?.Code ?? "ALLOWANCE",
+                Name = allowance.AllowanceType?.Name ?? "Phụ cấp",
+                Amount = allowance.Amount,
+                SourceType = "Allowance",
+                CreatedAt = DateTime.UtcNow
+            });
+        }
+
+        // Seniority allowance item
+        if (seniorityAllowanceAmt > 0)
+        {
+            payslip.Items.Add(new PayslipItem
+            {
+                Id = Guid.NewGuid(),
+                PayslipId = payslip.Id,
+                ItemType = "Allowance",
+                Code = "ALLOWANCE_SENIORITY",
+                Name = $"Phụ cấp thâm niên ({seniorityYears} năm)",
+                Amount = seniorityAllowanceAmt,
+                SourceType = "Seniority",
+                CreatedAt = DateTime.UtcNow
+            });
+        }
+
+        // Custom Deduction items
+        foreach (var deduction in periodDeductions)
+        {
+            payslip.Items.Add(new PayslipItem
+            {
+                Id = Guid.NewGuid(),
+                PayslipId = payslip.Id,
+                ItemType = "Deduction",
+                Code = deduction.DeductionType?.Code ?? "DEDUCTION",
+                Name = deduction.DeductionType?.Name ?? "Khấu trừ",
+                Amount = deduction.Amount,
+                SourceType = "Deduction",
+                CreatedAt = DateTime.UtcNow
+            });
+        }
+
+        // Auto-generated Insurance Deductions
+        if (bhxhAmount > 0)
+        {
+            payslip.Items.Add(new PayslipItem
+            {
+                Id = Guid.NewGuid(),
+                PayslipId = payslip.Id,
+                ItemType = "Deduction",
+                Code = "DEDUCTION_BHXH",
+                Name = "Bảo hiểm xã hội (8%)",
+                Amount = bhxhAmount,
+                SourceType = "Insurance",
+                CreatedAt = DateTime.UtcNow
+            });
+        }
+        if (bhytAmount > 0)
+        {
+            payslip.Items.Add(new PayslipItem
+            {
+                Id = Guid.NewGuid(),
+                PayslipId = payslip.Id,
+                ItemType = "Deduction",
+                Code = "DEDUCTION_BHYT",
+                Name = "Bảo hiểm y tế (1.5%)",
+                Amount = bhytAmount,
+                SourceType = "Insurance",
+                CreatedAt = DateTime.UtcNow
+            });
+        }
+        if (bhtnAmount > 0)
+        {
+            payslip.Items.Add(new PayslipItem
+            {
+                Id = Guid.NewGuid(),
+                PayslipId = payslip.Id,
+                ItemType = "Deduction",
+                Code = "DEDUCTION_BHTN",
+                Name = "Bảo hiểm thất nghiệp (1%)",
+                Amount = bhtnAmount,
+                SourceType = "Insurance",
+                CreatedAt = DateTime.UtcNow
+            });
+        }
+
+        // Auto-generated PIT Deduction
+        if (pitAmount > 0)
+        {
+            payslip.Items.Add(new PayslipItem
+            {
+                Id = Guid.NewGuid(),
+                PayslipId = payslip.Id,
+                ItemType = "Deduction",
+                Code = "DEDUCTION_PIT",
+                Name = "Thuế thu nhập cá nhân (TNCN)",
+                Amount = pitAmount,
+                SourceType = "Tax",
+                CreatedAt = DateTime.UtcNow
+            });
+        }
+
+        await _dbContext.SaveChangesAsync();
+
+        var resultDto = new PayslipDto(
+            payslip.Id,
+            payslip.PayrollPeriodId,
+            payslip.EmployeeId,
+            payslip.Employee != null ? payslip.Employee.EmployeeCode : string.Empty,
+            payslip.Employee != null ? payslip.Employee.FullName : string.Empty,
+            payslip.BaseSalary,
+            payslip.WorkedDays,
+            payslip.PaidLeaveDays,
+            payslip.GrossSalary,
+            payslip.TotalDeduction,
+            payslip.NetSalary,
+            payslip.Status,
+            payslip.Items.Select(i => new PayslipItemDto(i.Id, i.ItemType, i.Code, i.Name, i.Amount, i.SourceType)).ToList(),
+            payslip.PayrollPeriod != null ? payslip.PayrollPeriod.Name : string.Empty,
+            payslip.PayrollPeriod != null ? payslip.PayrollPeriod.Code : string.Empty
+        );
+
+        return Result<PayslipDto>.Success(resultDto, "Successfully updated payslip.");
+    }
+
     private decimal CalculatePIT(decimal assessableIncome)
     {
         if (assessableIncome <= 0) return 0;

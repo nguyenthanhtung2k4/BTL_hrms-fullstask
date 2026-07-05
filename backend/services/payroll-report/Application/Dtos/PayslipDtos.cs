@@ -29,3 +29,8 @@ public record PayslipItemDto(
     decimal Amount,
     string? SourceType
 );
+
+public record UpdatePayslipDto(
+    decimal WorkedDays,
+    decimal PaidLeaveDays
+);

@@ -59,7 +59,7 @@ const columns = computed(() => {
     { key: 'type', label: 'Loại khấu trừ' },
     { key: 'amount', label: 'Số tiền' }
   )
-  if (auth.isPayrollStaff) {
+  if (auth.hasAnyRole(['Admin', 'HR', 'PayrollStaff'])) {
     list.push({ key: 'actions', label: '' })
   }
   return list
@@ -235,8 +235,8 @@ onMounted(load)
             <span>Xuất Excel</span>
           </AppButton>
 
-          <!-- Import and Add Buttons - strictly Admin / PayrollStaff -->
-          <template v-if="auth.isPayrollStaff">
+          <!-- Import and Add Buttons - strictly Admin / HR / PayrollStaff -->
+          <template v-if="auth.hasAnyRole(['Admin', 'HR', 'PayrollStaff'])">
             <AppButton variant="secondary" @click="showImportModal = true">
               <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -316,7 +316,7 @@ onMounted(load)
         <td v-if="!auth.isEmployee" class="px-4 py-3 text-sm font-medium">{{ (row as EmployeeDeduction).employeeName ?? '—' }}</td>
         <td class="px-4 py-3 text-sm text-slate-600">{{ (row as EmployeeDeduction).deductionTypeName ?? '—' }}</td>
         <td class="px-4 py-3 text-sm font-medium text-rose-700">{{ fmtMoney((row as EmployeeDeduction).amount) }}</td>
-        <td v-if="auth.isPayrollStaff" class="px-4 py-3 text-right">
+        <td v-if="auth.hasAnyRole(['Admin', 'HR', 'PayrollStaff'])" class="px-4 py-3 text-right">
           <AppButton size="sm" variant="danger" @click="deleteTarget = row as EmployeeDeduction">Xóa</AppButton>
         </td>
       </template>

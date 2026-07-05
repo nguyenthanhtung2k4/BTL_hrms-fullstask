@@ -26,9 +26,9 @@ public class AllowancesController : ControllerBase
         [FromQuery] Guid? employeeId,
         [FromQuery] Guid? periodId)
     {
-        // Check permissions: Admin, HR, Manager, PayrollStaff can query any employee.
-        // Employee can only query their own employeeId.
-        var isPrivileged = User.IsInRole("Admin") || User.IsInRole("HR") || User.IsInRole("Manager") || User.IsInRole("PayrollStaff");
+        // Check permissions: Admin, HR, PayrollStaff can query any employee.
+        // Employee/Manager can only query their own employeeId.
+        var isPrivileged = User.IsInRole("Admin") || User.IsInRole("HR") || User.IsInRole("PayrollStaff");
         if (!isPrivileged)
         {
             var employeeIdClaim = User.FindFirst("employeeId")?.Value;
@@ -51,7 +51,7 @@ public class AllowancesController : ControllerBase
     }
 
     [HttpPost("types")]
-    [Authorize(Roles = "Admin,PayrollStaff")]
+    [Authorize(Roles = "Admin,HR,PayrollStaff")]
     public async Task<ActionResult<ApiResponse<AllowanceTypeDto>>> CreateAllowanceType([FromBody] CreateTypeRequest request)
     {
         var result = await _allowanceService.CreateAllowanceTypeAsync(request.Name);
@@ -73,8 +73,8 @@ public class AllowancesController : ControllerBase
             return NotFound(ApiResponse<EmployeeAllowanceDto>.Fail(result.Errors, result.Message));
         }
 
-        // Employee can only read their own allowance record
-        var isPrivileged = User.IsInRole("Admin") || User.IsInRole("HR") || User.IsInRole("Manager") || User.IsInRole("PayrollStaff");
+        // Employee/Manager can only read their own allowance record
+        var isPrivileged = User.IsInRole("Admin") || User.IsInRole("HR") || User.IsInRole("PayrollStaff");
         if (!isPrivileged)
         {
             var employeeIdClaim = User.FindFirst("employeeId")?.Value;
@@ -88,7 +88,7 @@ public class AllowancesController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin,PayrollStaff")]
+    [Authorize(Roles = "Admin,HR,PayrollStaff")]
     public async Task<ActionResult<ApiResponse<EmployeeAllowanceDto>>> Create([FromBody] CreateEmployeeAllowanceDto request)
     {
         var result = await _allowanceService.CreateAsync(request);
@@ -100,7 +100,7 @@ public class AllowancesController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin,PayrollStaff")]
+    [Authorize(Roles = "Admin,HR,PayrollStaff")]
     public async Task<ActionResult<ApiResponse<EmployeeAllowanceDto>>> Update(Guid id, [FromBody] UpdateEmployeeAllowanceDto request)
     {
         var result = await _allowanceService.UpdateAsync(id, request);
@@ -112,7 +112,7 @@ public class AllowancesController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin,PayrollStaff")]
+    [Authorize(Roles = "Admin,HR,PayrollStaff")]
     public async Task<ActionResult<ApiResponse>> Delete(Guid id)
     {
         var result = await _allowanceService.DeleteAsync(id);

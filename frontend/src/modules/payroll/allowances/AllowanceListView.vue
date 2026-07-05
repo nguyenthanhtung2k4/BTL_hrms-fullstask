@@ -110,7 +110,7 @@ function clearFilters() {
 // Dynamic columns based on role permissions
 const columns = computed(() => {
   const list: { key: string; label: string; class?: string }[] = []
-  if (auth.isPayrollStaff) {
+  if (auth.hasAnyRole(['Admin', 'HR', 'PayrollStaff'])) {
     list.push({ key: 'select', label: '', class: 'w-10' })
   }
   list.push({ key: 'period', label: 'Kỳ lương' })
@@ -121,7 +121,7 @@ const columns = computed(() => {
     { key: 'type', label: 'Loại phụ cấp' },
     { key: 'amount', label: 'Số tiền' }
   )
-  if (auth.isPayrollStaff) {
+  if (auth.hasAnyRole(['Admin', 'HR', 'PayrollStaff'])) {
     list.push({ key: 'actions', label: '', class: 'text-right' })
   }
   return list
@@ -298,8 +298,8 @@ onMounted(load)
             <span>Xuất Excel</span>
           </AppButton>
 
-          <!-- Import and Add Buttons - strictly Admin / PayrollStaff -->
-          <template v-if="auth.isPayrollStaff">
+          <!-- Import and Add Buttons - strictly Admin / HR / PayrollStaff -->
+          <template v-if="auth.hasAnyRole(['Admin', 'HR', 'PayrollStaff'])">
             <AppButton variant="secondary" @click="showImportModal = true">
               <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -371,7 +371,7 @@ onMounted(load)
         </div>
       </div>
     </div>
-    <div v-if="auth.isPayrollStaff && selectedIds.size > 0"
+    <div v-if="auth.hasAnyRole(['Admin', 'HR', 'PayrollStaff']) && selectedIds.size > 0"
       class="mb-3 flex items-center justify-between rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-2.5">
       <span class="text-sm font-medium text-emerald-800">
         Đã chọn {{ selectedIds.size }} phụ cấp
@@ -384,14 +384,14 @@ onMounted(load)
     <AppTable :page-size="10" :columns="columns" :rows="paginatedData" :loading="loading" row-key="id"
       empty-text="Chưa có phụ cấp nào">
       <!-- Select-all checkbox in header -->
-      <template v-if="auth.isPayrollStaff" #header-select>
+      <template v-if="auth.hasAnyRole(['Admin', 'HR', 'PayrollStaff'])" #header-select>
         <input type="checkbox" :checked="isAllSelected" :indeterminate="isIndeterminate"
           class="h-4 w-4 rounded border-slate-300 text-emerald-600 cursor-pointer" @change="toggleSelectAll" />
       </template>
 
       <template #default="{ row }">
         <!-- Checkbox cell -->
-        <td v-if="auth.isPayrollStaff" class="px-4 py-3 w-10">
+        <td v-if="auth.hasAnyRole(['Admin', 'HR', 'PayrollStaff'])" class="px-4 py-3 w-10">
           <input type="checkbox" :checked="selectedIds.has((row as EmployeeAllowance).id)"
             class="h-4 w-4 rounded border-slate-300 text-emerald-600 cursor-pointer"
             @change="toggleSelect((row as EmployeeAllowance).id)" />
@@ -402,7 +402,7 @@ onMounted(load)
         <td class="px-4 py-3 text-sm text-slate-600">{{ (row as EmployeeAllowance).allowanceTypeName ?? '—' }}</td>
         <td class="px-4 py-3 text-sm font-medium text-emerald-700">{{ fmtMoney((row as EmployeeAllowance).amount) }}
         </td>
-        <td v-if="auth.isPayrollStaff" class="px-4 py-3 text-right">
+        <td v-if="auth.hasAnyRole(['Admin', 'HR', 'PayrollStaff'])" class="px-4 py-3 text-right">
           <AppButton size="sm" variant="danger" @click="deleteTarget = row as EmployeeAllowance">Xóa</AppButton>
         </td>
       </template>

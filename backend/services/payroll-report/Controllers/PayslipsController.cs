@@ -28,8 +28,8 @@ public class PayslipsController : ControllerBase
         [FromQuery] Guid? employeeId,
         [FromQuery] Guid? departmentId)
     {
-        // Enforce role permission: regular employee can only query their own payslips
-        if (!User.IsInRole("Admin") && !User.IsInRole("PayrollStaff") && !User.IsInRole("HR") && !User.IsInRole("Manager"))
+        // Enforce role permission: only Admin and PayrollStaff can query any employee's payslips
+        if (!User.IsInRole("Admin") && !User.IsInRole("PayrollStaff"))
         {
             var currentEmployeeId = GetCurrentEmployeeId();
             if (currentEmployeeId == Guid.Empty)
@@ -70,8 +70,8 @@ public class PayslipsController : ControllerBase
             return NotFound(ApiResponse<PayslipDto>.Fail(result.Errors, result.Message));
         }
 
-        // Enforce role permission: regular employee can only view their own payslip
-        if (!User.IsInRole("Admin") && !User.IsInRole("PayrollStaff") && !User.IsInRole("HR") && !User.IsInRole("Manager"))
+        // Enforce role permission: only Admin and PayrollStaff can view any employee's payslip
+        if (!User.IsInRole("Admin") && !User.IsInRole("PayrollStaff"))
         {
             var currentEmployeeId = GetCurrentEmployeeId();
             if (result.Value!.EmployeeId != currentEmployeeId)
@@ -80,6 +80,18 @@ public class PayslipsController : ControllerBase
             }
         }
 
+        return Ok(ApiResponse<PayslipDto>.Ok(result.Value!, result.Message));
+    }
+
+    [HttpPut("{id}")]
+    [Authorize(Roles = "Admin,PayrollStaff")]
+    public async Task<ActionResult<ApiResponse<PayslipDto>>> Update(Guid id, [FromBody] UpdatePayslipDto request)
+    {
+        var result = await _payslipService.UpdatePayslipAsync(id, request);
+        if (result.IsFailure)
+        {
+            return BadRequest(ApiResponse<PayslipDto>.Fail(result.Errors, result.Message));
+        }
         return Ok(ApiResponse<PayslipDto>.Ok(result.Value!, result.Message));
     }
 
