@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { leaveService } from '../../../services/leave.service'
 import { employeeService } from '../../../services/employee.service'
 import { departmentService } from '../../../services/department.service'
 import { useAuthStore } from '../../../stores/auth'
 import { useToastStore } from '../../../stores/toast'
+import { extractError } from '../../../services/apiClient'
 import type { LeaveRequest, LeaveType, CreateLeaveRequestDto } from '../../../types/attendance.types'
 import type { Employee, Department } from '../../../types/hr.types'
 import PageHeader from '../../../components/layout/PageHeader.vue'
@@ -17,6 +19,7 @@ import AppModal from '../../../components/ui/AppModal.vue'
 import AppInput from '../../../components/ui/AppInput.vue'
 import AppConfirm from '../../../components/ui/AppConfirm.vue'
 
+const { t } = useI18n({ useScope: 'global' })
 const auth = useAuthStore()
 const toast = useToastStore()
 
@@ -37,17 +40,17 @@ const searchEmployee = ref('')
 const form = ref({ leaveTypeId: '', fromDate: '', toDate: '', reason: '' })
 const errors = ref<Record<string, string>>({})
 
-const columns = [
-  { key: 'employee', label: 'Nhân viên' },
-  { key: 'createdAt', label: 'Ngày gửi' },
-  { key: 'leaveTypeName', label: 'Loại nghỉ' },
-  { key: 'fromDate', label: 'Từ ngày' },
-  { key: 'toDate', label: 'Đến ngày' },
-  { key: 'totalDays', label: 'Số ngày' },
-  { key: 'reason', label: 'Lý do' },
-  { key: 'status', label: 'Trạng thái' },
+const columns = computed(() => [
+  { key: 'employee', label: t('leaves.col_employee') },
+  { key: 'createdAt', label: t('leaves.col_created_at') },
+  { key: 'leaveTypeName', label: t('leaves.col_leave_type') },
+  { key: 'fromDate', label: t('leaves.col_from_date') },
+  { key: 'toDate', label: t('leaves.col_to_date') },
+  { key: 'totalDays', label: t('leaves.col_total_days') },
+  { key: 'reason', label: t('leaves.col_reason') },
+  { key: 'status', label: t('leaves.col_status') },
   { key: 'actions', label: '', class: 'text-right' },
-]
+])
 
 const filtered = computed(() => {
   let result = leaves.value
@@ -99,8 +102,8 @@ async function load() {
       employees.value = results[2]
       departments.value = results[3]
     }
-  } catch {
-    toast.error('Không thể tải dữ liệu')
+  } catch (err: any) {
+    toast.error(extractError(err, t('leaves.toast_load_failed')))
   } finally {
     loading.value = false
   }
@@ -108,25 +111,25 @@ async function load() {
 
 function validate() {
   errors.value = {}
-  if (!form.value.leaveTypeId) errors.value.leaveTypeId = 'Loại nghỉ bắt buộc'
-  if (!form.value.fromDate) errors.value.fromDate = 'Từ ngày bắt buộc'
-  if (!form.value.toDate) errors.value.toDate = 'Đến ngày bắt buộc'
-  if (!form.value.reason.trim()) errors.value.reason = 'Lý do bắt buộc'
+  if (!form.value.leaveTypeId) errors.value.leaveTypeId = t('leaves.err_leave_type_required')
+  if (!form.value.fromDate) errors.value.fromDate = t('leaves.err_from_date_required')
+  if (!form.value.toDate) errors.value.toDate = t('leaves.err_to_date_required')
+  if (!form.value.reason.trim()) errors.value.reason = t('leaves.err_reason_required')
   return Object.keys(errors.value).length === 0
 }
 
 async function submitLeave() {
   if (!validate()) return
-  if (!auth.employeeId) { toast.error('Bạn chưa được liên kết nhân viên'); return }
+  if (!auth.employeeId) { toast.error(t('leaves.err_not_linked_employee')); return }
   saving.value = true
   try {
     const dto: CreateLeaveRequestDto = { leaveTypeId: form.value.leaveTypeId, fromDate: form.value.fromDate, toDate: form.value.toDate, reason: form.value.reason }
     await leaveService.create(dto)
-    toast.success('Gửi đơn nghỉ phép thành công')
+    toast.success(t('leaves.toast_submit_success'))
     showCreateForm.value = false
     form.value = { leaveTypeId: '', fromDate: '', toDate: '', reason: '' }
     await load()
-  } catch (err: any) { toast.error(err?.response?.data?.message ?? 'Gửi thất bại') }
+  } catch (err: any) { toast.error(extractError(err, t('leaves.toast_submit_failed'))) }
   finally { saving.value = false }
 }
 
@@ -135,9 +138,9 @@ async function doApprove() {
   actionLoading.value = true
   try {
     await leaveService.approve(approveTarget.value.id)
-    toast.success('Đã duyệt đơn nghỉ phép')
+    toast.success(t('leaves.toast_approve_success'))
     approveTarget.value = null; await load()
-  } catch (err: any) { toast.error(err?.response?.data?.message ?? 'Duyệt thất bại') }
+  } catch (err: any) { toast.error(extractError(err, t('leaves.toast_approve_failed'))) }
   finally { actionLoading.value = false }
 }
 
@@ -146,9 +149,9 @@ async function doReject() {
   actionLoading.value = true
   try {
     await leaveService.reject(rejectTarget.value.id)
-    toast.success('Đã từ chối đơn nghỉ phép')
+    toast.success(t('leaves.toast_reject_success'))
     rejectTarget.value = null; await load()
-  } catch (err: any) { toast.error(err?.response?.data?.message ?? 'Từ chối thất bại') }
+  } catch (err: any) { toast.error(extractError(err, t('leaves.toast_reject_failed'))) }
   finally { actionLoading.value = false }
 }
 
@@ -156,9 +159,9 @@ async function cancelLeave(l: LeaveRequest) {
   if (!auth.employeeId) return
   try {
     await leaveService.cancel(l.id)
-    toast.success('Đã hủy đơn nghỉ phép')
+    toast.success(t('leaves.toast_cancel_success'))
     await load()
-  } catch (err: any) { toast.error(err?.response?.data?.message ?? 'Hủy thất bại') }
+  } catch (err: any) { toast.error(extractError(err, t('leaves.toast_cancel_failed'))) }
 }
 
 function fmt(d: string) { return new Date(d).toLocaleDateString('vi-VN') }
@@ -170,11 +173,11 @@ onMounted(load)
 
 <template>
   <div>
-    <PageHeader title="Nghỉ phép" subtitle="Quản lý đơn xin nghỉ phép" :breadcrumbs="[{ label: 'Chấm công' }, { label: 'Nghỉ phép' }]">
+    <PageHeader :title="t('leaves.title')" :subtitle="t('leaves.subtitle')" :breadcrumbs="[{ label: t('leaves.breadcrumbs_attendance') }, { label: t('leaves.title') }]">
       <template #actions>
         <AppButton @click="showCreateForm = true; form = { leaveTypeId: '', fromDate: '', toDate: '', reason: '' }; errors = {}">
           <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
-          Tạo đơn nghỉ phép
+          {{ t('leaves.create_request') }}
         </AppButton>
       </template>
     </PageHeader>
@@ -183,12 +186,12 @@ onMounted(load)
     <div class="flex flex-wrap items-center gap-4 mb-6 bg-slate-50 p-4 rounded-2xl border border-slate-150 shadow-sm">
       <!-- Tìm kiếm -->
       <div class="flex-1 min-w-[280px]">
-        <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">Tìm kiếm</label>
+        <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">{{ t('common.search') }}</label>
         <div class="relative">
           <input
             v-model="searchEmployee"
             type="text"
-            placeholder="Tìm kiếm theo nhân viên, lý do hoặc loại nghỉ..."
+            :placeholder="t('leaves.search_placeholder')"
             class="h-10 w-full rounded-xl border border-slate-300 bg-white px-3.5 pl-10 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
           />
           <div class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
@@ -199,13 +202,13 @@ onMounted(load)
 
       <!-- Lọc phòng ban (chỉ hiển thị cho vai trò quản lý/HR/admin) -->
       <div v-if="auth.isManager" class="w-full sm:w-auto sm:min-w-[220px]">
-        <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">Phòng ban</label>
+        <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">{{ t('leaves.department') }}</label>
         <div class="relative">
           <select
             v-model="filterDept"
             class="h-10 w-full rounded-xl border border-slate-300 bg-white px-3.5 pr-10 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 appearance-none"
           >
-            <option value="">-- Tất cả phòng ban --</option>
+            <option value="">{{ t('leaves.all_departments') }}</option>
             <option v-for="d in departments" :key="d.id" :value="d.id">{{ d.name }}</option>
           </select>
           <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400">
@@ -216,17 +219,17 @@ onMounted(load)
 
       <!-- Lọc trạng thái -->
       <div class="w-full sm:w-auto sm:min-w-[180px]">
-        <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">Trạng thái</label>
+        <label class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">{{ t('leaves.status') }}</label>
         <div class="relative">
           <select
             v-model="filterStatus"
             class="h-10 w-full rounded-xl border border-slate-300 bg-white px-3.5 pr-10 text-sm outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 appearance-none"
           >
-            <option value="">-- Tất cả trạng thái --</option>
-            <option value="Pending">Chờ duyệt</option>
-            <option value="Approved">Đã duyệt</option>
-            <option value="Rejected">Từ chối</option>
-            <option value="Cancelled">Đã hủy</option>
+            <option value="">{{ t('leaves.all_statuses') }}</option>
+            <option value="Pending">{{ t('leaves.status_pending') }}</option>
+            <option value="Approved">{{ t('leaves.status_approved') }}</option>
+            <option value="Rejected">{{ t('leaves.status_rejected') }}</option>
+            <option value="Cancelled">{{ t('leaves.status_cancelled') }}</option>
           </select>
           <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400">
             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
@@ -235,22 +238,22 @@ onMounted(load)
       </div>
     </div>
 
-    <AppTable :page-size="10" :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Không có đơn nghỉ phép nào">
+    <AppTable :page-size="10" :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" :empty-text="t('leaves.empty_text')">
       <template #default="{ row }">
         <td class="px-4 py-3 text-sm font-medium">{{ (row as LeaveRequest).employeeName }}</td>
         <td class="px-4 py-3 text-sm text-slate-600 font-mono">{{ fmt((row as LeaveRequest).createdAt) }}</td>
         <td class="px-4 py-3 text-sm">{{ (row as LeaveRequest).leaveTypeName }}</td>
         <td class="px-4 py-3 text-sm text-slate-600">{{ fmt((row as LeaveRequest).fromDate) }}</td>
         <td class="px-4 py-3 text-sm text-slate-600">{{ fmt((row as LeaveRequest).toDate) }}</td>
-        <td class="px-4 py-3 text-sm font-medium">{{ (row as LeaveRequest).totalDays }} ngày</td>
+        <td class="px-4 py-3 text-sm font-medium">{{ (row as LeaveRequest).totalDays }} {{ t('common.days') }}</td>
         <td class="px-4 py-3 text-sm text-slate-600 max-w-xs truncate">{{ (row as LeaveRequest).reason }}</td>
         <td class="px-4 py-3"><AppBadge :status="(row as LeaveRequest).status" /></td>
         <td class="px-4 py-3 text-right">
           <div class="flex justify-end gap-1.5">
             <!-- Manager/HR duyệt -->
             <template v-if="auth.isManager && (row as LeaveRequest).status === 'Pending'">
-              <AppButton size="sm" variant="success" @click="approveTarget = row as LeaveRequest">Duyệt</AppButton>
-              <AppButton size="sm" variant="danger" @click="rejectTarget = row as LeaveRequest">Từ chối</AppButton>
+              <AppButton size="sm" variant="success" @click="approveTarget = row as LeaveRequest">{{ t('leaves.btn_approve') }}</AppButton>
+              <AppButton size="sm" variant="danger" @click="rejectTarget = row as LeaveRequest">{{ t('leaves.btn_reject') }}</AppButton>
             </template>
             <!-- Employee hủy đơn của mình -->
             <AppButton
@@ -258,7 +261,7 @@ onMounted(load)
               size="sm"
               variant="ghost"
               @click="cancelLeave(row as LeaveRequest)"
-            >Hủy</AppButton>
+            >{{ t('leaves.btn_cancel') }}</AppButton>
           </div>
         </td>
       </template>
@@ -266,41 +269,41 @@ onMounted(load)
     <AppPagination :total="total" :current="currentPage" :per-page="perPage" @change="currentPage = $event" @per-page-change="perPage = $event" />
 
     <!-- Create form modal -->
-    <AppModal v-if="showCreateForm" title="Tạo đơn xin nghỉ phép" @close="showCreateForm = false">
+    <AppModal v-if="showCreateForm" :title="t('leaves.modal_create_title')" @close="showCreateForm = false">
       <div class="space-y-4">
         <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium text-slate-700">Loại nghỉ <span class="text-red-500">*</span></label>
+          <label class="text-sm font-medium text-slate-700">{{ t('leaves.leave_type') }} <span class="text-red-500">*</span></label>
           <select v-model="form.leaveTypeId" :class="['h-9 rounded-lg border px-3 text-sm bg-white outline-none', errors.leaveTypeId ? 'border-red-400' : 'border-slate-300 focus:border-emerald-500']">
-            <option value="">-- Chọn loại nghỉ --</option>
+            <option value="">{{ t('leaves.select_leave_type') }}</option>
             <option v-for="t in leaveTypes" :key="t.id" :value="t.id">{{ t.name }} {{ t.isPaid ? '(có lương)' : '(không lương)' }}</option>
           </select>
           <p v-if="errors.leaveTypeId" class="text-xs text-red-500">{{ errors.leaveTypeId }}</p>
         </div>
         <div class="grid grid-cols-2 gap-3">
-          <AppInput id="lv-from" v-model="form.fromDate" label="Từ ngày" type="date" required :error="errors.fromDate" />
-          <AppInput id="lv-to" v-model="form.toDate" label="Đến ngày" type="date" required :error="errors.toDate" />
+          <AppInput id="lv-from" v-model="form.fromDate" :label="t('leaves.from_date')" type="date" required :error="errors.fromDate" />
+          <AppInput id="lv-to" v-model="form.toDate" :label="t('leaves.to_date')" type="date" required :error="errors.toDate" />
         </div>
-        <div v-if="totalDays > 0" class="rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2 text-sm text-emerald-700">
-          Tổng: <strong>{{ totalDays }} ngày</strong>
+        <div v-if="totalDays > 0" class="rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2 text-sm text-emerald-700 font-semibold">
+          {{ t('leaves.total_days_format', { days: totalDays }) }}
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium text-slate-700">Lý do <span class="text-red-500">*</span></label>
-          <textarea v-model="form.reason" rows="3" :class="['w-full rounded-lg border px-3 py-2 text-sm outline-none', errors.reason ? 'border-red-400' : 'border-slate-300 focus:border-emerald-500']" placeholder="Nhập lý do xin nghỉ..." />
+          <label class="text-sm font-medium text-slate-700">{{ t('leaves.reason') }} <span class="text-red-500">*</span></label>
+          <textarea v-model="form.reason" rows="3" :class="['w-full rounded-lg border px-3 py-2 text-sm outline-none', errors.reason ? 'border-red-400' : 'border-slate-300 focus:border-emerald-500']" :placeholder="t('leaves.reason_placeholder')" />
           <p v-if="errors.reason" class="text-xs text-red-500">{{ errors.reason }}</p>
         </div>
       </div>
       <template #footer>
-        <AppButton variant="secondary" @click="showCreateForm = false">Hủy</AppButton>
-        <AppButton :loading="saving" @click="submitLeave">Gửi đơn</AppButton>
+        <AppButton variant="secondary" @click="showCreateForm = false">{{ t('common.cancel') }}</AppButton>
+        <AppButton :loading="saving" @click="submitLeave">{{ t('leaves.btn_submit') }}</AppButton>
       </template>
     </AppModal>
 
     <!-- Approve confirm -->
     <AppConfirm
       v-if="approveTarget"
-      title="Duyệt đơn nghỉ phép"
-      :message="`Duyệt đơn của &quot;${approveTarget.employeeName}&quot; (${approveTarget.totalDays} ngày)?`"
-      confirm-text="Duyệt"
+      :title="t('leaves.confirm_approve_title')"
+      :message="t('leaves.confirm_approve_msg', { name: approveTarget.employeeName, days: approveTarget.totalDays })"
+      :confirm-text="t('leaves.btn_approve')"
       :loading="actionLoading"
       @confirm="doApprove"
       @cancel="approveTarget = null"
@@ -309,9 +312,9 @@ onMounted(load)
     <!-- Reject confirm -->
     <AppConfirm
       v-if="rejectTarget"
-      title="Từ chối đơn nghỉ phép"
-      :message="`Từ chối đơn của &quot;${rejectTarget.employeeName}&quot;?`"
-      confirm-text="Từ chối"
+      :title="t('leaves.confirm_reject_title')"
+      :message="t('leaves.confirm_reject_msg', { name: rejectTarget.employeeName })"
+      :confirm-text="t('leaves.btn_reject')"
       :danger="true"
       :loading="actionLoading"
       @confirm="doReject"

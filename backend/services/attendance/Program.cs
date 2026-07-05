@@ -123,6 +123,25 @@ using (var scope = app.Services.CreateScope())
         "    CREATE UNIQUE INDEX IX_LeaveBalances_EmployeeId_LeaveTypeId_Year ON dbo.LeaveBalances(EmployeeId, LeaveTypeId, Year); " +
         "END"
     );
+
+    // Seed or update LeaveTypes with proper Vietnamese diacritics
+    var leaveTypes = await context.LeaveTypes.ToListAsync();
+    var npn = leaveTypes.FirstOrDefault(t => t.Code == "NPN");
+    if (npn != null) npn.Name = "Nghỉ phép năm";
+    
+    var no = leaveTypes.FirstOrDefault(t => t.Code == "NO");
+    if (no != null) no.Name = "Nghỉ ốm";
+    
+    var nkl = leaveTypes.FirstOrDefault(t => t.Code == "NKL");
+    if (nkl != null) nkl.Name = "Nghỉ không lương";
+    
+    var nts = leaveTypes.FirstOrDefault(t => t.Code == "NTS");
+    if (nts != null) nts.Name = "Nghỉ thai sản";
+    
+    if (npn != null || no != null || nkl != null || nts != null)
+    {
+        await context.SaveChangesAsync();
+    }
 }
 
 app.UseMiddleware<ExceptionMiddleware>();

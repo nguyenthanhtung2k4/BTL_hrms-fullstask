@@ -1,7 +1,8 @@
-﻿<script setup lang="ts">
-import { ref, onMounted } from 'vue'
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
 import { payrollRuleService } from '../../../services/payrollRule.service'
 import { useToastStore } from '../../../stores/toast'
+import { useAuthStore } from '../../../stores/auth'
 import type { PayrollRule, CreatePayrollRuleDto } from '../../../types/payroll.types'
 import PageHeader from '../../../components/layout/PageHeader.vue'
 import AppTable from '../../../components/ui/AppTable.vue'
@@ -14,6 +15,7 @@ import AppPagination from '../../../components/ui/AppPagination.vue'
 import { usePagination } from '../../../composables/usePagination'
 
 const toast = useToastStore()
+const auth = useAuthStore()
 const rules = ref<PayrollRule[]>([])
 const loading = ref(false)
 const showForm = ref(false)
@@ -21,13 +23,35 @@ const editTarget = ref<PayrollRule | null>(null)
 const deleteTarget = ref<PayrollRule | null>(null)
 const deleteLoading = ref(false)
 const saving = ref(false)
-const form = ref({ code: '', name: '', workDayHours: '8', paidLeaveCountsAsWork: true, overtimeRate: '1.5', isActive: true })
+const form = ref({
+  code: '',
+  name: '',
+  workDayHours: '8',
+  paidLeaveCountsAsWork: true,
+  overtimeRate: '1.5',
+  isActive: true,
+  gracePeriodMinutes: '15',
+  lateDeductionRate: '0.05',
+  weekendOvertimeRate: '2.0',
+  holidayOvertimeRate: '3.0',
+  roundingMinutes: '15'
+})
 const errors = ref<Record<string, string>>({})
 
-const columns = [
-  { key: 'code', label: 'Mã' }, { key: 'name', label: 'Tên quy tắc' }, { key: 'hours', label: 'Giờ/ngày' },
-  { key: 'ot', label: 'Hệ số OT' }, { key: 'paid', label: 'Phép CL = ngày công' }, { key: 'status', label: 'Trạng thái' }, { key: 'actions', label: '', class: 'text-right' },
-]
+const columns = computed(() => {
+  const cols: Array<{ key: string; label: string; class?: string }> = [
+    { key: 'code', label: 'Mã' },
+    { key: 'name', label: 'Tên quy tắc' },
+    { key: 'hours', label: 'Giờ/ngày' },
+    { key: 'ot', label: 'Hệ số OT' },
+    { key: 'paid', label: 'Phép CL = ngày công' },
+    { key: 'status', label: 'Trạng thái' }
+  ]
+  if (auth.isPayrollStaff) {
+    cols.push({ key: 'actions', label: '', class: 'text-right' })
+  }
+  return cols
+})
 
 async function load() {
   loading.value = true
@@ -36,8 +60,43 @@ async function load() {
   finally { loading.value = false }
 }
 
-function openCreate() { editTarget.value = null; form.value = { code: '', name: '', workDayHours: '8', paidLeaveCountsAsWork: true, overtimeRate: '1.5', isActive: true }; errors.value = {}; showForm.value = true }
-function openEdit(r: PayrollRule) { editTarget.value = r; form.value = { code: r.code, name: r.name, workDayHours: String(r.workDayHours), paidLeaveCountsAsWork: r.paidLeaveCountsAsWork, overtimeRate: String(r.overtimeRate), isActive: r.isActive }; errors.value = {}; showForm.value = true }
+function openCreate() {
+  editTarget.value = null
+  form.value = {
+    code: '',
+    name: '',
+    workDayHours: '8',
+    paidLeaveCountsAsWork: true,
+    overtimeRate: '1.5',
+    isActive: true,
+    gracePeriodMinutes: '15',
+    lateDeductionRate: '0.05',
+    weekendOvertimeRate: '2.0',
+    holidayOvertimeRate: '3.0',
+    roundingMinutes: '15'
+  }
+  errors.value = {}
+  showForm.value = true
+}
+
+function openEdit(r: PayrollRule) {
+  editTarget.value = r
+  form.value = {
+    code: r.code,
+    name: r.name,
+    workDayHours: String(r.workDayHours),
+    paidLeaveCountsAsWork: r.paidLeaveCountsAsWork,
+    overtimeRate: String(r.overtimeRate),
+    isActive: r.isActive,
+    gracePeriodMinutes: String(r.gracePeriodMinutes ?? 15),
+    lateDeductionRate: String(r.lateDeductionRate ?? 0.05),
+    weekendOvertimeRate: String(r.weekendOvertimeRate ?? 2.0),
+    holidayOvertimeRate: String(r.holidayOvertimeRate ?? 3.0),
+    roundingMinutes: String(r.roundingMinutes ?? 15)
+  }
+  errors.value = {}
+  showForm.value = true
+}
 
 function validate() {
   errors.value = {}
@@ -50,12 +109,33 @@ async function save() {
   if (!validate()) return
   saving.value = true
   try {
-    const dto: CreatePayrollRuleDto = { code: form.value.code, name: form.value.name, workDayHours: Number(form.value.workDayHours), paidLeaveCountsAsWork: form.value.paidLeaveCountsAsWork, overtimeRate: Number(form.value.overtimeRate), isActive: form.value.isActive }
-    if (editTarget.value) { await payrollRuleService.update(editTarget.value.id, dto); toast.success('Cập nhật quy tắc thành công') }
-    else { await payrollRuleService.create(dto); toast.success('Tạo quy tắc thành công') }
-    showForm.value = false; await load()
-  } catch (err: any) { toast.error(err?.response?.data?.message ?? 'Lưu thất bại') }
-  finally { saving.value = false }
+    const dto: CreatePayrollRuleDto = {
+      code: form.value.code,
+      name: form.value.name,
+      workDayHours: Number(form.value.workDayHours),
+      paidLeaveCountsAsWork: form.value.paidLeaveCountsAsWork,
+      overtimeRate: Number(form.value.overtimeRate),
+      isActive: form.value.isActive,
+      gracePeriodMinutes: Number(form.value.gracePeriodMinutes),
+      lateDeductionRate: Number(form.value.lateDeductionRate),
+      weekendOvertimeRate: Number(form.value.weekendOvertimeRate),
+      holidayOvertimeRate: Number(form.value.holidayOvertimeRate),
+      roundingMinutes: Number(form.value.roundingMinutes)
+    }
+    if (editTarget.value) {
+      await payrollRuleService.update(editTarget.value.id, dto)
+      toast.success('Cập nhật quy tắc thành công')
+    } else {
+      await payrollRuleService.create(dto)
+      toast.success('Tạo quy tắc thành công')
+    }
+    showForm.value = false
+    await load()
+  } catch (err: any) {
+    toast.error(err?.response?.data?.message ?? 'Lưu thất bại')
+  } finally {
+    saving.value = false
+  }
 }
 
 async function confirmDelete() {
@@ -74,7 +154,7 @@ onMounted(load)
 <template>
   <div>
     <PageHeader title="Quy tắc tính lương" :breadcrumbs="[{ label: 'Lương & Báo cáo' }, { label: 'Quy tắc lương' }]">
-      <template #actions>
+      <template #actions v-if="auth.isPayrollStaff">
         <AppButton @click="openCreate">
           <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
           Thêm quy tắc
@@ -87,10 +167,16 @@ onMounted(load)
         <td class="px-4 py-3 text-sm font-mono">{{ (row as PayrollRule).code }}</td>
         <td class="px-4 py-3 text-sm font-medium">{{ (row as PayrollRule).name }}</td>
         <td class="px-4 py-3 text-sm">{{ (row as PayrollRule).workDayHours }}h/ngày</td>
-        <td class="px-4 py-3 text-sm">x{{ (row as PayrollRule).overtimeRate }}</td>
+        <td class="px-4 py-3 text-sm">
+          <div class="flex flex-wrap gap-2 text-[11px]">
+            <span class="inline-flex items-center px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-700 font-medium">Thường: x{{ (row as PayrollRule).overtimeRate }}</span>
+            <span class="inline-flex items-center px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-medium border border-emerald-200">Cuối tuần: x{{ (row as PayrollRule).weekendOvertimeRate ?? '2.0' }}</span>
+            <span class="inline-flex items-center px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-700 font-medium border border-amber-200">Ngày lễ: x{{ (row as PayrollRule).holidayOvertimeRate ?? '3.0' }}</span>
+          </div>
+        </td>
         <td class="px-4 py-3 text-sm">{{ (row as PayrollRule).paidLeaveCountsAsWork ? '✓ Có' : '✗ Không' }}</td>
         <td class="px-4 py-3"><AppBadge :status="(row as PayrollRule).isActive ? 'Active' : 'Inactive'" /></td>
-        <td class="px-4 py-3 text-right">
+        <td v-if="auth.isPayrollStaff" class="px-4 py-3 text-right">
           <div class="flex justify-end gap-2">
             <AppButton size="sm" variant="secondary" @click="openEdit(row as PayrollRule)">Sửa</AppButton>
             <AppButton size="sm" variant="danger" @click="deleteTarget = row as PayrollRule">Xóa</AppButton>
@@ -101,21 +187,53 @@ onMounted(load)
     <AppPagination :total="total" :current="currentPage" :per-page="perPage" @change="currentPage = $event" @per-page-change="perPage = $event" />
 
     <AppModal v-if="showForm" :title="editTarget ? 'Sửa quy tắc' : 'Thêm quy tắc tính lương'" @close="showForm = false">
-      <div class="space-y-4">
-        <AppInput id="rule-code" v-model="form.code" label="Mã quy tắc" required :disabled="!!editTarget" :error="errors.code" />
-        <AppInput id="rule-name" v-model="form.name" label="Tên quy tắc" required :error="errors.name" />
-        <div class="grid grid-cols-2 gap-3">
-          <AppInput id="rule-hours" v-model="form.workDayHours" label="Số giờ/ngày công" type="number" />
-          <AppInput id="rule-ot" v-model="form.overtimeRate" label="Hệ số tăng ca (OT)" type="number" hint="VD: 1.5 = x1.5 lương" />
+      <div class="space-y-5 max-h-[70vh] overflow-y-auto pr-1">
+        <!-- 1. Thông tin chung -->
+        <div class="space-y-3">
+          <h4 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-1">1. Thông tin chung</h4>
+          <div class="grid grid-cols-2 gap-3">
+            <AppInput id="rule-code" v-model="form.code" label="Mã quy tắc" required :disabled="!!editTarget" :error="errors.code" placeholder="VD: RULE_STANDARD" />
+            <AppInput id="rule-name" v-model="form.name" label="Tên quy tắc" required :error="errors.name" placeholder="VD: Quy tắc tính lương tiêu chuẩn" />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <AppInput id="rule-hours" v-model="form.workDayHours" label="Số giờ/ngày công" type="number" min="1" max="24" />
+            <AppInput id="rule-round" v-model="form.roundingMinutes" label="Làm tròn công (phút)" type="number" min="0" max="60" placeholder="VD: 15" />
+          </div>
         </div>
-        <label class="flex items-center gap-2 cursor-pointer">
-          <input v-model="form.paidLeaveCountsAsWork" type="checkbox" class="h-4 w-4 accent-emerald-600" />
-          <span class="text-sm">Nghỉ phép có lương tính vào ngày công</span>
-        </label>
-        <label class="flex items-center gap-2 cursor-pointer">
-          <input v-model="form.isActive" type="checkbox" class="h-4 w-4 accent-emerald-600" />
-          <span class="text-sm">Kích hoạt</span>
-        </label>
+
+        <!-- 2. Hệ số tăng ca (OT) -->
+        <div class="space-y-3">
+          <h4 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-1">2. Hệ số tăng ca (OT)</h4>
+          <div class="grid grid-cols-3 gap-3">
+            <AppInput id="rule-ot" v-model="form.overtimeRate" label="OT Ngày thường" type="number" step="0.1" placeholder="1.5" />
+            <AppInput id="rule-ot-weekend" v-model="form.weekendOvertimeRate" label="OT Cuối tuần" type="number" step="0.1" placeholder="2.0" />
+            <AppInput id="rule-ot-holiday" v-model="form.holidayOvertimeRate" label="OT Ngày lễ" type="number" step="0.1" placeholder="3.0" />
+          </div>
+        </div>
+
+        <!-- 3. Quản lý đi muộn / Về sớm -->
+        <div class="space-y-3">
+          <h4 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-1">3. Quản lý đi muộn / Về sớm</h4>
+          <div class="grid grid-cols-2 gap-3">
+            <AppInput id="rule-grace" v-model="form.gracePeriodMinutes" label="Đi muộn cho phép (phút)" type="number" min="0" placeholder="15" />
+            <AppInput id="rule-deduct" v-model="form.lateDeductionRate" label="Hệ số phạt đi muộn" type="number" step="0.01" placeholder="0.05" />
+          </div>
+        </div>
+
+        <!-- 4. Cấu hình khác -->
+        <div class="space-y-3">
+          <h4 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-1">4. Cấu hình khác</h4>
+          <div class="flex flex-col sm:flex-row gap-4 pt-1">
+            <label class="flex items-center gap-2 cursor-pointer select-none">
+              <input v-model="form.paidLeaveCountsAsWork" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 accent-emerald-600" />
+              <span class="text-sm text-slate-700">Nghỉ phép tính vào ngày công</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer select-none">
+              <input v-model="form.isActive" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 accent-emerald-600" />
+              <span class="text-sm text-slate-700">Kích hoạt quy tắc</span>
+            </label>
+          </div>
+        </div>
       </div>
       <template #footer>
         <AppButton variant="secondary" @click="showForm = false">Hủy</AppButton>

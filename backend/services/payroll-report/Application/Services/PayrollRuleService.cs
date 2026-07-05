@@ -30,7 +30,12 @@ public class PayrollRuleService : IPayrollRuleService
                 r.WorkDayHours,
                 r.PaidLeaveCountsAsWork,
                 r.OvertimeRate,
-                r.IsActive
+                r.IsActive,
+                r.GracePeriodMinutes,
+                r.LateDeductionRate,
+                r.WeekendOvertimeRate,
+                r.HolidayOvertimeRate,
+                r.RoundingMinutes
             ))
             .ToListAsync();
 
@@ -52,7 +57,12 @@ public class PayrollRuleService : IPayrollRuleService
             rule.WorkDayHours,
             rule.PaidLeaveCountsAsWork,
             rule.OvertimeRate,
-            rule.IsActive
+            rule.IsActive,
+            rule.GracePeriodMinutes,
+            rule.LateDeductionRate,
+            rule.WeekendOvertimeRate,
+            rule.HolidayOvertimeRate,
+            rule.RoundingMinutes
         );
 
         return Result<PayrollRuleDto>.Success(dto, "Successfully retrieved payroll rule.");
@@ -74,7 +84,12 @@ public class PayrollRuleService : IPayrollRuleService
             WorkDayHours = dto.WorkDayHours,
             PaidLeaveCountsAsWork = dto.PaidLeaveCountsAsWork,
             OvertimeRate = dto.OvertimeRate,
-            IsActive = true
+            IsActive = true,
+            GracePeriodMinutes = dto.GracePeriodMinutes,
+            LateDeductionRate = dto.LateDeductionRate,
+            WeekendOvertimeRate = dto.WeekendOvertimeRate,
+            HolidayOvertimeRate = dto.HolidayOvertimeRate,
+            RoundingMinutes = dto.RoundingMinutes
         };
 
         _dbContext.PayrollRules.Add(rule);
@@ -87,7 +102,12 @@ public class PayrollRuleService : IPayrollRuleService
             rule.WorkDayHours,
             rule.PaidLeaveCountsAsWork,
             rule.OvertimeRate,
-            rule.IsActive
+            rule.IsActive,
+            rule.GracePeriodMinutes,
+            rule.LateDeductionRate,
+            rule.WeekendOvertimeRate,
+            rule.HolidayOvertimeRate,
+            rule.RoundingMinutes
         );
 
         return Result<PayrollRuleDto>.Success(resultDto, "Successfully created payroll rule.");
@@ -106,6 +126,11 @@ public class PayrollRuleService : IPayrollRuleService
         rule.PaidLeaveCountsAsWork = dto.PaidLeaveCountsAsWork;
         rule.OvertimeRate = dto.OvertimeRate;
         rule.IsActive = dto.IsActive;
+        rule.GracePeriodMinutes = dto.GracePeriodMinutes;
+        rule.LateDeductionRate = dto.LateDeductionRate;
+        rule.WeekendOvertimeRate = dto.WeekendOvertimeRate;
+        rule.HolidayOvertimeRate = dto.HolidayOvertimeRate;
+        rule.RoundingMinutes = dto.RoundingMinutes;
 
         _dbContext.PayrollRules.Update(rule);
         await _dbContext.SaveChangesAsync();
@@ -117,7 +142,12 @@ public class PayrollRuleService : IPayrollRuleService
             rule.WorkDayHours,
             rule.PaidLeaveCountsAsWork,
             rule.OvertimeRate,
-            rule.IsActive
+            rule.IsActive,
+            rule.GracePeriodMinutes,
+            rule.LateDeductionRate,
+            rule.WeekendOvertimeRate,
+            rule.HolidayOvertimeRate,
+            rule.RoundingMinutes
         );
 
         return Result<PayrollRuleDto>.Success(resultDto, "Successfully updated payroll rule.");

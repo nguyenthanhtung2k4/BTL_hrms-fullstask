@@ -84,6 +84,15 @@ public class LeaveRequestService : ILeaveRequestService
         var balance = await _dbContext.LeaveBalances
             .FirstOrDefaultAsync(b => b.EmployeeId == employeeId && b.LeaveTypeId == leaveTypeId && b.Year == year);
 
+        var leaveType = await _dbContext.LeaveTypes.FindAsync(leaveTypeId);
+        decimal entitledDays = 12; // Default 12 days for annual leave
+        if (leaveType != null)
+        {
+            if (leaveType.Code == "NTS") entitledDays = 180; // 180 days for maternity leave
+            else if (leaveType.Code == "NO") entitledDays = 30; // 30 days for sick leave
+            else if (leaveType.Code == "NKL") entitledDays = 365; // 365 days for unpaid leave
+        }
+
         if (balance == null)
         {
             balance = new LeaveBalance
@@ -92,11 +101,16 @@ public class LeaveRequestService : ILeaveRequestService
                 EmployeeId = employeeId,
                 LeaveTypeId = leaveTypeId,
                 Year = year,
-                EntitledDays = 12, // Default 12 days
+                EntitledDays = entitledDays,
                 UsedDays = 0,
                 CreatedAt = DateTime.UtcNow
             };
             _dbContext.LeaveBalances.Add(balance);
+            await _dbContext.SaveChangesAsync();
+        }
+        else if (balance.EntitledDays == 12 && entitledDays != 12)
+        {
+            balance.EntitledDays = entitledDays;
             await _dbContext.SaveChangesAsync();
         }
 

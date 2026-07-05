@@ -15,7 +15,7 @@ const route = useRoute()
 const router = useRouter()
 const toast = useToastStore()
 const auth = useAuthStore()
-const { t } = useI18n()
+const { t } = useI18n({ useScope: 'global' })
 
 const payslip = ref<Payslip | null>(null)
 const loading = ref(true)
@@ -231,7 +231,10 @@ onMounted(load)
 </template>
 
 <style scoped>
-.payslip-detail { max-width: 52rem; }
+.payslip-detail {
+  max-width: 52rem;
+  margin: 0 auto;
+}
 
 .skeleton-box {
   background-color: var(--bg-muted);
@@ -295,6 +298,9 @@ onMounted(load)
   padding: 0.875rem 1.5rem;
   border-bottom: 1px solid var(--border);
   font-size: 0.8125rem;
+}
+.payslip-info-row:nth-child(odd) {
+  border-right: 1px solid var(--border);
 }
 .payslip-info-label { color: var(--text-tertiary); }
 .payslip-info-val { color: var(--text-primary); }

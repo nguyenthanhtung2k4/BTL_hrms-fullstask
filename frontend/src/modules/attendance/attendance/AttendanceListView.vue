@@ -331,7 +331,7 @@ onMounted(load)
       </FilterBar>
 
       <!-- Table -->
-      <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm animate-fade-in">
+      <div class="animate-fade-in">
         <AppTable :page-size="10" :columns="recordColumns" :rows="filteredRecords" :loading="loading" row-key="id" empty-text="Không có dữ liệu chấm công">
           <template #default="{ row }">
             <td class="px-5 py-4 text-sm font-semibold text-slate-900">{{ (row as AttendanceRecord).employeeName }}</td>
@@ -418,7 +418,7 @@ onMounted(load)
       </div>
 
       <!-- Table -->
-      <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm animate-fade-in">
+      <div class="animate-fade-in">
         <AppTable :page-size="10" :columns="adjustmentColumns" :rows="adjustments" :loading="loading" row-key="id" empty-text="Không có đơn giải trình nào phù hợp">
           <template #default="{ row }">
             <td class="px-5 py-4 text-sm font-semibold text-slate-900">{{ (row as AttendanceAdjustment).employeeName }}</td>

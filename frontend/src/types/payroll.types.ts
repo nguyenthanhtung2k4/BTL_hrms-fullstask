@@ -40,6 +40,11 @@ export interface PayrollRule {
   overtimeRate: number
   isActive: boolean
   createdAt: string
+  gracePeriodMinutes: number
+  lateDeductionRate: number
+  weekendOvertimeRate: number
+  holidayOvertimeRate: number
+  roundingMinutes: number
 }
 
 export interface CreatePayrollRuleDto {
@@ -49,6 +54,11 @@ export interface CreatePayrollRuleDto {
   paidLeaveCountsAsWork: boolean
   overtimeRate: number
   isActive?: boolean
+  gracePeriodMinutes: number
+  lateDeductionRate: number
+  weekendOvertimeRate: number
+  holidayOvertimeRate: number
+  roundingMinutes: number
 }
 
 // ---

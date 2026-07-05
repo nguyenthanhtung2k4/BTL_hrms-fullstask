@@ -33,7 +33,7 @@ public class AuthService : IAuthService
     public async Task<Result<AuthResponse>> LoginAsync(LoginRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
-            return Result<AuthResponse>.Failure("Email and password are required.");
+            return Result<AuthResponse>.Failure("Email và mật khẩu không được để trống.", "Email và mật khẩu không được để trống.");
 
         var user = await _dbContext.Users
             .Include(u => u.Employee)
@@ -41,13 +41,13 @@ public class AuthService : IAuthService
             .FirstOrDefaultAsync(u => u.Email == request.Email);
 
         if (user == null)
-            return Result<AuthResponse>.Failure("Invalid email or password.");
+            return Result<AuthResponse>.Failure("Email hoặc mật khẩu không chính xác.", "Email hoặc mật khẩu không chính xác.");
 
         if (!user.IsActive)
-            return Result<AuthResponse>.Failure("Account has been deactivated.");
+            return Result<AuthResponse>.Failure("Tài khoản của bạn đã bị khóa.", "Tài khoản của bạn đã bị khóa.");
 
         if (!PasswordHasher.VerifyPassword(request.Password, user.PasswordHash))
-            return Result<AuthResponse>.Failure("Invalid email or password.");
+            return Result<AuthResponse>.Failure("Email hoặc mật khẩu không chính xác.", "Email hoặc mật khẩu không chính xác.");
 
         user.LastLoginAt = DateTime.UtcNow;
 

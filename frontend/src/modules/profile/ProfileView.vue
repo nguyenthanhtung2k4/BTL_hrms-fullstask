@@ -17,7 +17,7 @@ import { useFormGuard } from '../../composables/useFormGuard'
 import { FileText, Eye, Download, Paperclip } from '@lucide/vue'
 import { getAttachmentUrl } from '../../services/apiClient'
 
-const { t } = useI18n()
+const { t } = useI18n({ useScope: 'global' })
 const auth = useAuthStore()
 const toast = useToastStore()
 

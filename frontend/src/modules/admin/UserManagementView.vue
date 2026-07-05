@@ -21,7 +21,7 @@ import AppModal from '../../components/ui/AppModal.vue'
 import AppInput from '../../components/ui/AppInput.vue'
 import AppConfirm from '../../components/ui/AppConfirm.vue'
 
-const { t } = useI18n()
+const { t } = useI18n({ useScope: 'global' })
 const toast = useToastStore()
 const auth = useAuthStore()
 

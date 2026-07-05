@@ -14,7 +14,8 @@ const loading = ref(false)
 async function load() {
   loading.value = true
   try {
-    payslips.value = await payslipService.getMyPayslips()
+    const raw = await payslipService.getMyPayslips()
+    payslips.value = raw.filter(p => p.status !== 'Draft')
   } catch {
     toast.error('Không thể tải phiếu lương')
   } finally {

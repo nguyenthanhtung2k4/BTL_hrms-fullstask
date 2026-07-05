@@ -47,9 +47,9 @@ const previews = computed<PeriodPreview[]>(() => {
 
     const code = `KY-${mm}-${y}`
     const name = nameTemplate.value
-      .replace('{M}', String(m))
-      .replace('{MM}', mm)
-      .replace('{Y}', String(y))
+      .replace(/{+MM}+/gi, mm)
+      .replace(/{+M}+/gi, String(m))
+      .replace(/{+Y}+/gi, String(y))
 
     const fromDate = new Date(y, m - 1, 1).toISOString().split('T')[0]
     const toDate = new Date(y, m, 0).toISOString().split('T')[0]

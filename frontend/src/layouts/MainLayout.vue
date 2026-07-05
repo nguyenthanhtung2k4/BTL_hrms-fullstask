@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Users, Building2, Briefcase, FileText,
   CalendarCheck, Clock, Calendar, ClipboardList, UmbrellaOff,
   BadgeDollarSign, ScrollText, Settings2, PiggyBank, Wallet,
-  BarChart3, LogOut, Menu, Network,
+  BarChart3, LogOut, Menu,
   Sun, Moon, Monitor, ChevronDown, ShieldCheck, UserCircle, Bell
 } from '@lucide/vue'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
@@ -26,9 +26,19 @@ const { t } = useI18n()
 const { themeMode, setTheme } = useTheme()
 const { currentLocale, setLocale } = useLocale()
 
+const isSidebarCollapsed = ref(localStorage.getItem('sidebar_collapsed') === 'true')
 const mobileOpen = ref(false)
 const langDropdownOpen = ref(false)
 const themeDropdownOpen = ref(false)
+
+function handleMenuClick() {
+  if (window.innerWidth < 1024) {
+    mobileOpen.value = !mobileOpen.value
+  } else {
+    isSidebarCollapsed.value = !isSidebarCollapsed.value
+    localStorage.setItem('sidebar_collapsed', String(isSidebarCollapsed.value))
+  }
+}
 
 // GSAP Page Transition Callbacks
 function onBeforeEnter(el: any) {
@@ -204,10 +214,6 @@ const langOptions: { code: LocaleCode; label: string; flag: string }[] = [
   { code: 'en', label: 'English', flag: '🇬🇧' },
 ]
 
-const currentLangFlag = computed(() => {
-  return langOptions.find(l => l.code === currentLocale.value)?.flag ?? '🇻🇳'
-})
-
 async function logout() {
   await auth.logout()
   toast.success(t('auth.loggedOut'))
@@ -226,19 +232,24 @@ async function logout() {
     <aside
       :class="[
         'fixed inset-y-0 left-0 z-40 w-64 flex flex-col transition-transform duration-300',
-        'lg:translate-x-0',
-        mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
+        isSidebarCollapsed ? 'lg:-translate-x-full' : 'lg:translate-x-0',
+        mobileOpen ? 'translate-x-0' : '-translate-x-full',
       ]"
       style="background-color: var(--sidebar-bg); border-right: 1px solid var(--sidebar-border);"
     >
       <!-- Logo -->
       <div class="flex h-16 flex-shrink-0 items-center gap-3 px-5" style="border-bottom: 1px solid var(--sidebar-border);">
         <div class="grid h-9 w-9 place-items-center rounded-xl shadow-sm" style="background: var(--color-primary); color: var(--text-inverse);">
-          <Network :size="18" />
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M11 7V11H14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="18" cy="18" r="4.5" fill="var(--color-primary)" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M16.5 18L17.5 19L19.5 17" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
         </div>
         <div>
-          <div class="text-sm font-bold" style="color: var(--text-primary);">HRMS</div>
-          <div class="text-xs" style="color: var(--text-secondary);">Microservices</div>
+          <div class="text-sm font-bold" style="color: var(--text-primary);">Chấm Công Số</div>
+          <div class="text-xs" style="color: var(--text-secondary);">Cổng thông tin nội bộ</div>
         </div>
       </div>
 
@@ -303,19 +314,24 @@ async function logout() {
     </aside>
 
     <!-- Main -->
-    <div class="lg:pl-64 flex flex-col min-h-screen">
+    <div
+      :class="[
+        'flex flex-col min-h-screen transition-all duration-300',
+        isSidebarCollapsed ? 'lg:pl-0' : 'lg:pl-64'
+      ]"
+    >
       <!-- Topbar -->
       <header
         class="sticky top-0 z-30 flex h-14 items-center gap-3 px-4 backdrop-blur-sm lg:px-6"
         style="border-bottom: 1px solid var(--border); background-color: color-mix(in srgb, var(--bg-surface) 95%, transparent);"
       >
-        <!-- Mobile menu button -->
+        <!-- Toggle menu button -->
         <button
-          class="rounded-lg p-1.5 transition-colors lg:hidden"
-          style="color: var(--text-secondary);"
-          @click="mobileOpen = true"
+          class="toggle-sidebar-btn"
+          :title="isSidebarCollapsed ? 'Mở rộng menu' : 'Thu gọn menu'"
+          @click="handleMenuClick"
         >
-          <Menu :size="20" />
+          <Menu :size="18" />
         </button>
 
         <!-- Title -->
@@ -353,7 +369,27 @@ async function logout() {
               style="color: var(--text-secondary);"
               @click.stop="langDropdownOpen = !langDropdownOpen; themeDropdownOpen = false"
             >
-              <span class="text-base leading-none">{{ currentLangFlag }}</span>
+              <span class="flex items-center">
+                <template v-if="currentLocale === 'vi'">
+                  <svg class="w-5 h-3.5 rounded-sm object-cover shadow-sm border border-black/10" viewBox="0 0 30 20" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="30" height="20" fill="#da251d"/>
+                    <polygon points="15,4 16.18,7.62 20,7.62 16.91,9.88 18.09,13.5 15,11.25 11.91,13.5 13.09,9.88 10,7.62 13.82,7.62" fill="#ffff00"/>
+                  </svg>
+                </template>
+                <template v-else-if="currentLocale === 'en'">
+                  <svg class="w-5 h-3.5 rounded-sm object-cover shadow-sm border border-black/10" viewBox="0 0 20 14" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="20" height="14" fill="#bb133e"/>
+                    <path d="M0,1h20M0,3h20M0,5h20M0,7h20M0,9h20M0,11h20M0,13h20" stroke="#fff" stroke-width="1"/>
+                    <rect width="8" height="8" fill="#002147"/>
+                    <polygon points="1.5,1.8 1.8,2.8 2.8,2.8 2.0,3.4 2.3,4.4 1.5,3.8 0.7,4.4 1.0,3.4 0.2,2.8 1.2,2.8" fill="#fff"/>
+                    <polygon points="4.0,1.8 4.3,2.8 5.3,2.8 4.5,3.4 4.8,4.4 4.0,3.8 3.2,4.4 3.5,3.4 2.7,2.8 3.7,2.8" fill="#fff"/>
+                    <polygon points="6.5,1.8 6.8,2.8 7.8,2.8 7.0,3.4 7.3,4.4 6.5,3.8 5.7,4.4 6.0,3.4 5.2,2.8 6.2,2.8" fill="#fff"/>
+                    <polygon points="1.5,4.3 1.8,5.3 2.8,5.3 2.0,5.9 2.3,6.9 1.5,6.3 0.7,6.9 1.0,5.9 0.2,5.3 1.2,5.3" fill="#fff"/>
+                    <polygon points="4.0,4.3 4.3,5.3 5.3,5.3 4.5,5.9 4.8,6.9 4.0,6.3 3.2,6.9 3.5,5.9 2.7,5.3 3.7,5.3" fill="#fff"/>
+                    <polygon points="6.5,4.3 6.8,5.3 7.8,5.3 7.0,5.9 7.3,6.9 6.5,6.3 5.7,6.9 6.0,5.9 5.2,5.3 6.2,5.3" fill="#fff"/>
+                  </svg>
+                </template>
+              </span>
               <span class="text-xs font-semibold hidden sm:block">{{ currentLocale.toUpperCase() }}</span>
               <ChevronDown :size="12" class="opacity-50" />
             </button>
@@ -375,7 +411,27 @@ async function logout() {
                 }"
                 @click="setLocale(lang.code); langDropdownOpen = false"
               >
-                <span class="text-base">{{ lang.flag }}</span>
+                <span class="flex items-center">
+                  <template v-if="lang.code === 'vi'">
+                    <svg class="w-5 h-3.5 rounded-sm object-cover shadow-sm border border-black/10" viewBox="0 0 30 20" xmlns="http://www.w3.org/2000/svg">
+                      <rect width="30" height="20" fill="#da251d"/>
+                      <polygon points="15,4 16.18,7.62 20,7.62 16.91,9.88 18.09,13.5 15,11.25 11.91,13.5 13.09,9.88 10,7.62 13.82,7.62" fill="#ffff00"/>
+                    </svg>
+                  </template>
+                  <template v-else-if="lang.code === 'en'">
+                    <svg class="w-5 h-3.5 rounded-sm object-cover shadow-sm border border-black/10" viewBox="0 0 20 14" xmlns="http://www.w3.org/2000/svg">
+                      <rect width="20" height="14" fill="#bb133e"/>
+                      <path d="M0,1h20M0,3h20M0,5h20M0,7h20M0,9h20M0,11h20M0,13h20" stroke="#fff" stroke-width="1"/>
+                      <rect width="8" height="8" fill="#002147"/>
+                      <polygon points="1.5,1.8 1.8,2.8 2.8,2.8 2.0,3.4 2.3,4.4 1.5,3.8 0.7,4.4 1.0,3.4 0.2,2.8 1.2,2.8" fill="#fff"/>
+                      <polygon points="4.0,1.8 4.3,2.8 5.3,2.8 4.5,3.4 4.8,4.4 4.0,3.8 3.2,4.4 3.5,3.4 2.7,2.8 3.7,2.8" fill="#fff"/>
+                      <polygon points="6.5,1.8 6.8,2.8 7.8,2.8 7.0,3.4 7.3,4.4 6.5,3.8 5.7,4.4 6.0,3.4 5.2,2.8 6.2,2.8" fill="#fff"/>
+                      <polygon points="1.5,4.3 1.8,5.3 2.8,5.3 2.0,5.9 2.3,6.9 1.5,6.3 0.7,6.9 1.0,5.9 0.2,5.3 1.2,5.3" fill="#fff"/>
+                      <polygon points="4.0,4.3 4.3,5.3 5.3,5.3 4.5,5.9 4.8,6.9 4.0,6.3 3.2,6.9 3.5,5.9 2.7,5.3 3.7,5.3" fill="#fff"/>
+                      <polygon points="6.5,4.3 6.8,5.3 7.8,5.3 7.0,5.9 7.3,6.9 6.5,6.3 5.7,6.9 6.0,5.9 5.2,5.3 6.2,5.3" fill="#fff"/>
+                    </svg>
+                  </template>
+                </span>
                 <span>{{ lang.label }}</span>
                 <span v-if="currentLocale === lang.code" class="ml-auto text-xs">✓</span>
               </button>
@@ -441,6 +497,25 @@ async function logout() {
 </template>
 
 <style scoped>
+.toggle-sidebar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  background-color: transparent;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+.toggle-sidebar-btn:hover {
+  background-color: var(--bg-subtle);
+  color: var(--text-primary);
+}
+
 /* Active sidebar link */
 :deep(.sidebar-active) {
   background-color: var(--sidebar-active) !important;

@@ -9,7 +9,12 @@ public record PayrollRuleDto(
     decimal WorkDayHours,
     bool PaidLeaveCountsAsWork,
     decimal OvertimeRate,
-    bool IsActive
+    bool IsActive,
+    int GracePeriodMinutes,
+    decimal LateDeductionRate,
+    decimal WeekendOvertimeRate,
+    decimal HolidayOvertimeRate,
+    int RoundingMinutes
 );
 
 public record CreatePayrollRuleDto(
@@ -17,7 +22,12 @@ public record CreatePayrollRuleDto(
     string Name,
     decimal WorkDayHours,
     bool PaidLeaveCountsAsWork,
-    decimal OvertimeRate
+    decimal OvertimeRate,
+    int GracePeriodMinutes,
+    decimal LateDeductionRate,
+    decimal WeekendOvertimeRate,
+    decimal HolidayOvertimeRate,
+    int RoundingMinutes
 );
 
 public record UpdatePayrollRuleDto(
@@ -25,5 +35,10 @@ public record UpdatePayrollRuleDto(
     decimal WorkDayHours,
     bool PaidLeaveCountsAsWork,
     decimal OvertimeRate,
-    bool IsActive
+    bool IsActive,
+    int GracePeriodMinutes,
+    decimal LateDeductionRate,
+    decimal WeekendOvertimeRate,
+    decimal HolidayOvertimeRate,
+    int RoundingMinutes
 );

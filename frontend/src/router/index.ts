@@ -248,3 +248,40 @@ router.beforeEach(async (to) => {
     }
   }
 })
+
+// ── Danh sách tiêu đề trang động
+const titleMap: Record<string, string> = {
+  'login': 'Đăng nhập',
+  'dashboard': 'Tổng quan',
+  'notifications': 'Thông báo',
+  'hr-departments': 'Quản lý Phòng ban',
+  'hr-positions': 'Quản lý Chức vụ',
+  'hr-employees': 'Danh sách Nhân viên',
+  'hr-employee-detail': 'Chi tiết Nhân viên',
+  'hr-contracts': 'Quản lý Hợp đồng',
+  'attendance-shifts': 'Quản lý Ca làm việc',
+  'attendance-work-schedules': 'Lịch làm việc',
+  'attendance-checkin': 'Check-In / Check-Out',
+  'attendance-my-attendance': 'Chấm công của tôi',
+  'attendance-records': 'Quản lý Chấm công',
+  'attendance-leaves': 'Đăng ký Nghỉ phép',
+  'attendance-timesheets': 'Bảng công tổng hợp',
+  'payroll-periods': 'Chu kỳ Lương',
+  'payroll-period-detail': 'Chi tiết Chu kỳ Lương',
+  'payroll-rules': 'Quy tắc tính lương',
+  'payroll-allowances': 'Quản lý Phụ cấp',
+  'payroll-deductions': 'Quản lý Khấu trừ',
+  'payroll-payslips': 'Danh sách Phiếu lương',
+  'payroll-payslip-detail': 'Chi tiết Phiếu lương',
+  'payroll-my-payslip': 'Phiếu lương của tôi',
+  'payroll-reports': 'Báo cáo lương',
+  'admin-users': 'Quản lý tài khoản',
+  'profile': 'Hồ sơ cá nhân'
+}
+
+// ── Cập nhật Document Title tự động sau khi chuyển trang
+router.afterEach((to) => {
+  const baseTitle = 'Chấm Công Số'
+  const pageTitle = to.name && titleMap[to.name as string] ? titleMap[to.name as string] : ''
+  document.title = pageTitle ? `${pageTitle} | ${baseTitle}` : baseTitle
+})

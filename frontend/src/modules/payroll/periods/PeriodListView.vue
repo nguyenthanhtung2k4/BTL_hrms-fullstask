@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { payrollPeriodService } from '../../../services/payrollPeriod.service'
 import { payrollRuleService } from '../../../services/payrollRule.service'
 import { useToastStore } from '../../../stores/toast'
+import { useAuthStore } from '../../../stores/auth'
 import type { PayrollPeriod, PayrollRule, CreatePayrollPeriodDto } from '../../../types/payroll.types'
 import PageHeader from '../../../components/layout/PageHeader.vue'
 import AppTable from '../../../components/ui/AppTable.vue'
@@ -18,6 +19,7 @@ import BulkCreatePeriodsModal from './BulkCreatePeriodsModal.vue'
 
 const toast = useToastStore()
 const router = useRouter()
+const auth = useAuthStore()
 
 const periods = ref<PayrollPeriod[]>([])
 const rules = ref<PayrollRule[]>([])
@@ -49,9 +51,15 @@ async function handleBulkCreated(count: number) {
 const searchQuery = ref('')
 
 const filteredPeriods = computed(() => {
+  let list = periods.value
+  
+  if (!auth.isPayrollStaff) {
+    list = list.filter(p => p.status === 'Calculated' || p.status === 'Closed')
+  }
+
   const q = searchQuery.value.trim().toLowerCase()
-  if (!q) return periods.value
-  return periods.value.filter(p =>
+  if (!q) return list
+  return list.filter(p =>
     p.name.toLowerCase().includes(q) ||
     p.code.toLowerCase().includes(q)
   )
@@ -104,11 +112,20 @@ async function confirmBulkDelete() {
 }
 
 // ── Table columns ─────────────────────────────────────────
-const columns = [
-  { key: 'select', label: '', class: 'w-10' },
-  { key: 'name', label: 'Tên kỳ lương' }, { key: 'from', label: 'Từ ngày' }, { key: 'to', label: 'Đến ngày' },
-  { key: 'rule', label: 'Quy tắc' }, { key: 'status', label: 'Trạng thái' }, { key: 'actions', label: '', class: 'text-right' },
-]
+const columns = computed(() => {
+  const cols = [
+    { key: 'name', label: 'Tên kỳ lương' },
+    { key: 'from', label: 'Từ ngày' },
+    { key: 'to', label: 'Đến ngày' },
+    { key: 'rule', label: 'Quy tắc' },
+    { key: 'status', label: 'Trạng thái' },
+    { key: 'actions', label: '', class: 'text-right' }
+  ]
+  if (auth.isPayrollStaff) {
+    cols.unshift({ key: 'select', label: '', class: 'w-10' })
+  }
+  return cols
+})
 
 async function load() {
   loading.value = true
@@ -191,7 +208,7 @@ onMounted(load)
 <template>
   <div>
     <PageHeader title="Kỳ lương" subtitle="Quản lý các kỳ tính lương" :breadcrumbs="[{ label: 'Lương & Báo cáo' }, { label: 'Kỳ lương' }]">
-      <template #actions>
+      <template #actions v-if="auth.isPayrollStaff">
         <AppButton variant="secondary" @click="showBulkCreate = true">
           <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
           Tạo hàng loạt
@@ -241,7 +258,7 @@ onMounted(load)
     <!-- ── Table ── -->
     <AppTable :page-size="10" :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Chưa có kỳ lương nào">
       <!-- Custom header for checkbox column -->
-      <template #header-select>
+      <template #header-select v-if="auth.isPayrollStaff">
         <input
           type="checkbox"
           :checked="isAllSelected"
@@ -253,7 +270,7 @@ onMounted(load)
 
       <template #default="{ row }">
         <!-- Checkbox -->
-        <td class="px-4 py-3 w-10">
+        <td v-if="auth.isPayrollStaff" class="px-4 py-3 w-10">
           <input
             v-if="(row as PayrollPeriod).status !== 'Closed'"
             type="checkbox"
@@ -270,7 +287,7 @@ onMounted(load)
         <td class="px-4 py-3 text-right">
           <div class="flex justify-end gap-1.5">
             <AppButton size="sm" variant="ghost" @click="router.push(`/payroll/periods/${(row as PayrollPeriod).id}`)">Chi tiết</AppButton>
-            <template v-if="(row as PayrollPeriod).status !== 'Closed'">
+            <template v-if="auth.isPayrollStaff && (row as PayrollPeriod).status !== 'Closed'">
               <AppButton size="sm" variant="secondary" @click="editPeriod(row as PayrollPeriod)">Sửa</AppButton>
               <AppButton size="sm" variant="danger" @click="deleteTarget = row as PayrollPeriod">Xóa</AppButton>
             </template>

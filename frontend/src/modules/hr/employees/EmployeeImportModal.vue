@@ -1,17 +1,14 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { parseExcelFile, exportToExcel } from '../../utils/excel'
-import type { PayrollPeriod } from '../../types/payroll.types'
-import type { Employee } from '../../types/hr.types'
-import AppButton from './AppButton.vue'
+import { parseExcelFile, exportToExcel } from '../../../utils/excel'
+import type { Department, Position } from '../../../types/hr.types'
+import AppButton from '../../../components/ui/AppButton.vue'
 
 const props = defineProps<{
   isOpen: boolean
   title: string
-  type: 'allowance' | 'deduction'
-  periods: PayrollPeriod[]
-  employees: Employee[]
-  types: any[] // AllowanceType[] or DeductionType[]
+  departments: Department[]
+  positions: Position[]
 }>()
 
 const emit = defineEmits<{
@@ -30,66 +27,89 @@ const validatedRows = computed(() => {
   if (parsedRows.value.length === 0) return []
 
   return parsedRows.value.map((row, idx) => {
-    // Expected Excel Columns: MaKyLuong, MaNhanVien, MaLoai, SoTien, GhiChu
-    // Allow fallback if user writes slightly different casing
-    const periodCode = (row.MaKyLuong || row.maKyLuong || '').toString().trim()
-    const employeeCode = (row.MaNhanVien || row.maNhanVien || row.MaNV || row.maNV || '').toString().trim()
-    const typeCode = (row.MaLoai || row.maLoai || row.MaLoaiPhuCap || row.MaLoaiKhauTru || '').toString().trim()
-    const amount = Number(row.SoTien || row.soTien || row.Amount || row.amount || 0)
-    const notes = (row.GhiChu || row.ghiChu || row.Notes || row.notes || '').toString().trim()
+    const employeeCode = (row['Mã NV'] || row['maNV'] || row['Mã nhân viên'] || row['maNhanVien'] || '').toString().trim()
+    const fullName = (row['Họ tên'] || row['hoTen'] || row['Tên'] || row['ten'] || row['FullName'] || '').toString().trim()
+    const email = (row['Email'] || row['email'] || '').toString().trim()
+    const phone = (row['SĐT'] || row['sdt'] || row['Phone'] || row['phone'] || '').toString().trim()
+    const deptName = (row['Phòng ban'] || row['phongBan'] || row['Department'] || row['department'] || '').toString().trim()
+    const posName = (row['Chức vụ'] || row['chucVu'] || row['Position'] || row['position'] || '').toString().trim()
+    
+    const rawHireDate = row['Ngày vào'] || row['ngayVao'] || row['HireDate'] || row['hireDate']
+    const rawBirthDate = row['Ngày sinh'] || row['ngaySinh'] || row['DateOfBirth'] || row['dateOfBirth']
+    const rawGender = (row['Giới tính'] || row['gioiTinh'] || row['Gender'] || row['gender'] || '').toString().trim()
 
     let errors: string[] = []
 
-    // 1. Resolve Period
-    const period = props.periods.find(
-      (p) => p.code.toLowerCase() === periodCode.toLowerCase() || p.name.toLowerCase() === periodCode.toLowerCase()
-    )
-    if (!periodCode) {
-      errors.push('Thiếu mã kỳ lương')
-    } else if (!period) {
-      errors.push(`Không tìm thấy kỳ lương: "${periodCode}"`)
-    } else if (period.status === 'Closed') {
-      errors.push(`Kỳ lương "${period.name}" đã đóng, không thể nhập`)
-    }
-
-    // 2. Resolve Employee
-    const employee = props.employees.find(
-      (e) => e.employeeCode.toLowerCase() === employeeCode.toLowerCase()
-    )
+    // 1. Validate employee code, full name, email
     if (!employeeCode) {
       errors.push('Thiếu mã nhân viên')
-    } else if (!employee) {
-      errors.push(`Không tìm thấy mã NV: "${employeeCode}"`)
+    }
+    if (!fullName) {
+      errors.push('Thiếu họ và tên')
+    }
+    if (!email) {
+      errors.push('Thiếu email')
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.push('Email không đúng định dạng')
     }
 
-    // 3. Resolve Type
-    const itemType = props.types.find(
-      (t) => t.code.toLowerCase() === typeCode.toLowerCase() || t.name.toLowerCase() === typeCode.toLowerCase()
+    // 2. Resolve Department
+    const dept = props.departments.find(
+      (d) => d.name.toLowerCase() === deptName.toLowerCase()
     )
-    if (!typeCode) {
-      errors.push(`Thiếu mã loại ${props.type === 'allowance' ? 'phụ cấp' : 'khấu trừ'}`)
-    } else if (!itemType) {
-      errors.push(`Không tìm thấy loại: "${typeCode}"`)
+    if (!deptName) {
+      errors.push('Thiếu phòng ban')
+    } else if (!dept) {
+      errors.push(`Không tìm thấy phòng ban: "${deptName}"`)
     }
 
-    // 4. Validate Amount
-    if (isNaN(amount) || amount <= 0) {
-      errors.push('Số tiền phải là số lớn hơn 0')
+    // 3. Resolve Position
+    const pos = props.positions.find(
+      (p) => p.name.toLowerCase() === posName.toLowerCase()
+    )
+    if (!posName) {
+      errors.push('Thiếu chức vụ')
+    } else if (!pos) {
+      errors.push(`Không tìm thấy chức vụ: "${posName}"`)
     }
+
+    // 4. Resolve Dates
+    let hireDate = new Date().toISOString().split('T')[0]
+    if (rawHireDate) {
+      const d = new Date(rawHireDate)
+      if (isNaN(d.getTime())) {
+        errors.push(`Ngày vào không hợp lệ: "${rawHireDate}"`)
+      } else {
+        hireDate = d.toISOString().split('T')[0]
+      }
+    }
+
+    let dateOfBirth: string | undefined = undefined
+    if (rawBirthDate) {
+      const d = new Date(rawBirthDate)
+      if (isNaN(d.getTime())) {
+        errors.push(`Ngày sinh không hợp lệ: "${rawBirthDate}"`)
+      } else {
+        dateOfBirth = d.toISOString().split('T')[0]
+      }
+    }
+
+    const gender = rawGender === 'Nữ' ? 'Female' : (rawGender === 'Nam' ? 'Male' : 'Other')
 
     return {
       index: idx + 1,
-      periodCode,
-      periodName: period?.name || 'Chưa rõ',
-      payrollPeriodId: period?.id || '',
       employeeCode,
-      employeeName: employee?.fullName || 'Chưa rõ',
-      employeeId: employee?.id || '',
-      typeCode,
-      typeName: itemType?.name || 'Chưa rõ',
-      typeId: itemType?.id || '',
-      amount,
-      notes,
+      fullName,
+      email,
+      phone,
+      departmentName: dept?.name || deptName || 'Chưa rõ',
+      departmentId: dept?.id || '',
+      positionName: pos?.name || posName || 'Chưa rõ',
+      positionId: pos?.id || '',
+      hireDate,
+      dateOfBirth,
+      gender,
+      genderLabel: rawGender || 'Chưa rõ',
       isValid: errors.length === 0,
       errors,
     }
@@ -133,20 +153,33 @@ async function handleFileUpload(event: Event) {
 
 // Download Sample Template
 function downloadTemplate() {
-  const samplePeriod = props.periods[0]?.code || 'JUN-2026'
-  const sampleEmployee = props.employees[0]?.employeeCode || 'NV001'
-  const sampleType = props.types[0]?.code || 'SAMPLE_CODE'
+  const templateData = [
+    {
+      'Mã NV': 'NV001',
+      'Họ tên': 'Nguyễn Văn A',
+      'Email': 'nguyenvana@example.com',
+      'SĐT': '0912345678',
+      'Phòng ban': props.departments[0]?.name || 'Ban Giam Doc',
+      'Chức vụ': props.positions[0]?.name || 'Chuyen Vien NS',
+      'Ngày vào': '2026-07-01',
+      'Ngày sinh': '1995-05-15',
+      'Giới tính': 'Nam'
+    },
+    {
+      'Mã NV': 'NV002',
+      'Họ tên': 'Trần Thị B',
+      'Email': 'tranthib@example.com',
+      'SĐT': '0987654321',
+      'Phòng ban': props.departments[0]?.name || 'Ban Giam Doc',
+      'Chức vụ': props.positions[0]?.name || 'Chuyen Vien NS',
+      'Ngày vào': '2026-07-02',
+      'Ngày sinh': '1998-09-20',
+      'Giới tính': 'Nữ'
+    }
+  ]
 
-  const headers = {
-    MaKyLuong: samplePeriod,
-    MaNhanVien: sampleEmployee,
-    MaLoai: sampleType,
-    SoTien: 500000,
-    GhiChu: 'Nhập mẫu dữ liệu'
-  }
-
-  const fileName = `Mau_Nhap_${props.type === 'allowance' ? 'Phu_Cap' : 'Khau_Tru'}`
-  exportToExcel([headers], fileName, 'Template')
+  const fileName = 'Mau_Nhap_Nhan_Vien'
+  exportToExcel(templateData, fileName, 'Template')
 }
 
 // Submit Import
@@ -165,7 +198,7 @@ function reset() {
 <template>
   <Teleport to="body">
     <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto bg-black/50 backdrop-blur-sm">
-    <div class="relative w-full max-w-4xl bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[85vh]">
+    <div class="relative w-full max-w-5xl bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[85vh]">
       <!-- Header -->
       <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
         <div>
@@ -264,11 +297,11 @@ function reset() {
                 <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
                   <tr>
                     <th class="px-4 py-3 text-center w-12">STT</th>
-                    <th class="px-4 py-3">Kỳ lương</th>
-                    <th class="px-4 py-3">Nhân viên</th>
-                    <th class="px-4 py-3">Phân loại</th>
-                    <th class="px-4 py-3 text-right">Số tiền</th>
-                    <th class="px-4 py-3">Ghi chú</th>
+                    <th class="px-4 py-3">Mã NV</th>
+                    <th class="px-4 py-3">Họ tên / Email</th>
+                    <th class="px-4 py-3">Phòng ban</th>
+                    <th class="px-4 py-3">Chức vụ</th>
+                    <th class="px-4 py-3">Thông tin khác</th>
                     <th class="px-4 py-3">Trạng thái</th>
                   </tr>
                 </thead>
@@ -279,23 +312,17 @@ function reset() {
                     :class="[!row.isValid ? 'bg-rose-50/30' : 'hover:bg-slate-50/50']"
                   >
                     <td class="px-4 py-3 text-slate-400 text-center font-medium">{{ row.index }}</td>
+                    <td class="px-4 py-3 font-mono text-slate-700 font-semibold">{{ row.employeeCode || '—' }}</td>
                     <td class="px-4 py-3">
-                      <div class="font-medium text-slate-800">{{ row.periodName }}</div>
-                      <div class="text-[10px] text-slate-500">Mã: {{ row.periodCode }}</div>
+                      <div class="font-medium text-slate-800">{{ row.fullName || '—' }}</div>
+                      <div class="text-[10px] text-slate-500">{{ row.email || '—' }}</div>
                     </td>
-                    <td class="px-4 py-3">
-                      <div class="font-medium text-slate-800">{{ row.employeeName }}</div>
-                      <div class="text-[10px] text-slate-500">Mã: {{ row.employeeCode }}</div>
-                    </td>
-                    <td class="px-4 py-3">
-                      <div class="font-medium text-slate-800">{{ row.typeName }}</div>
-                      <div class="text-[10px] text-slate-500">Mã: {{ row.typeCode }}</div>
-                    </td>
-                    <td class="px-4 py-3 text-right font-semibold text-slate-800">
-                      {{ row.amount.toLocaleString('vi-VN') }} ₫
-                    </td>
-                    <td class="px-4 py-3 text-slate-500 text-xs italic max-w-[150px] truncate" :title="row.notes">
-                      {{ row.notes || '—' }}
+                    <td class="px-4 py-3 text-slate-700">{{ row.departmentName }}</td>
+                    <td class="px-4 py-3 text-slate-700">{{ row.positionName }}</td>
+                    <td class="px-4 py-3 text-xs text-slate-500 space-y-0.5">
+                      <div>SĐT: {{ row.phone || '—' }}</div>
+                      <div>Vào: {{ row.hireDate }}</div>
+                      <div>Phái: {{ row.genderLabel }}</div>
                     </td>
                     <td class="px-4 py-3">
                       <div v-if="row.isValid" class="flex items-center space-x-1 text-emerald-600 text-xs font-semibold">

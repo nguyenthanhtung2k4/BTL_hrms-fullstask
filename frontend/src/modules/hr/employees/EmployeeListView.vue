@@ -13,6 +13,7 @@ import AppBadge from '../../../components/ui/AppBadge.vue'
 import AppConfirm from '../../../components/ui/AppConfirm.vue'
 import EmployeeFormModal from './EmployeeFormModal.vue'
 import EmployeeStatusModal from './EmployeeStatusModal.vue'
+import EmployeeImportModal from './EmployeeImportModal.vue'
 import { useRouter } from 'vue-router'
 import AppPagination from '../../../components/ui/AppPagination.vue'
 import { usePagination } from '../../../composables/usePagination'
@@ -25,7 +26,6 @@ const toast = useToastStore()
 const router = useRouter()
 
 const selectedIds = ref<string[]>([])
-const fileInput = ref<HTMLInputElement | null>(null)
 const importLoading = ref(false)
 
 const employees = ref<Employee[]>([])
@@ -38,6 +38,7 @@ const filterDept = ref('')
 const filterStatus = ref('')
 
 const showForm = ref(false)
+const showImportModal = ref(false)
 const editTarget = ref<Employee | null>(null)
 const deleteTarget = ref<Employee | null>(null)
 const deleteLoading = ref(false)
@@ -149,78 +150,6 @@ async function confirmBulkDelete() {
   }
 }
 
-async function handleFileUpload(event: Event) {
-  const target = event.target as HTMLInputElement
-  if (!target.files || target.files.length === 0) return
-  const file = target.files[0]
-  
-  importLoading.value = true
-  try {
-    const data = await file.arrayBuffer()
-    const workbook = XLSX.read(data)
-    const worksheet = workbook.Sheets[workbook.SheetNames[0]]
-    const rows = XLSX.utils.sheet_to_json<any>(worksheet)
-    
-    let successCount = 0
-    let errorCount = 0
-    
-    for (const row of rows) {
-      try {
-        const empCode = row['Mã NV']?.toString() || ''
-        const fullName = row['Họ tên']?.toString() || row['Tên']?.toString() || ''
-        const email = row['Email']?.toString() || ''
-        
-        if (!empCode || !fullName || !email) {
-          throw new Error('Thiếu thông tin bắt buộc: Mã NV, Họ tên, hoặc Email.')
-        }
-
-        const deptName = row['Phòng ban']?.toString() || ''
-        const posName = row['Chức vụ']?.toString() || ''
-        
-        const dept = departments.value.find(d => d.name === deptName)
-        const pos = positions.value.find(p => p.name === posName)
-        
-        if (!dept) {
-          throw new Error(`Không tìm thấy phòng ban '${deptName}' trong hệ thống.`)
-        }
-        if (!pos) {
-          throw new Error(`Không tìm thấy chức vụ '${posName}' trong hệ thống.`)
-        }
-
-        const dto: CreateEmployeeDto = {
-          employeeCode: empCode,
-          fullName: fullName,
-          email: email,
-          phone: row['SĐT']?.toString() || '',
-          hireDate: row['Ngày vào'] ? new Date(row['Ngày vào']).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-          departmentId: dept.id,
-          positionId: pos.id,
-          dateOfBirth: row['Ngày sinh'] ? new Date(row['Ngày sinh']).toISOString().split('T')[0] : undefined,
-          gender: row['Giới tính'] === 'Nữ' ? 'Female' : (row['Giới tính'] === 'Nam' ? 'Male' : 'Other')
-        }
-        await employeeService.create(dto)
-        successCount++
-      } catch (err: any) {
-        console.error('Lỗi khi import dòng:', row, err)
-        errorCount++
-      }
-    }
-    
-    if (successCount > 0) {
-      toast.success(`Đã thêm thành công ${successCount} nhân viên`)
-      await load()
-    }
-    if (errorCount > 0) {
-      toast.error(`Có ${errorCount} nhân viên không thể thêm (Vui lòng kiểm tra lại dữ liệu)`)
-    }
-  } catch (err) {
-    console.error(err)
-    toast.error('Lỗi khi đọc file Excel')
-  } finally {
-    importLoading.value = false
-    if (fileInput.value) fileInput.value.value = ''
-  }
-}
 
 async function confirmDelete() {
   if (!deleteTarget.value) return
@@ -233,6 +162,67 @@ async function confirmDelete() {
   finally { deleteLoading.value = false }
 }
 
+async function handleImportSave(validatedRows: any[]) {
+  importLoading.value = true
+  let successCount = 0
+  let failCount = 0
+  
+  for (const row of validatedRows) {
+    try {
+      const dto: CreateEmployeeDto = {
+        employeeCode: row.employeeCode,
+        fullName: row.fullName,
+        email: row.email,
+        phone: row.phone,
+        hireDate: row.hireDate,
+        departmentId: row.departmentId,
+        positionId: row.positionId,
+        dateOfBirth: row.dateOfBirth,
+        gender: row.gender
+      }
+      await employeeService.create(dto)
+      successCount++
+    } catch (err) {
+      console.error('Lỗi khi import nhân viên:', row, err)
+      failCount++
+    }
+  }
+  
+  importLoading.value = false
+  showImportModal.value = false
+  if (failCount === 0) {
+    toast.success(`Đã nhập thành công toàn bộ ${successCount} nhân viên từ Excel.`)
+  } else {
+    toast.warning(`Đã nhập thành công ${successCount} nhân viên. Thất bại ${failCount} dòng.`)
+  }
+  await load()
+}
+
+function exportToExcel() {
+  const dataToExport = filtered.value.map((e) => ({
+    'Mã NV': e.employeeCode,
+    'Họ tên': e.fullName,
+    'Email': e.email,
+    'SĐT': e.phone || '',
+    'Phòng ban': e.departmentName,
+    'Chức vụ': e.positionName,
+    'Ngày vào': e.hireDate ? new Date(e.hireDate).toLocaleDateString('vi-VN') : '',
+    'Trạng thái': e.status === 'Active' ? 'Đang làm' : (e.status === 'Inactive' ? 'Ngưng' : (e.status === 'OnLeave' ? 'Nghỉ phép' : 'Đã nghỉ')),
+  }))
+
+  const worksheet = XLSX.utils.json_to_sheet(dataToExport)
+  const workbook = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Nhân viên')
+  
+  const maxProps = ['Mã NV', 'Họ tên', 'Email', 'SĐT', 'Phòng ban', 'Chức vụ', 'Ngày vào', 'Trạng thái']
+  worksheet['!cols'] = maxProps.map(prop => ({
+    wch: Math.max(...dataToExport.map(row => (row[prop as keyof typeof row] || '').toString().length), prop.length) + 4
+  }))
+
+  XLSX.writeFile(workbook, 'Danh_sach_nhan_vien.xlsx')
+  toast.success('Xuất file Excel thành công')
+}
+
 onMounted(load)
 </script>
 
@@ -240,10 +230,13 @@ onMounted(load)
   <div>
     <PageHeader title="Nhân viên" subtitle="Quản lý hồ sơ nhân viên" :breadcrumbs="[{ label: 'Nhân sự' }, { label: 'Nhân viên' }]">
       <template #actions>
-        <input type="file" ref="fileInput" accept=".xlsx, .xls" class="hidden" @change="handleFileUpload" />
-        <AppButton v-if="auth.isHR || auth.isAdmin" variant="secondary" @click="fileInput?.click()" class="mr-2" :loading="importLoading">
+        <AppButton v-if="auth.isHR || auth.isAdmin" variant="secondary" @click="showImportModal = true" class="mr-2">
           <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
           Nhập Excel
+        </AppButton>
+        <AppButton v-if="auth.isHR || auth.isAdmin" variant="secondary" @click="exportToExcel" class="mr-2">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+          Xuất Excel
         </AppButton>
         <AppButton v-if="auth.isHR || auth.isAdmin" @click="openCreate">
           <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
@@ -318,6 +311,7 @@ onMounted(load)
 
     <EmployeeFormModal v-if="showForm" :edit="editTarget" :departments="departments" :positions="positions" :employees="employees" @close="showForm = false" @saved="load(); showForm = false" />
     <EmployeeStatusModal v-if="statusTarget" :employee="statusTarget" @close="statusTarget = null" @saved="load(); statusTarget = null" />
+    <EmployeeImportModal v-if="showImportModal" :is-open="showImportModal" title="Nhập nhân viên từ Excel" :departments="departments" :positions="positions" @close="showImportModal = false" @import="handleImportSave" />
     <AppConfirm v-if="deleteTarget" title="Xóa nhân viên" :message="`Xóa nhân viên &quot;${deleteTarget.fullName}&quot;?`" confirm-text="Xóa" :danger="true" :loading="deleteLoading" @confirm="confirmDelete" @cancel="deleteTarget = null" />
   </div>
 </template>

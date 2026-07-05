@@ -69,7 +69,7 @@ const auth = useAuthStore()
 const toast = useToastStore()
 const router = useRouter()
 const { isDark } = useTheme()
-const { t } = useI18n()
+const { t } = useI18n({ useScope: 'global' })
 
 const {
   loading,

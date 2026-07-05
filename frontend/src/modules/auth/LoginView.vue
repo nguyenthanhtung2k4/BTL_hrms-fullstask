@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../../stores/auth'
 import { useToastStore } from '../../stores/toast'
 import { useTheme } from '../../composables/useTheme'
+import { extractError } from '../../services/apiClient'
 import { 
   Mail, Lock, LogIn, AlertCircle, X, ArrowRight, 
   Users, Calendar, CreditCard, Layers, Briefcase, BarChart2,
@@ -15,11 +16,20 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
 gsap.registerPlugin(ScrollTrigger)
 
+import { useLocale } from '../../composables/useLocale'
+
 const router = useRouter()
 const auth = useAuthStore()
 const toast = useToastStore()
-const { t } = useI18n()
+const { t } = useI18n({ useScope: 'global' })
 const { cycleTheme, isDark } = useTheme()
+const { currentLocale, setLocale } = useLocale()
+
+const langDropdownOpen = ref(false)
+const langOptions = [
+  { code: 'vi', label: 'Tiếng Việt' },
+  { code: 'en', label: 'English' }
+]
 
 const email = ref('')
 const password = ref('')
@@ -52,7 +62,7 @@ async function handleLogin() {
     else if (auth.isPayrollStaff)  router.push('/payroll/periods')
     else                           router.push('/attendance/checkin')
   } catch (err: any) {
-    errors.value.general = err?.response?.data?.message ?? t('auth.loginError')
+    errors.value.general = extractError(err, t('auth.loginError'))
   }
 }
 
@@ -115,48 +125,48 @@ onMounted(() => {
   )
 
   // 2. Mockup card hovering parallax drift
-  gsap.fromTo('.landing-mockup-card',
+  gsap.fromTo('.landing-mockup-wrapper',
     { y: 0 },
     { y: -15, duration: 6, repeat: -1, yoyo: true, ease: 'sine.inOut' }
   )
 
   // 3. Floating animation for stats/mockup sub-elements
-  gsap.fromTo('.landing-float-badge-1',
+  gsap.fromTo('.landing-badge-wrapper-1',
     { y: 0 }, { y: -8, duration: 3.5, repeat: -1, yoyo: true, ease: 'sine.inOut', delay: 0.5 }
   )
-  gsap.fromTo('.landing-float-badge-2',
+  gsap.fromTo('.landing-badge-wrapper-2',
     { y: 0 }, { y: 8, duration: 4, repeat: -1, yoyo: true, ease: 'sine.inOut', delay: 1 }
   )
 
   // 4. ScrollTrigger: Parallax zoom & rise mockup on scroll
-  gsap.to('.landing-mockup-card', {
+  gsap.to('.landing-mockup-wrapper', {
     scale: 1.06,
     yPercent: -10,
     scrollTrigger: {
       trigger: '.landing-hero-container',
       start: 'top top',
       end: 'bottom top',
-      scrub: true
+      scrub: 1.5
     }
   })
 
   // ScrollTrigger: Parallax float badges on scroll
-  gsap.to('.landing-float-badge-1', {
+  gsap.to('.landing-badge-wrapper-1', {
     yPercent: -45,
     scrollTrigger: {
       trigger: '.landing-hero-container',
       start: 'top top',
       end: 'bottom top',
-      scrub: true
+      scrub: 1.5
     }
   })
-  gsap.to('.landing-float-badge-2', {
+  gsap.to('.landing-badge-wrapper-2', {
     yPercent: 45,
     scrollTrigger: {
       trigger: '.landing-hero-container',
       start: 'top top',
       end: 'bottom top',
-      scrub: true
+      scrub: 1.5
     }
   })
 
@@ -270,7 +280,7 @@ onMounted(() => {
       end: '+=1200',
       pin: true,
       pinSpacing: true,
-      scrub: true,
+      scrub: 1,
       onUpdate: (self) => {
         const idx = Math.min(2, Math.floor(self.progress * 3))
         if (activeShowcase.value !== idx) {
@@ -284,45 +294,126 @@ onMounted(() => {
 
 <template>
   <main class="login-page">
-    <!-- Ambient background blobs -->
-    <div class="login-blob login-blob-1"></div>
-    <div class="login-blob login-blob-2"></div>
-    <div class="login-blob login-blob-3"></div>
+    <!-- Optimized Background Layer Container (Limits compositing to viewport) -->
+    <div class="landing-bg-container">
+      <!-- Ambient background blobs -->
+      <div class="login-blob login-blob-1"></div>
+      <div class="login-blob login-blob-2"></div>
+      <div class="login-blob login-blob-3"></div>
 
-    <!-- Frosted glass background blur filter layer -->
-    <div class="login-bg-blur-overlay"></div>
+      <!-- Frosted glass background blur filter layer -->
+      <div class="login-bg-blur-overlay"></div>
 
-    <!-- Premium tech grid background pattern -->
-    <div class="login-bg-grid"></div>
+      <!-- Premium tech grid background pattern -->
+      <div class="login-bg-grid"></div>
+    </div>
 
     <!-- STICKY HEADER BAR -->
     <header class="landing-header">
       <div class="landing-header-left" @click="scrollToSection('.login-page')" style="cursor: pointer;">
         <div class="landing-logo">
-          <svg class="h-5.5 w-5.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-            <path stroke-linecap="round" stroke-linejoin="round"
-              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+          <svg class="h-5.5 w-5.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M11 7V11H14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="18" cy="18" r="4.5" fill="currentColor" stroke="#ffffff" stroke-width="1.5"/>
+            <path d="M16.5 18L17.5 19L19.5 17" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </div>
         <div class="landing-logo-text">
-          <span class="landing-brand-name">HRMS Portal</span>
-          <span class="landing-brand-subname">Cổng thông tin nội bộ</span>
+          <span class="landing-brand-name">{{ t('auth.brandName') }}</span>
+          <span class="landing-brand-subname">{{ t('auth.subnamePortal') }}</span>
         </div>
       </div>
 
       <nav class="landing-nav-menu">
-        <a href="#" @click.prevent="scrollToSection('.login-page')" class="landing-nav-link">Trang chủ</a>
-        <a href="#" @click.prevent="scrollToSection('.landing-features-section')" class="landing-nav-link">Tính năng</a>
-        <a href="#" @click.prevent="scrollToSection('.landing-showcase-section')" class="landing-nav-link">Trải nghiệm</a>
-        <a href="#" @click.prevent="scrollToSection('.landing-stats-section')" class="landing-nav-link">Số liệu</a>
+        <a href="#" @click.prevent="scrollToSection('.login-page')" class="landing-nav-link">{{ t('auth.home') }}</a>
+        <a href="#" @click.prevent="scrollToSection('.landing-features-section')" class="landing-nav-link">{{ t('auth.features') }}</a>
+        <a href="#" @click.prevent="scrollToSection('.landing-showcase-section')" class="landing-nav-link">{{ t('auth.experience') }}</a>
+        <a href="#" @click.prevent="scrollToSection('.landing-stats-section')" class="landing-nav-link">{{ t('auth.stats') }}</a>
       </nav>
 
       <div class="landing-header-right">
+        <!-- Language Switcher -->
+        <div class="relative">
+          <button
+            class="flex items-center gap-1.5 h-9 rounded-lg px-2.5 text-sm font-medium transition-colors border border-[var(--border-strong)] bg-[var(--bg-surface)] hover:bg-[var(--bg-subtle)]"
+            :title="t('language.switch')"
+            style="color: var(--text-secondary);"
+            @click.stop="langDropdownOpen = !langDropdownOpen"
+          >
+            <span class="flex items-center">
+              <template v-if="currentLocale === 'vi'">
+                <svg class="w-5 h-3.5 rounded-sm object-cover shadow-sm border border-black/10" viewBox="0 0 30 20" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="30" height="20" fill="#da251d"/>
+                  <polygon points="15,4 16.18,7.62 20,7.62 16.91,9.88 18.09,13.5 15,11.25 11.91,13.5 13.09,9.88 10,7.62 13.82,7.62" fill="#ffff00"/>
+                </svg>
+              </template>
+              <template v-else-if="currentLocale === 'en'">
+                <svg class="w-5 h-3.5 rounded-sm object-cover shadow-sm border border-black/10" viewBox="0 0 20 14" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="20" height="14" fill="#bb133e"/>
+                  <path d="M0,1h20M0,3h20M0,5h20M0,7h20M0,9h20M0,11h20M0,13h20" stroke="#fff" stroke-width="1"/>
+                  <rect width="8" height="8" fill="#002147"/>
+                  <polygon points="1.5,1.8 1.8,2.8 2.8,2.8 2.0,3.4 2.3,4.4 1.5,3.8 0.7,4.4 1.0,3.4 0.2,2.8 1.2,2.8" fill="#fff"/>
+                  <polygon points="4.0,1.8 4.3,2.8 5.3,2.8 4.5,3.4 4.8,4.4 4.0,3.8 3.2,4.4 3.5,3.4 2.7,2.8 3.7,2.8" fill="#fff"/>
+                  <polygon points="6.5,1.8 6.8,2.8 7.8,2.8 7.0,3.4 7.3,4.4 6.5,3.8 5.7,4.4 6.0,3.4 5.2,2.8 6.2,2.8" fill="#fff"/>
+                  <polygon points="1.5,4.3 1.8,5.3 2.8,5.3 2.0,5.9 2.3,6.9 1.5,6.3 0.7,6.9 1.0,5.9 0.2,5.3 1.2,5.3" fill="#fff"/>
+                  <polygon points="4.0,4.3 4.3,5.3 5.3,5.3 4.5,5.9 4.8,6.9 4.0,6.3 3.2,6.9 3.5,5.9 2.7,5.3 3.7,5.3" fill="#fff"/>
+                  <polygon points="6.5,4.3 6.8,5.3 7.8,5.3 7.0,5.9 7.3,6.9 6.5,6.3 5.7,6.9 6.0,5.9 5.2,5.3 6.2,5.3" fill="#fff"/>
+                </svg>
+              </template>
+            </span>
+            <span class="text-xs font-semibold hidden sm:block">{{ currentLocale.toUpperCase() }}</span>
+          </button>
+
+          <!-- Language Dropdown -->
+          <div
+            v-if="langDropdownOpen"
+            class="absolute right-0 top-full mt-1.5 z-50 w-40 rounded-xl shadow-lg overflow-hidden border"
+            style="background: var(--bg-surface); border-color: var(--border); box-shadow: var(--shadow-lg);"
+          >
+            <button
+              v-for="lang in langOptions"
+              :key="lang.code"
+              class="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left transition-colors hover:bg-[var(--bg-subtle)]"
+              :style="{
+                background: currentLocale === lang.code ? 'var(--color-primary-light)' : 'transparent',
+                color: currentLocale === lang.code ? 'var(--color-primary-text)' : 'var(--text-primary)',
+                fontWeight: currentLocale === lang.code ? '600' : '400'
+              }"
+              @click="setLocale(lang.code as any); langDropdownOpen = false"
+            >
+              <span class="flex items-center">
+                <template v-if="lang.code === 'vi'">
+                  <svg class="w-5 h-3.5 rounded-sm object-cover shadow-sm border border-black/10" viewBox="0 0 30 20" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="30" height="20" fill="#da251d"/>
+                    <polygon points="15,4 16.18,7.62 20,7.62 16.91,9.88 18.09,13.5 15,11.25 11.91,13.5 13.09,9.88 10,7.62 13.82,7.62" fill="#ffff00"/>
+                  </svg>
+                </template>
+                <template v-else-if="lang.code === 'en'">
+                  <svg class="w-5 h-3.5 rounded-sm object-cover shadow-sm border border-black/10" viewBox="0 0 20 14" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="20" height="14" fill="#bb133e"/>
+                    <path d="M0,1h20M0,3h20M0,5h20M0,7h20M0,9h20M0,11h20M0,13h20" stroke="#fff" stroke-width="1"/>
+                    <rect width="8" height="8" fill="#002147"/>
+                    <polygon points="1.5,1.8 1.8,2.8 2.8,2.8 2.0,3.4 2.3,4.4 1.5,3.8 0.7,4.4 1.0,3.4 0.2,2.8 1.2,2.8" fill="#fff"/>
+                    <polygon points="4.0,1.8 4.3,2.8 5.3,2.8 4.5,3.4 4.8,4.4 4.0,3.8 3.2,4.4 3.5,3.4 2.7,2.8 3.7,2.8" fill="#fff"/>
+                    <polygon points="6.5,1.8 6.8,2.8 7.8,2.8 7.0,3.4 7.3,4.4 6.5,3.8 5.7,4.4 6.0,3.4 5.2,2.8 6.2,2.8" fill="#fff"/>
+                    <polygon points="1.5,4.3 1.8,5.3 2.8,5.3 2.0,5.9 2.3,6.9 1.5,6.3 0.7,6.9 1.0,5.9 0.2,5.3 1.2,5.3" fill="#fff"/>
+                    <polygon points="4.0,4.3 4.3,5.3 5.3,5.3 4.5,5.9 4.8,6.9 4.0,6.3 3.2,6.9 3.5,5.9 2.7,5.3 3.7,5.3" fill="#fff"/>
+                    <polygon points="6.5,4.3 6.8,5.3 7.8,5.3 7.0,5.9 7.3,6.9 6.5,6.3 5.7,6.9 6.0,5.9 5.2,5.3 6.2,5.3" fill="#fff"/>
+                  </svg>
+                </template>
+              </span>
+              <span>{{ lang.label }}</span>
+              <span v-if="currentLocale === lang.code" class="ml-auto text-xs">✓</span>
+            </button>
+          </div>
+        </div>
+
         <button class="theme-toggle-btn" @click="cycleTheme" :title="isDark() ? 'Chế độ sáng' : 'Chế độ tối'" aria-label="Toggle Theme">
           <Sun v-if="isDark()" class="h-4.5 w-4.5 text-secondary hover:text-primary transition-colors" />
           <Moon v-else class="h-4.5 w-4.5 text-secondary hover:text-primary transition-colors" />
         </button>
-        <button class="landing-header-btn btn-login" @click="openModal">Đăng nhập</button>
+        <button class="landing-header-btn btn-login" @click="openModal">{{ t('auth.login') }}</button>
       </div>
     </header>
 
@@ -332,80 +423,80 @@ onMounted(() => {
       <!-- HERO SECTION -->
       <section class="landing-hero-container">
         <div class="landing-hero-left">
-          <div class="landing-badge landing-fade-in">HRMS WORKSPACE · CỔNG THÔNG TIN NỘI BỘ</div>
-          <h1 class="landing-main-title landing-fade-in">
-            Hệ thống quản trị <span class="gradient-text">nhân sự &amp; tiền lương</span> nội bộ
-          </h1>
+          <div class="landing-badge landing-fade-in">{{ t('auth.heroBadge') }}</div>
+          <h1 class="landing-main-title landing-fade-in" v-html="t('auth.heroTitle')"></h1>
           <p class="landing-description landing-fade-in">
-            Cổng thông tin tích hợp dành riêng cho cán bộ nhân viên. Hỗ trợ tự động chấm công trực tuyến, tra cứu phiếu lương cá nhân và quản lý hồ sơ nhân sự bảo mật.
+            {{ t('auth.heroDesc') }}
           </p>
 
           <div class="landing-cta-row landing-fade-in">
             <button class="landing-cta-btn landing-cta-btn--primary" @click="openModal">
-              Đăng nhập hệ thống
+              {{ t('auth.heroCta') }}
               <ArrowRight class="h-4.5 w-4.5" />
             </button>
             <button class="landing-cta-btn landing-cta-btn--secondary" @click="handleContact">
-              Yêu cầu cấp tài khoản
+              {{ t('auth.requestAccount') }}
             </button>
           </div>
         </div>
 
         <div class="landing-hero-right landing-fade-in">
-          <!-- Glassmorphic Dashboard Mockup -->
-          <div class="landing-mockup-card">
-            <!-- Mockup Header -->
-            <div class="mockup-header">
-              <div class="mockup-header-left">
-                <span class="mockup-dot mockup-dot-red"></span>
-                <span class="mockup-dot mockup-dot-yellow"></span>
-                <span class="mockup-dot mockup-dot-green"></span>
-                <span class="mockup-header-title">HRMS PANEL PRO v4.2</span>
-              </div>
-              <div class="mockup-header-right">
-                <span class="mockup-status-pulse"></span>
-                <span class="mockup-status-text">Active System</span>
-              </div>
-            </div>
-
-            <!-- Mockup Content -->
-            <div class="mockup-content">
-              <div class="mockup-sidebar">
-                <div class="mockup-sidebar-item active"></div>
-                <div class="mockup-sidebar-item"></div>
-                <div class="mockup-sidebar-item"></div>
-                <div class="mockup-sidebar-item"></div>
-              </div>
-              <div class="mockup-main">
-                <div class="mockup-stats-row">
-                  <div class="mockup-mini-card">
-                    <span class="mockup-mini-label">Nhân sự hiện diện</span>
-                    <span class="mockup-mini-val text-primary">32 / 48 Online</span>
-                  </div>
-                  <div class="mockup-mini-card">
-                    <span class="mockup-mini-label">Nghỉ phép chờ duyệt</span>
-                    <span class="mockup-mini-val text-warning">3 Yêu cầu</span>
-                  </div>
+          <!-- Glassmorphic Dashboard Mockup Wrapper -->
+          <div class="landing-mockup-wrapper">
+            <div class="landing-mockup-card">
+              <!-- Mockup Header -->
+              <div class="mockup-header">
+                <div class="mockup-header-left">
+                  <span class="mockup-dot mockup-dot-red"></span>
+                  <span class="mockup-dot mockup-dot-yellow"></span>
+                  <span class="mockup-dot mockup-dot-green"></span>
+                  <span class="mockup-header-title">HRMS PANEL PRO v4.2</span>
                 </div>
-                <div class="mockup-dashboard-grid">
-                  <div class="mockup-chart-card">
-                    <span class="mockup-card-label">Tỷ lệ đi làm đúng giờ</span>
-                    <div class="mockup-chart-bars">
-                      <div class="mockup-chart-bar-col"><div class="mockup-chart-bar" style="height: 65%;"></div></div>
-                      <div class="mockup-chart-bar-col"><div class="mockup-chart-bar" style="height: 85%;"></div></div>
-                      <div class="mockup-chart-bar-col"><div class="mockup-chart-bar" style="height: 98%;"></div></div>
-                      <div class="mockup-chart-bar-col"><div class="mockup-chart-bar" style="height: 88%;"></div></div>
-                      <div class="mockup-chart-bar-col"><div class="mockup-chart-bar" style="height: 95%;"></div></div>
+                <div class="mockup-header-right">
+                  <span class="mockup-status-pulse"></span>
+                  <span class="mockup-status-text">Active System</span>
+                </div>
+              </div>
+
+              <!-- Mockup Content -->
+              <div class="mockup-content">
+                <div class="mockup-sidebar">
+                  <div class="mockup-sidebar-item active"></div>
+                  <div class="mockup-sidebar-item"></div>
+                  <div class="mockup-sidebar-item"></div>
+                  <div class="mockup-sidebar-item"></div>
+                </div>
+                <div class="mockup-main">
+                  <div class="mockup-stats-row">
+                    <div class="mockup-mini-card">
+                      <span class="mockup-mini-label">Nhân sự hiện diện</span>
+                      <span class="mockup-mini-val text-primary">32 / 48 Online</span>
+                    </div>
+                    <div class="mockup-mini-card">
+                      <span class="mockup-mini-label">Nghỉ phép chờ duyệt</span>
+                      <span class="mockup-mini-val text-warning">3 Yêu cầu</span>
                     </div>
                   </div>
-                  <div class="mockup-members-card">
-                    <span class="mockup-card-label">Check-In Trực Tuyến</span>
-                    <div class="mockup-members-avatars">
-                      <div class="mockup-avatar" style="background-color: #10b981; color: white;">AN</div>
-                      <div class="mockup-avatar" style="background-color: #3b82f6; color: white;">TH</div>
-                      <div class="mockup-avatar" style="background-color: #8b5cf6; color: white;">MD</div>
+                  <div class="mockup-dashboard-grid">
+                    <div class="mockup-chart-card">
+                      <span class="mockup-card-label">Tỷ lệ đi làm đúng giờ</span>
+                      <div class="mockup-chart-bars">
+                        <div class="mockup-chart-bar-col"><div class="mockup-chart-bar" style="height: 65%;"></div></div>
+                        <div class="mockup-chart-bar-col"><div class="mockup-chart-bar" style="height: 85%;"></div></div>
+                        <div class="mockup-chart-bar-col"><div class="mockup-chart-bar" style="height: 98%;"></div></div>
+                        <div class="mockup-chart-bar-col"><div class="mockup-chart-bar" style="height: 88%;"></div></div>
+                        <div class="mockup-chart-bar-col"><div class="mockup-chart-bar" style="height: 95%;"></div></div>
+                      </div>
                     </div>
-                    <span class="mockup-mini-subtext">+5 checked-in mới</span>
+                    <div class="mockup-members-card">
+                      <span class="mockup-card-label">Check-In Trực Tuyến</span>
+                      <div class="mockup-members-avatars">
+                        <div class="mockup-avatar" style="background-color: #10b981; color: white;">AN</div>
+                        <div class="mockup-avatar" style="background-color: #3b82f6; color: white;">TH</div>
+                        <div class="mockup-avatar" style="background-color: #8b5cf6; color: white;">MD</div>
+                      </div>
+                      <span class="mockup-mini-subtext">+5 checked-in mới</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -413,8 +504,12 @@ onMounted(() => {
           </div>
 
           <!-- Floating Badges -->
-          <div class="landing-float-badge landing-float-badge-1">+20% Hiệu suất</div>
-          <div class="landing-float-badge landing-float-badge-2">98.2% Đúng giờ</div>
+          <div class="landing-badge-wrapper-1">
+            <div class="landing-float-badge landing-float-badge-1">+20% Hiệu suất</div>
+          </div>
+          <div class="landing-badge-wrapper-2">
+            <div class="landing-float-badge landing-float-badge-2">98.2% Đúng giờ</div>
+          </div>
         </div>
       </section>
 
@@ -663,14 +758,16 @@ onMounted(() => {
         <!-- Logo + Title -->
         <div class="login-logo-row login-animate-item">
           <div class="login-logo-icon">
-            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round"
-                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+            <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M11 7V11H14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="18" cy="18" r="4.5" fill="currentColor" stroke="#ffffff" stroke-width="1.5"/>
+              <path d="M16.5 18L17.5 19L19.5 17" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </div>
           <div>
-            <h1 class="login-title">Đăng nhập HRMS</h1>
-            <p class="login-subtitle">Nhập tài khoản nội bộ được cấp để truy cập</p>
+            <h1 class="login-title">{{ t('auth.titlePortal') }}</h1>
+            <p class="login-subtitle">{{ t('auth.subtitlePortal') }}</p>
           </div>
         </div>
 
@@ -754,6 +851,18 @@ onMounted(() => {
   transition: background-color var(--transition-base);
 }
 
+/* Optimized Background Layer Container */
+.landing-bg-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100vh;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+}
+
 /* Ambient background blobs */
 .login-blob {
   position: absolute;
@@ -790,19 +899,19 @@ onMounted(() => {
 }
 
 @keyframes float-blob-1 {
-  0% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(40px, -60px) scale(1.05); }
-  100% { transform: translate(0, 0) scale(1); }
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(40px, -60px, 0) scale(1.05); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
 }
 @keyframes float-blob-2 {
-  0% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(-50px, 50px) scale(0.95); }
-  100% { transform: translate(0, 0) scale(1); }
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-50px, 50px, 0) scale(0.95); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
 }
 @keyframes float-blob-3 {
-  0% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(30px, 30px) scale(1.1); }
-  100% { transform: translate(0, 0) scale(1); }
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(30px, 30px, 0) scale(1.1); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
 }
 
 /* Frosted glass background overlay */
@@ -1084,9 +1193,25 @@ onMounted(() => {
   position: relative;
 }
 
+/* Floating badges inside Hero Wrapper */
+.landing-badge-wrapper-1 {
+  position: absolute;
+  top: 10%;
+  left: -10%;
+  z-index: 15;
+  will-change: transform;
+}
+.landing-badge-wrapper-2 {
+  position: absolute;
+  bottom: 15%;
+  right: -8%;
+  z-index: 15;
+  will-change: transform;
+}
+
 /* Floating badges inside Hero */
 .landing-float-badge {
-  position: absolute;
+  position: relative;
   padding: 0.625rem 1rem;
   font-size: 0.6875rem;
   font-weight: 700;
@@ -1097,15 +1222,21 @@ onMounted(() => {
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   box-shadow: var(--shadow-md);
-  z-index: 15;
   transition: transform var(--transition-fast);
   will-change: transform;
 }
 .landing-float-badge:hover {
   transform: scale(1.05) translateY(-2px);
 }
-.landing-float-badge-1 { top: 10%; left: -10%; color: var(--color-success-text); }
-.landing-float-badge-2 { bottom: 15%; right: -8%; color: var(--color-primary-text); }
+.landing-float-badge-1 { color: var(--color-success-text); }
+.landing-float-badge-2 { color: var(--color-primary-text); }
+
+/* Dashboard Mockup Wrapper */
+.landing-mockup-wrapper {
+  width: 100%;
+  max-width: 32rem;
+  will-change: transform;
+}
 
 /* Dashboard Mockup styling */
 .landing-mockup-card {
@@ -1370,7 +1501,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  transition: all var(--transition-base);
+  transition: border-color var(--transition-base), background-color var(--transition-base), box-shadow var(--transition-base);
   will-change: transform, opacity;
 }
 .feature-card:hover {
@@ -1963,7 +2094,8 @@ onMounted(() => {
   border: 1px solid var(--border-strong);
   background-color: var(--bg-surface);
   color: var(--text-primary);
-  padding: 0 1rem 0 2.875rem;
+  padding-left: 2.875rem !important;
+  padding-right: 1.25rem !important;
   font-size: 0.9375rem;
   font-weight: 500;
   outline: none;

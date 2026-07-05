@@ -6,7 +6,9 @@ import { shiftService } from '../../../services/shift.service'
 import { departmentService } from '../../../services/department.service'
 import { useAuthStore } from '../../../stores/auth'
 import { useToastStore } from '../../../stores/toast'
-import type { WorkSchedule, Shift } from '../../../types/attendance.types'
+import { attendanceService } from '../../../services/attendance.service'
+import { exportToExcel } from '../../../utils/excel'
+import type { WorkSchedule, Shift, AttendanceRecord } from '../../../types/attendance.types'
 import type { Employee, Department } from '../../../types/hr.types'
 import PageHeader from '../../../components/layout/PageHeader.vue'
 import AppTable from '../../../components/ui/AppTable.vue'
@@ -28,7 +30,8 @@ import {
   ChevronRight,
   Grid,
   List,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Download
 } from '@lucide/vue'
 
 const auth = useAuthStore()
@@ -37,6 +40,7 @@ const schedules = ref<WorkSchedule[]>([])
 const employees = ref<Employee[]>([])
 const shifts = ref<Shift[]>([])
 const departments = ref<Department[]>([])
+const attendanceRecords = ref<AttendanceRecord[]>([])
 const loading = ref(false)
 const showForm = ref(false)
 const showImport = ref(false)
@@ -61,33 +65,61 @@ function getMonday(d: Date) {
   return monday
 }
 
-const currentWeekStart = ref(getMonday(new Date()))
+const currentDate = ref(new Date())
+const gridRangeMode = ref<'week' | 'month'>('week')
 
-const currentWeekDays = computed(() => {
-  const start = new Date(currentWeekStart.value)
-  const days = []
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(start)
-    d.setDate(start.getDate() + i)
-    days.push(d)
-  }
-  return days
+const currentWeekStart = computed(() => {
+  return getMonday(currentDate.value)
 })
 
-function prevWeek() {
-  const d = new Date(currentWeekStart.value)
-  d.setDate(d.getDate() - 7)
-  currentWeekStart.value = d
+const currentDays = computed(() => {
+  if (gridRangeMode.value === 'week') {
+    const start = new Date(currentWeekStart.value)
+    const days = []
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(start)
+      d.setDate(start.getDate() + i)
+      days.push(d)
+    }
+    return days
+  } else {
+    const year = currentDate.value.getFullYear()
+    const month = currentDate.value.getMonth()
+    const daysInMonth = new Date(year, month + 1, 0).getDate()
+    const days = []
+    for (let i = 1; i <= daysInMonth; i++) {
+      days.push(new Date(year, month, i))
+    }
+    return days
+  }
+})
+
+function prevPeriod() {
+  if (gridRangeMode.value === 'week') {
+    const d = new Date(currentDate.value)
+    d.setDate(d.getDate() - 7)
+    currentDate.value = d
+  } else {
+    const d = new Date(currentDate.value)
+    d.setMonth(d.getMonth() - 1)
+    currentDate.value = d
+  }
 }
 
-function nextWeek() {
-  const d = new Date(currentWeekStart.value)
-  d.setDate(d.getDate() + 7)
-  currentWeekStart.value = d
+function nextPeriod() {
+  if (gridRangeMode.value === 'week') {
+    const d = new Date(currentDate.value)
+    d.setDate(d.getDate() + 7)
+    currentDate.value = d
+  } else {
+    const d = new Date(currentDate.value)
+    d.setMonth(d.getMonth() + 1)
+    currentDate.value = d
+  }
 }
 
 function goToday() {
-  currentWeekStart.value = getMonday(new Date())
+  currentDate.value = new Date()
 }
 
 function formatDateToYMD(date: Date) {
@@ -189,19 +221,23 @@ async function load() {
   try {
     // Quyền view-all: Admin, HR, Manager, PayrollStaff
     const canViewAll = auth.isManager || auth.isPayrollStaff
-    const params = canViewAll ? undefined : { employeeId: auth.employeeId }
-    const resSchedules = await workScheduleService.getAll(params || {})
-    schedules.value = resSchedules
+    const params = canViewAll ? {} : { employeeId: auth.employeeId ?? undefined }
     
-    // Luôn tải danh sách nhân viên & phòng ban để phục vụ mapping lọc
-    const [resEmployees, resShifts, resDepts] = await Promise.all([
-      employeeService.getAll(),
+    // Tải song song tất cả các nguồn dữ liệu bao gồm cả bảng chấm công
+    const [resSchedules, resEmployees, resShifts, resDepts, resAttendance] = await Promise.all([
+      workScheduleService.getAll(params),
+      canViewAll
+        ? employeeService.getAll()
+        : (auth.employeeId ? employeeService.getById(auth.employeeId).then((e) => [e]) : Promise.resolve([])),
       shiftService.getAll(),
-      departmentService.getAll()
+      departmentService.getAll(),
+      canViewAll ? attendanceService.getAll() : attendanceService.getMyRecords()
     ])
+    schedules.value = resSchedules
     employees.value = resEmployees
     shifts.value = resShifts
     departments.value = resDepts
+    attendanceRecords.value = resAttendance
   } catch {
     toast.error('Không thể tải dữ liệu lịch làm việc')
   } finally {
@@ -324,28 +360,88 @@ function fmt(d: string) {
   return new Date(d).toLocaleDateString('vi-VN')
 }
 
-// Styling classes for status badges
-function getStatusClass(status: string) {
-  switch (status) {
-    case 'Completed':
-      return 'bg-emerald-50 text-emerald-700 border-emerald-150'
-    case 'Absent':
-      return 'bg-rose-50 text-rose-700 border-rose-150'
-    case 'Planned':
-    default:
-      return 'bg-blue-50 text-blue-700 border-blue-150'
+// Dynamic status resolver based on actual attendance records
+function getShiftExpectedMinutes(shift: Shift): number {
+  if (!shift || !shift.startTime || !shift.endTime) return 480 // default 8 hours
+  const [startH, startM] = shift.startTime.split(':').map(Number)
+  const [endH, endM] = shift.endTime.split(':').map(Number)
+  
+  let startMinutes = startH * 60 + startM
+  let endMinutes = endH * 60 + endM
+  
+  if (endMinutes < startMinutes) {
+    endMinutes += 24 * 60
   }
+  
+  const breakMins = shift.breakMinutes || 0
+  return endMinutes - startMinutes - breakMins
 }
 
-function getStatusLabel(status: string) {
-  switch (status) {
-    case 'Completed':
-      return 'Completed'
-    case 'Absent':
-      return 'Absent'
-    case 'Planned':
-    default:
-      return 'Planned'
+function getScheduleStatusInfo(schedule: WorkSchedule) {
+  const record = attendanceRecords.value.find(
+    (r) => r.employeeId === schedule.employeeId && r.workDate === schedule.workDate
+  )
+  
+  const scheduleDate = new Date(schedule.workDate)
+  scheduleDate.setHours(0, 0, 0, 0)
+  
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  
+  if (record) {
+    if (record.checkInAt && record.checkOutAt) {
+      const shift = shifts.value.find(s => s.id === schedule.shiftId)
+      const expected = shift ? getShiftExpectedMinutes(shift) : 480
+      
+      if (record.workedMinutes >= expected) {
+        return {
+          status: 'Completed',
+          label: 'Completed',
+          class: 'bg-emerald-50 text-emerald-700 border-emerald-150'
+        }
+      } else {
+        return {
+          status: 'Incomplete',
+          label: 'Thiếu giờ',
+          class: 'bg-indigo-50 text-indigo-700 border-indigo-150'
+        }
+      }
+    } else if (record.checkInAt) {
+      return {
+        status: 'CheckedIn',
+        label: 'Đã check-in',
+        class: 'bg-amber-50 text-amber-700 border-amber-150'
+      }
+    }
+  }
+  
+  if (scheduleDate < today) {
+    return {
+      status: 'Absent',
+      label: 'Absent',
+      class: 'bg-rose-50 text-rose-700 border-rose-150'
+    }
+  }
+  
+  const schedStatus = schedule.status || 'Planned'
+  if (schedStatus === 'Completed') {
+    return {
+      status: 'Completed',
+      label: 'Completed',
+      class: 'bg-emerald-50 text-emerald-700 border-emerald-150'
+    }
+  } else if (schedStatus === 'Absent') {
+    return {
+      status: 'Absent',
+      label: 'Absent',
+      class: 'bg-rose-50 text-rose-700 border-rose-150'
+    }
+  }
+  
+  return {
+    status: 'Planned',
+    label: 'Planned',
+    class: 'bg-blue-50 text-blue-700 border-blue-150'
   }
 }
 
@@ -358,6 +454,51 @@ function findSchedule(employeeId: string, date: Date): WorkSchedule | undefined 
 }
 
 const { currentPage, perPage, paginatedData, total } = usePagination(filtered)
+
+function exportExcel() {
+  try {
+    if (viewMode.value === 'grid') {
+      // Export Matrix
+      const exportData = filteredEmployeesForGrid.value.map(emp => {
+        const rowData: Record<string, any> = {
+          'Mã nhân viên': emp.employeeCode || '',
+          'Họ tên': emp.fullName,
+          'Phòng ban': emp.departmentName || 'Chưa gán phòng'
+        }
+        
+        currentDays.value.forEach(day => {
+          const sched = findSchedule(emp.id, day)
+          const colHeader = `${day.getDate()}/${day.getMonth() + 1}/${day.getFullYear()}`
+          rowData[colHeader] = sched ? `${sched.shiftName} (${getScheduleStatusInfo(sched).label})` : '—'
+        })
+        
+        return rowData
+      })
+      
+      const rangeText = gridRangeMode.value === 'week' ? 'Tuan' : 'Thang'
+      const dateStartText = formatDateToYMD(currentDays.value[0])
+      const dateEndText = formatDateToYMD(currentDays.value[currentDays.value.length - 1])
+      exportToExcel(exportData, `Lich_Lam_Viec_${rangeText}_${dateStartText}_den_${dateEndText}`, 'Lịch làm việc')
+    } else {
+      // Export Flat List
+      const exportData = filtered.value.map((s, idx) => {
+        const emp = employees.value.find(e => e.id === s.employeeId)
+        return {
+          'STT': idx + 1,
+          'Mã nhân viên': emp?.employeeCode || '—',
+          'Nhân viên': s.employeeName || '',
+          'Ca làm việc': s.shiftName || '',
+          'Ngày làm việc': fmt(s.workDate),
+          'Trạng thái': getScheduleStatusInfo(s).label
+        }
+      })
+      exportToExcel(exportData, 'Danh_Sach_Lich_Lam_Viec', 'Danh sách')
+    }
+    toast.success('Xuất file Excel thành công')
+  } catch (err: any) {
+    toast.error(err.message || 'Xuất file Excel thất bại')
+  }
+}
 
 onMounted(load)
 </script>
@@ -387,6 +528,11 @@ onMounted(load)
             </button>
           </div>
 
+          <AppButton variant="secondary" @click="exportExcel" class="flex items-center gap-1.5 border-slate-300 hover:border-emerald-300 mr-1">
+            <Download class="h-4 w-4 text-emerald-600" />
+            <span>Xuất Excel</span>
+          </AppButton>
+
           <template v-if="auth.isManager">
             <AppButton variant="secondary" @click="showImport = true" class="flex items-center gap-1.5 border-slate-300 hover:border-emerald-300">
               <FileSpreadsheet class="h-4 w-4 text-emerald-600" />
@@ -412,7 +558,7 @@ onMounted(load)
               v-model="search"
               type="text"
               placeholder="Tìm nhân viên, ca, ngày..."
-              class="h-9 w-full rounded-xl border border-slate-250 bg-slate-50/50 px-3 pl-9 text-xs outline-none transition-all focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 placeholder:text-slate-400"
+              class="h-9 w-full rounded-xl border border-slate-250 bg-slate-50/50 pl-9 pr-3 text-xs outline-none transition-all focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 placeholder:text-slate-400"
             />
             <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
               <Search class="h-3.5 w-3.5" />
@@ -464,15 +610,33 @@ onMounted(load)
           </div>
         </div>
 
-        <!-- Right: Week Nav (Grid View only) -->
+        <!-- Right: Period Nav (Grid View only) -->
         <div v-if="viewMode === 'grid'" class="flex items-center gap-2">
-          <button @click="prevWeek" class="h-8.5 w-8.5 flex items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-emerald-600 hover:border-emerald-300 hover:bg-emerald-50/20 transition-all" title="Tuần trước">
+          <!-- Toggle Week / Month -->
+          <div class="inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200 mr-2 shadow-sm">
+            <button
+              type="button"
+              @click="gridRangeMode = 'week'"
+              :class="['px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer', gridRangeMode === 'week' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']"
+            >
+              Tuần
+            </button>
+            <button
+              type="button"
+              @click="gridRangeMode = 'month'"
+              :class="['px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer', gridRangeMode === 'month' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700']"
+            >
+              Tháng
+            </button>
+          </div>
+
+          <button @click="prevPeriod" class="h-8.5 w-8.5 flex items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-emerald-600 hover:border-emerald-300 hover:bg-emerald-50/20 transition-all cursor-pointer" :title="gridRangeMode === 'week' ? 'Tuần trước' : 'Tháng trước'">
             <ChevronLeft class="h-4.5 w-4.5" />
           </button>
-          <button @click="goToday" class="h-8.5 px-3 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:text-emerald-600 hover:border-emerald-300 hover:bg-emerald-50/20 transition-all">
-            Tuần này
+          <button @click="goToday" class="h-8.5 px-3 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:text-emerald-600 hover:border-emerald-300 hover:bg-emerald-50/20 transition-all cursor-pointer">
+            {{ gridRangeMode === 'week' ? 'Tuần này' : 'Tháng này' }}
           </button>
-          <button @click="nextWeek" class="h-8.5 w-8.5 flex items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-emerald-600 hover:border-emerald-300 hover:bg-emerald-50/20 transition-all" title="Tuần sau">
+          <button @click="nextPeriod" class="h-8.5 w-8.5 flex items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-emerald-600 hover:border-emerald-300 hover:bg-emerald-50/20 transition-all cursor-pointer" :title="gridRangeMode === 'week' ? 'Tuần sau' : 'Tháng sau'">
             <ChevronRight class="h-4.5 w-4.5" />
           </button>
         </div>
@@ -482,7 +646,7 @@ onMounted(load)
       <div v-if="viewMode === 'grid'" class="flex items-center justify-between border-t border-slate-100 pt-2.5">
         <div class="text-xs font-bold text-slate-700 flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
           <Calendar class="h-4 w-4 text-emerald-600" />
-          <span>Lịch làm việc từ <span class="text-emerald-700 font-extrabold">{{ fmt(formatDateToYMD(currentWeekDays[0])) }}</span> đến <span class="text-emerald-700 font-extrabold">{{ fmt(formatDateToYMD(currentWeekDays[6])) }}</span></span>
+          <span>Lịch làm việc từ <span class="text-emerald-700 font-extrabold">{{ fmt(formatDateToYMD(currentDays[0])) }}</span> đến <span class="text-emerald-700 font-extrabold">{{ fmt(formatDateToYMD(currentDays[currentDays.length - 1])) }}</span></span>
         </div>
         <div class="text-[11px] text-slate-400 font-medium">
           Mẹo: Nhấp dấu cộng (+) để thêm lịch nhanh cho nhân viên
@@ -490,7 +654,7 @@ onMounted(load)
       </div>
     </div>
 
-    <!-- 1. BẢNG TUẦN (GRID VIEW) -->
+    <!-- 1. BẢNG TUẦN/THÁNG (GRID VIEW) -->
     <div v-if="viewMode === 'grid'" class="overflow-x-auto rounded-2xl border border-slate-150 shadow-sm bg-white">
       <table class="min-w-full divide-y divide-slate-150">
         <thead class="bg-slate-50/70 backdrop-blur-sm">
@@ -498,15 +662,15 @@ onMounted(load)
             <th class="px-4 py-4 text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider sticky left-0 bg-slate-50/95 border-r border-slate-200 z-10 w-[240px] shadow-[2px_0_5px_rgba(0,0,0,0.02)]">
               Nhân viên
             </th>
-            <th v-for="(day, index) in currentWeekDays" :key="index" class="px-3 py-4 text-center text-xs font-bold border-r border-slate-250 last:border-r-0 min-w-[140px]">
-              <div class="text-slate-600 font-semibold">{{ ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'][index] }}</div>
+            <th v-for="(day, index) in currentDays" :key="index" :class="['px-3 py-4 text-center text-xs font-bold border-r border-slate-250 last:border-r-0', gridRangeMode === 'month' ? 'min-w-[110px]' : 'min-w-[140px]']">
+              <div class="text-slate-600 font-semibold">{{ ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'][day.getDay()] }}</div>
               <div class="text-[10px] text-slate-400 font-bold mt-0.5">{{ day.getDate() }}/{{ day.getMonth() + 1 }}</div>
             </th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-150 bg-white">
           <tr v-if="filteredEmployeesForGrid.length === 0">
-            <td colspan="8" class="px-6 py-12 text-center text-sm text-slate-400 font-medium">
+            <td :colspan="currentDays.length + 1" class="px-6 py-12 text-center text-sm text-slate-400 font-medium">
               Không tìm thấy nhân viên phù hợp bộ lọc.
             </td>
           </tr>
@@ -519,7 +683,7 @@ onMounted(load)
                 </div>
                 <div class="min-w-0">
                   <div class="font-bold text-slate-800 text-sm truncate" :title="emp.fullName">
-                    {{ emp.fullName }}
+                     {{ emp.fullName }}
                   </div>
                   <div class="text-[10px] text-slate-400 font-bold tracking-wide mt-0.5 uppercase">
                     {{ emp.departmentName || 'Chưa gán phòng' }}
@@ -529,13 +693,13 @@ onMounted(load)
             </td>
 
             <!-- Các cột ca làm của các thứ -->
-            <td v-for="(day, idx) in currentWeekDays" :key="idx" class="px-2.5 py-3.5 border-r border-slate-100 last:border-r-0 text-center">
+            <td v-for="(day, idx) in currentDays" :key="idx" class="px-2.5 py-3.5 border-r border-slate-100 last:border-r-0 text-center">
               <div v-if="findSchedule(emp.id, day)" class="group/cell relative p-2.5 rounded-xl border border-slate-200 bg-white shadow-sm flex flex-col items-center gap-1.5 transition-all hover:border-emerald-400 hover:shadow-md hover:-translate-y-0.5">
                 <div class="text-[11px] font-bold text-slate-700 truncate max-w-full">
                   {{ findSchedule(emp.id, day)?.shiftName }}
                 </div>
-                <span :class="['inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider border', getStatusClass(findSchedule(emp.id, day)!.status)]">
-                  {{ getStatusLabel(findSchedule(emp.id, day)!.status) }}
+                <span :class="['inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider border', getScheduleStatusInfo(findSchedule(emp.id, day)!).class]">
+                  {{ getScheduleStatusInfo(findSchedule(emp.id, day)!).label }}
                 </span>
 
                 <!-- Quick actions on cell hover -->
@@ -606,9 +770,9 @@ onMounted(load)
           </td>
           <td class="px-4 py-3 text-sm">
             <span
-              :class="['inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border', getStatusClass((row as WorkSchedule).status)]"
+              :class="['inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border', getScheduleStatusInfo(row as WorkSchedule).class]"
             >
-              {{ getStatusLabel((row as WorkSchedule).status) }}
+              {{ getScheduleStatusInfo(row as WorkSchedule).label }}
             </span>
           </td>
           <td v-if="auth.isManager" class="px-4 py-3 text-right">

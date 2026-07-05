@@ -72,7 +72,7 @@ onMounted(load)
     <!-- Search -->
     <div class="mb-4 relative">
       <input v-model="search" type="text" placeholder="Tìm theo tên, mã NV, chức vụ..."
-        class="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 pl-9 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100" />
+        class="h-9 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100" />
       <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

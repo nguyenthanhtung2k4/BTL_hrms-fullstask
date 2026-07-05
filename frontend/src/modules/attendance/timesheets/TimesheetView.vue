@@ -22,7 +22,7 @@ import { apiClient, extractData } from '../../../services/apiClient'
 
 const auth = useAuthStore()
 const toast = useToastStore()
-const { t } = useI18n()
+const { t } = useI18n({ useScope: 'global' })
 
 const WORK_DAY_MINUTES = 480
 
