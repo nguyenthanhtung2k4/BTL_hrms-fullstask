@@ -1,11 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Hrms.Attendance.Application.Dtos;
 using Hrms.Attendance.Application.Interfaces;
+using Hrms.Attendance.Infrastructure.Persistence;
 using Hrms.Shared.Domain;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Hrms.Attendance.Controllers;
 
@@ -15,10 +18,12 @@ namespace Hrms.Attendance.Controllers;
 public class WorkSchedulesController : ControllerBase
 {
     private readonly IWorkScheduleService _scheduleService;
+    private readonly AttendanceDbContext _dbContext;
 
-    public WorkSchedulesController(IWorkScheduleService scheduleService)
+    public WorkSchedulesController(IWorkScheduleService scheduleService, AttendanceDbContext dbContext)
     {
         _scheduleService = scheduleService;
+        _dbContext = dbContext;
     }
 
     [HttpGet]
@@ -27,22 +32,54 @@ public class WorkSchedulesController : ControllerBase
         [FromQuery] DateOnly? fromDate,
         [FromQuery] DateOnly? toDate)
     {
-        var isPrivileged = User.IsInRole("Admin") || User.IsInRole("HR") || User.IsInRole("Manager") || User.IsInRole("PayrollStaff");
-        if (!isPrivileged)
+        var isSuperPrivileged = User.IsInRole("Admin") || User.IsInRole("HR") || User.IsInRole("PayrollStaff");
+        var isManager = User.IsInRole("Manager");
+        var employeeIdClaim = User.FindFirst("employeeId")?.Value;
+        Guid.TryParse(employeeIdClaim, out var claimEmpId);
+
+        if (!isSuperPrivileged)
         {
-            var employeeIdClaim = User.FindFirst("employeeId")?.Value;
-            if (Guid.TryParse(employeeIdClaim, out var claimEmpId))
+            if (isManager)
             {
-                employeeId = claimEmpId;
+                var managerEmp = await _dbContext.EmployeeProjections.FindAsync(claimEmpId);
+                var managerDeptId = managerEmp?.DepartmentId;
+
+                if (employeeId.HasValue)
+                {
+                    var targetEmp = await _dbContext.EmployeeProjections.FindAsync(employeeId.Value);
+                    if (targetEmp == null || (targetEmp.DepartmentId != managerDeptId && targetEmp.ManagerEmployeeId != claimEmpId))
+                    {
+                        return Forbid();
+                    }
+                }
+                else
+                {
+                    var result = await _scheduleService.GetSchedulesAsync(null, fromDate, toDate);
+                    if (result.IsSuccess && result.Value != null)
+                    {
+                        var allowedEmpIds = await _dbContext.EmployeeProjections
+                            .Where(e => e.DepartmentId == managerDeptId || e.ManagerEmployeeId == claimEmpId)
+                            .Select(e => e.Id)
+                            .ToListAsync();
+                        
+                        var filtered = result.Value.Where(s => allowedEmpIds.Contains(s.EmployeeId) || s.EmployeeId == claimEmpId);
+                        return Ok(ApiResponse<IEnumerable<WorkScheduleDto>>.Ok(filtered, result.Message));
+                    }
+                    return Ok(ApiResponse<IEnumerable<WorkScheduleDto>>.Ok(Array.Empty<WorkScheduleDto>(), result?.Message ?? "Success"));
+                }
             }
-            else
+            else // Employee
             {
-                return Forbid();
+                if (employeeId.HasValue && employeeId.Value != claimEmpId)
+                {
+                    return Forbid();
+                }
+                employeeId = claimEmpId;
             }
         }
 
-        var result = await _scheduleService.GetSchedulesAsync(employeeId, fromDate, toDate);
-        return Ok(ApiResponse<IEnumerable<WorkScheduleDto>>.Ok(result.Value!, result.Message));
+        var resultNormal = await _scheduleService.GetSchedulesAsync(employeeId, fromDate, toDate);
+        return Ok(ApiResponse<IEnumerable<WorkScheduleDto>>.Ok(resultNormal.Value!, resultNormal.Message));
     }
 
     [HttpGet("{id:guid}")]
@@ -54,13 +91,34 @@ public class WorkSchedulesController : ControllerBase
             return NotFound(ApiResponse<WorkScheduleDto>.Fail(result.Errors, result.Message));
         }
 
-        var isPrivileged = User.IsInRole("Admin") || User.IsInRole("HR") || User.IsInRole("Manager") || User.IsInRole("PayrollStaff");
-        if (!isPrivileged)
+        var isSuperPrivileged = User.IsInRole("Admin") || User.IsInRole("HR") || User.IsInRole("PayrollStaff");
+        var isManager = User.IsInRole("Manager");
+
+        if (!isSuperPrivileged)
         {
             var employeeIdClaim = User.FindFirst("employeeId")?.Value;
-            if (!Guid.TryParse(employeeIdClaim, out var claimEmpId) || claimEmpId != result.Value!.EmployeeId)
+            if (!Guid.TryParse(employeeIdClaim, out var claimEmpId))
             {
                 return Forbid();
+            }
+
+            if (isManager)
+            {
+                var managerEmp = await _dbContext.EmployeeProjections.FindAsync(claimEmpId);
+                var managerDeptId = managerEmp?.DepartmentId;
+
+                var targetEmp = await _dbContext.EmployeeProjections.FindAsync(result.Value!.EmployeeId);
+                if (targetEmp == null || (targetEmp.DepartmentId != managerDeptId && targetEmp.ManagerEmployeeId != claimEmpId && targetEmp.Id != claimEmpId))
+                {
+                    return Forbid();
+                }
+            }
+            else // Employee
+            {
+                if (claimEmpId != result.Value!.EmployeeId)
+                {
+                    return Forbid();
+                }
             }
         }
 
@@ -71,6 +129,25 @@ public class WorkSchedulesController : ControllerBase
     [Authorize(Roles = "Admin,HR,Manager")]
     public async Task<ActionResult<ApiResponse<WorkScheduleDto>>> Create([FromBody] CreateWorkScheduleDto dto)
     {
+        var isSuperPrivileged = User.IsInRole("Admin") || User.IsInRole("HR");
+        if (!isSuperPrivileged && User.IsInRole("Manager"))
+        {
+            var employeeIdClaim = User.FindFirst("employeeId")?.Value;
+            if (!Guid.TryParse(employeeIdClaim, out var claimEmpId))
+            {
+                return Forbid();
+            }
+
+            var managerEmp = await _dbContext.EmployeeProjections.FindAsync(claimEmpId);
+            var managerDeptId = managerEmp?.DepartmentId;
+
+            var targetEmp = await _dbContext.EmployeeProjections.FindAsync(dto.EmployeeId);
+            if (targetEmp == null || (targetEmp.DepartmentId != managerDeptId && targetEmp.ManagerEmployeeId != claimEmpId))
+            {
+                return Forbid();
+            }
+        }
+
         var result = await _scheduleService.CreateAsync(dto);
         if (result.IsFailure)
         {
@@ -83,6 +160,31 @@ public class WorkSchedulesController : ControllerBase
     [Authorize(Roles = "Admin,HR,Manager")]
     public async Task<ActionResult<ApiResponse<WorkScheduleDto>>> Update(Guid id, [FromBody] UpdateWorkScheduleDto dto)
     {
+        var isSuperPrivileged = User.IsInRole("Admin") || User.IsInRole("HR");
+        if (!isSuperPrivileged && User.IsInRole("Manager"))
+        {
+            var employeeIdClaim = User.FindFirst("employeeId")?.Value;
+            if (!Guid.TryParse(employeeIdClaim, out var claimEmpId))
+            {
+                return Forbid();
+            }
+
+            var managerEmp = await _dbContext.EmployeeProjections.FindAsync(claimEmpId);
+            var managerDeptId = managerEmp?.DepartmentId;
+
+            var existingSchedule = await _scheduleService.GetByIdAsync(id);
+            if (existingSchedule.IsFailure)
+            {
+                return NotFound(ApiResponse<WorkScheduleDto>.Fail(existingSchedule.Errors, existingSchedule.Message));
+            }
+
+            var targetEmp = await _dbContext.EmployeeProjections.FindAsync(existingSchedule.Value!.EmployeeId);
+            if (targetEmp == null || (targetEmp.DepartmentId != managerDeptId && targetEmp.ManagerEmployeeId != claimEmpId))
+            {
+                return Forbid();
+            }
+        }
+
         var result = await _scheduleService.UpdateAsync(id, dto);
         if (result.IsFailure)
         {
@@ -95,6 +197,31 @@ public class WorkSchedulesController : ControllerBase
     [Authorize(Roles = "Admin,HR,Manager")]
     public async Task<ActionResult<ApiResponse>> Delete(Guid id)
     {
+        var isSuperPrivileged = User.IsInRole("Admin") || User.IsInRole("HR");
+        if (!isSuperPrivileged && User.IsInRole("Manager"))
+        {
+            var employeeIdClaim = User.FindFirst("employeeId")?.Value;
+            if (!Guid.TryParse(employeeIdClaim, out var claimEmpId))
+            {
+                return Forbid();
+            }
+
+            var managerEmp = await _dbContext.EmployeeProjections.FindAsync(claimEmpId);
+            var managerDeptId = managerEmp?.DepartmentId;
+
+            var existingSchedule = await _scheduleService.GetByIdAsync(id);
+            if (existingSchedule.IsFailure)
+            {
+                return NotFound(ApiResponse.Fail(existingSchedule.Errors, existingSchedule.Message));
+            }
+
+            var targetEmp = await _dbContext.EmployeeProjections.FindAsync(existingSchedule.Value!.EmployeeId);
+            if (targetEmp == null || (targetEmp.DepartmentId != managerDeptId && targetEmp.ManagerEmployeeId != claimEmpId))
+            {
+                return Forbid();
+            }
+        }
+
         var result = await _scheduleService.DeleteAsync(id);
         if (result.IsFailure)
         {

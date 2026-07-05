@@ -22,7 +22,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = "Admin,HR")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<ApiResponse<IEnumerable<UserDto>>>> GetAll()
     {
         var result = await _userService.GetAllAsync();
@@ -30,7 +30,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [Authorize(Roles = "Admin,HR")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<ApiResponse<UserDto>>> GetById(Guid id)
     {
         var result = await _userService.GetByIdAsync(id);
@@ -43,7 +43,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("employee/{employeeId:guid}")]
-    [Authorize(Roles = "Admin,HR")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<ApiResponse<UserDto>>> GetByEmployeeId(Guid employeeId)
     {
         var result = await _userService.GetByEmployeeIdAsync(employeeId);
@@ -56,7 +56,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin,HR")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<ApiResponse<UserDto>>> Create([FromBody] CreateUserDto dto)
     {
         var result = await _userService.CreateUserAsync(dto);
@@ -82,7 +82,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPut("{id:guid}/password")]
-    [Authorize(Roles = "Admin,HR")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<ApiResponse>> ResetPassword(Guid id, [FromBody] ResetPasswordDto dto)
     {
         var result = await _userService.ResetPasswordAsync(id, dto);
@@ -95,7 +95,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPut("{id:guid}/status")]
-    [Authorize(Roles = "Admin,HR")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<ApiResponse>> ChangeStatus(Guid id, [FromBody] ChangeUserStatusDto dto)
     {
         var result = await _userService.ChangeStatusAsync(id, dto.IsActive);

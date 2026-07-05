@@ -11,6 +11,7 @@ import PageHeader from '../../../components/layout/PageHeader.vue'
 import AppTable from '../../../components/ui/AppTable.vue'
 import { useAuthStore } from '../../../stores/auth.ts'
 import AppButton from '../../../components/ui/AppButton.vue'
+import FilterBar from '../../../components/ui/FilterBar.vue'
 
 const toast = useToastStore()
 const records = ref<AttendanceRecord[]>([])
@@ -223,115 +224,111 @@ onMounted(load)
 
     <div v-if="activeMainTab === 'records'" class="space-y-6">
 
-      <!-- Filters & Action Bar (Compact & Space-Optimized) -->
-      <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm mb-4">
-        <div class="flex flex-wrap items-end gap-3 justify-between">
-          <!-- Filter Fields Grid -->
-          <div class="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
-            <!-- Nhân viên -->
-            <div class="flex flex-col min-w-[140px] flex-1 sm:max-w-xs">
-              <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Nhân viên</label>
-              <div class="relative">
-                <select
-                  v-model="filterEmployee"
-                  class="h-9 w-full rounded-xl border border-slate-250 bg-slate-50/50 px-3 pr-8 text-xs outline-none transition-all focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 appearance-none text-slate-700 font-medium"
-                >
-                  <option value="">Tất cả nhân viên</option>
-                  <option v-for="e in filteredEmployees" :key="e.id" :value="e.id">{{ e.fullName }}</option>
-                </select>
-                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400">
-                  <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-                </div>
-              </div>
-            </div>
-
-            <!-- Phòng ban -->
-            <div class="flex flex-col min-w-[130px] flex-1 sm:max-w-[200px]">
-              <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Phòng ban</label>
-              <div class="relative">
-                <select
-                  v-model="filterDept"
-                  class="h-9 w-full rounded-xl border border-slate-250 bg-slate-50/50 px-3 pr-8 text-xs outline-none transition-all focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 appearance-none text-slate-700 font-medium"
-                >
-                  <option value="">Tất cả phòng ban</option>
-                  <option v-for="d in departments" :key="d.id" :value="d.id">{{ d.name }}</option>
-                </select>
-                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400">
-                  <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-                </div>
-              </div>
-            </div>
-
-            <!-- Trạng thái -->
-            <div class="flex flex-col min-w-[120px] flex-1 sm:max-w-[160px]">
-              <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Trạng thái</label>
-              <div class="relative">
-                <select
-                  v-model="filterStatus"
-                  class="h-9 w-full rounded-xl border border-slate-250 bg-slate-50/50 px-3 pr-8 text-xs outline-none transition-all focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 appearance-none text-slate-700 font-medium"
-                >
-                  <option value="">Tất cả trạng thái</option>
-                  <option value="Completed">Hoàn thành</option>
-                  <option value="CheckedIn">Đang làm</option>
-                  <option value="Absent">Vắng mặt</option>
-                </select>
-                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400">
-                  <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-                </div>
-              </div>
-            </div>
-
-            <!-- Tháng -->
-            <div class="flex flex-col min-w-[80px] flex-1 sm:max-w-[120px]">
-              <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tháng</label>
-              <div class="relative">
-                <select
-                  v-model="filterMonth"
-                  class="h-9 w-full rounded-xl border border-slate-250 bg-slate-50/50 px-3 pr-8 text-xs outline-none transition-all focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 appearance-none text-slate-700 font-medium"
-                >
-                  <option v-for="m in months" :key="m.value" :value="m.value">{{ m.label }}</option>
-                </select>
-                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400">
-                  <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-                </div>
-              </div>
-            </div>
-
-            <!-- Năm -->
-            <div class="flex flex-col min-w-[70px] flex-1 sm:max-w-[100px]">
-              <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Năm</label>
-              <div class="relative">
-                <select
-                  v-model="filterYear"
-                  class="h-9 w-full rounded-xl border border-slate-250 bg-slate-50/50 px-3 pr-8 text-xs outline-none transition-all focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 appearance-none text-slate-700 font-medium"
-                >
-                  <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
-                </select>
-                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400">
-                  <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-                </div>
+      <!-- Filters & Action Bar (Compact & Space-Optimized via FilterBar component) -->
+      <FilterBar>
+        <template #filters>
+          <!-- Nhân viên -->
+          <div class="flex flex-col min-w-[140px] flex-1 sm:max-w-xs">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Nhân viên</label>
+            <div class="relative">
+              <select
+                v-model="filterEmployee"
+                class="h-9 w-full rounded-xl border border-slate-250 bg-slate-50/50 px-3 pr-8 text-xs outline-none transition-all focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 appearance-none text-slate-700 font-medium"
+              >
+                <option value="">Tất cả nhân viên</option>
+                <option v-for="e in filteredEmployees" :key="e.id" :value="e.id">{{ e.fullName }}</option>
+              </select>
+              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400">
+                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
               </div>
             </div>
           </div>
 
-          <!-- Buttons -->
-          <div class="flex items-center gap-2 mt-2 sm:mt-0">
-            <button
-              @click="handleExport"
-              class="h-9 inline-flex items-center justify-center px-4 rounded-xl border border-slate-250 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors gap-1.5"
-            >
-              <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-              Xuất Excel
-            </button>
-            <button
-              @click="load"
-              class="h-9 inline-flex items-center justify-center px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-xs font-semibold text-white transition-colors"
-            >
-              Lọc dữ liệu
-            </button>
+          <!-- Phòng ban -->
+          <div class="flex flex-col min-w-[130px] flex-1 sm:max-w-[200px]">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Phòng ban</label>
+            <div class="relative">
+              <select
+                v-model="filterDept"
+                class="h-9 w-full rounded-xl border border-slate-250 bg-slate-50/50 px-3 pr-8 text-xs outline-none transition-all focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 appearance-none text-slate-700 font-medium"
+              >
+                <option value="">Tất cả phòng ban</option>
+                <option v-for="d in departments" :key="d.id" :value="d.id">{{ d.name }}</option>
+              </select>
+              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400">
+                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+
+          <!-- Trạng thái -->
+          <div class="flex flex-col min-w-[120px] flex-1 sm:max-w-[160px]">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Trạng thái</label>
+            <div class="relative">
+              <select
+                v-model="filterStatus"
+                class="h-9 w-full rounded-xl border border-slate-250 bg-slate-50/50 px-3 pr-8 text-xs outline-none transition-all focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 appearance-none text-slate-700 font-medium"
+              >
+                <option value="">Tất cả trạng thái</option>
+                <option value="Completed">Hoàn thành</option>
+                <option value="CheckedIn">Đang làm</option>
+                <option value="Absent">Vắng mặt</option>
+              </select>
+              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400">
+                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tháng -->
+          <div class="flex flex-col min-w-[80px] flex-1 sm:max-w-[120px]">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tháng</label>
+            <div class="relative">
+              <select
+                v-model="filterMonth"
+                class="h-9 w-full rounded-xl border border-slate-250 bg-slate-50/50 px-3 pr-8 text-xs outline-none transition-all focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 appearance-none text-slate-700 font-medium"
+              >
+                <option v-for="m in months" :key="m.value" :value="m.value">{{ m.label }}</option>
+              </select>
+              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400">
+                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Năm -->
+          <div class="flex flex-col min-w-[70px] flex-1 sm:max-w-[100px]">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Năm</label>
+            <div class="relative">
+              <select
+                v-model="filterYear"
+                class="h-9 w-full rounded-xl border border-slate-250 bg-slate-50/50 px-3 pr-8 text-xs outline-none transition-all focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 appearance-none text-slate-700 font-medium"
+              >
+                <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
+              </select>
+              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400">
+                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <template #actions>
+          <button
+            @click="handleExport"
+            class="h-9 inline-flex items-center justify-center px-4 rounded-xl border border-slate-250 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors gap-1.5"
+          >
+            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+            Xuất Excel
+          </button>
+          <button
+            @click="load"
+            class="h-9 inline-flex items-center justify-center px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-xs font-semibold text-white transition-colors"
+          >
+            Lọc dữ liệu
+          </button>
+        </template>
+      </FilterBar>
 
       <!-- Table -->
       <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm animate-fade-in">

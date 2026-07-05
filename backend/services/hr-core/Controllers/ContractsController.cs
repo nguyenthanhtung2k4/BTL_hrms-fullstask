@@ -22,7 +22,7 @@ public class ContractsController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = "Admin,HR,Manager,PayrollStaff")]
+    [Authorize(Roles = "Admin,HR,PayrollStaff")]
     public async Task<ActionResult<ApiResponse<IEnumerable<ContractDto>>>> GetAll()
     {
         var result = await _contractService.GetAllAsync();
@@ -32,9 +32,9 @@ public class ContractsController : ControllerBase
     [HttpGet("employee/{employeeId:guid}")]
     public async Task<ActionResult<ApiResponse<IEnumerable<ContractDto>>>> GetByEmployeeId(Guid employeeId)
     {
-        // Check permissions: Admin, HR, Manager, PayrollStaff can view any contract.
-        // Employee can only view their own contracts.
-        var isPrivileged = User.IsInRole("Admin") || User.IsInRole("HR") || User.IsInRole("Manager") || User.IsInRole("PayrollStaff");
+        // Check permissions: Admin, HR, PayrollStaff can view any contract.
+        // Employee/Manager can only view their own contracts.
+        var isPrivileged = User.IsInRole("Admin") || User.IsInRole("HR") || User.IsInRole("PayrollStaff");
         if (!isPrivileged)
         {
             var employeeIdClaim = User.FindFirst("employeeId")?.Value;
@@ -57,9 +57,9 @@ public class ContractsController : ControllerBase
             return NotFound(ApiResponse<ContractDto>.Fail(result.Errors, result.Message));
         }
 
-        // Check permissions: Admin, HR, Manager, PayrollStaff can view any contract.
-        // Employee can only view their own contract.
-        var isPrivileged = User.IsInRole("Admin") || User.IsInRole("HR") || User.IsInRole("Manager") || User.IsInRole("PayrollStaff");
+        // Check permissions: Admin, HR, PayrollStaff can view any contract.
+        // Employee/Manager can only view their own contract.
+        var isPrivileged = User.IsInRole("Admin") || User.IsInRole("HR") || User.IsInRole("PayrollStaff");
         if (!isPrivileged)
         {
             var employeeIdClaim = User.FindFirst("employeeId")?.Value;

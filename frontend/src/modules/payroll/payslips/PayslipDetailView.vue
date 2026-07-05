@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { payslipService } from '../../../services/payslip.service'
 import { useToastStore } from '../../../stores/toast'
+import { useAuthStore } from '../../../stores/auth'
 import { exportPayslipPdf } from '../../../services/pdf.service'
 import type { Payslip } from '../../../types/payroll.types'
 import PageHeader from '../../../components/layout/PageHeader.vue'
@@ -13,11 +14,27 @@ import AppBadge from '../../../components/ui/AppBadge.vue'
 const route = useRoute()
 const router = useRouter()
 const toast = useToastStore()
+const auth = useAuthStore()
 const { t } = useI18n()
 
 const payslip = ref<Payslip | null>(null)
 const loading = ref(true)
 const pdfLoading = ref(false)
+
+const isMyPayslip = computed(() => {
+  return payslip.value?.employeeId === auth.employeeId
+})
+
+const breadcrumbs = computed(() => {
+  const crumbs: { label: string; to?: string }[] = [{ label: t('nav.payroll') }]
+  if (isMyPayslip.value) {
+    crumbs.push({ label: t('nav.myPayslip'), to: '/payroll/my-payslip' })
+  } else {
+    crumbs.push({ label: t('nav.allPayslips'), to: '/payroll/payslips' })
+  }
+  crumbs.push({ label: payslip.value?.fullName ?? t('common.detail') })
+  return crumbs
+})
 
 async function load() {
   try {
@@ -66,11 +83,7 @@ onMounted(load)
   <div class="payslip-detail">
     <PageHeader
       :title="payslip ? `Chi tiết phiếu lương — ${payslip.fullName}` : t('payroll.payslips')"
-      :breadcrumbs="[
-        { label: t('nav.payroll') },
-        { label: t('nav.myPayslip'), to: '/payroll/my-payslip' },
-        { label: payslip?.fullName ?? t('common.detail') }
-      ]"
+      :breadcrumbs="breadcrumbs"
     >
       <template #actions>
         <AppButton variant="secondary" size="sm" @click="router.back()">

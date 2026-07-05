@@ -457,7 +457,6 @@ public class PayslipService : IPayslipService
     public async Task<Result<PayslipDto>> UpdatePayslipAsync(Guid id, UpdatePayslipDto dto)
     {
         var payslip = await _dbContext.Payslips
-            .Include(p => p.Items)
             .Include(p => p.Employee)
             .Include(p => p.PayrollPeriod)
             .ThenInclude(pp => pp!.PayrollRule)
@@ -563,14 +562,15 @@ public class PayslipService : IPayslipService
         payslip.NetSalary = netSalary;
         payslip.UpdatedAt = DateTime.UtcNow;
 
-        // Clear existing payslip items and save first to avoid concurrency/tracking conflicts
+        // Clear existing payslip items in db first
         var existingItems = await _dbContext.PayslipItems.Where(pi => pi.PayslipId == payslip.Id).ToListAsync();
         _dbContext.PayslipItems.RemoveRange(existingItems);
-        payslip.Items.Clear();
         await _dbContext.SaveChangesAsync();
 
+        var newItems = new List<PayslipItem>();
+
         // Re-generate basic salary item
-        payslip.Items.Add(new PayslipItem
+        newItems.Add(new PayslipItem
         {
             Id = Guid.NewGuid(),
             PayslipId = payslip.Id,
@@ -585,7 +585,7 @@ public class PayslipService : IPayslipService
         // Allowance items
         foreach (var allowance in periodAllowances)
         {
-            payslip.Items.Add(new PayslipItem
+            newItems.Add(new PayslipItem
             {
                 Id = Guid.NewGuid(),
                 PayslipId = payslip.Id,
@@ -601,7 +601,7 @@ public class PayslipService : IPayslipService
         // Seniority allowance item
         if (seniorityAllowanceAmt > 0)
         {
-            payslip.Items.Add(new PayslipItem
+            newItems.Add(new PayslipItem
             {
                 Id = Guid.NewGuid(),
                 PayslipId = payslip.Id,
@@ -617,7 +617,7 @@ public class PayslipService : IPayslipService
         // Custom Deduction items
         foreach (var deduction in periodDeductions)
         {
-            payslip.Items.Add(new PayslipItem
+            newItems.Add(new PayslipItem
             {
                 Id = Guid.NewGuid(),
                 PayslipId = payslip.Id,
@@ -633,7 +633,7 @@ public class PayslipService : IPayslipService
         // Auto-generated Insurance Deductions
         if (bhxhAmount > 0)
         {
-            payslip.Items.Add(new PayslipItem
+            newItems.Add(new PayslipItem
             {
                 Id = Guid.NewGuid(),
                 PayslipId = payslip.Id,
@@ -647,7 +647,7 @@ public class PayslipService : IPayslipService
         }
         if (bhytAmount > 0)
         {
-            payslip.Items.Add(new PayslipItem
+            newItems.Add(new PayslipItem
             {
                 Id = Guid.NewGuid(),
                 PayslipId = payslip.Id,
@@ -661,7 +661,7 @@ public class PayslipService : IPayslipService
         }
         if (bhtnAmount > 0)
         {
-            payslip.Items.Add(new PayslipItem
+            newItems.Add(new PayslipItem
             {
                 Id = Guid.NewGuid(),
                 PayslipId = payslip.Id,
@@ -677,7 +677,7 @@ public class PayslipService : IPayslipService
         // Auto-generated PIT Deduction
         if (pitAmount > 0)
         {
-            payslip.Items.Add(new PayslipItem
+            newItems.Add(new PayslipItem
             {
                 Id = Guid.NewGuid(),
                 PayslipId = payslip.Id,
@@ -690,6 +690,7 @@ public class PayslipService : IPayslipService
             });
         }
 
+        _dbContext.PayslipItems.AddRange(newItems);
         await _dbContext.SaveChangesAsync();
 
         var resultDto = new PayslipDto(
@@ -705,7 +706,7 @@ public class PayslipService : IPayslipService
             payslip.TotalDeduction,
             payslip.NetSalary,
             payslip.Status,
-            payslip.Items.Select(i => new PayslipItemDto(i.Id, i.ItemType, i.Code, i.Name, i.Amount, i.SourceType)).ToList(),
+            newItems.Select(i => new PayslipItemDto(i.Id, i.ItemType, i.Code, i.Name, i.Amount, i.SourceType)).ToList(),
             payslip.PayrollPeriod != null ? payslip.PayrollPeriod.Name : string.Empty,
             payslip.PayrollPeriod != null ? payslip.PayrollPeriod.Code : string.Empty
         );

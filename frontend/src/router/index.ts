@@ -69,31 +69,31 @@ export const router = createRouter({
           path: 'hr/departments',
           name: 'hr-departments',
           component: DepartmentListView,
-          meta: { roles: ['Admin', 'HR', 'Manager', 'Employee'] },
+          meta: { roles: ['Admin', 'HR', 'Manager', 'PayrollStaff', 'Employee'] },
         },
         {
           path: 'hr/positions',
           name: 'hr-positions',
           component: PositionListView,
-          meta: { roles: ['Admin', 'HR', 'Manager'] },
+          meta: { roles: ['Admin', 'HR', 'Manager', 'PayrollStaff', 'Employee'] },
         },
         {
           path: 'hr/employees',
           name: 'hr-employees',
           component: EmployeeListView,
-          meta: { roles: ['Admin', 'HR', 'Manager'] },
+          meta: { roles: ['Admin', 'HR', 'Manager', 'PayrollStaff'] },
         },
         {
           path: 'hr/employees/:id',
           name: 'hr-employee-detail',
           component: EmployeeDetailView,
-          meta: { roles: ['Admin', 'HR', 'Manager'] },
+          meta: { roles: ['Admin', 'HR', 'Manager', 'PayrollStaff'] },
         },
         {
           path: 'hr/contracts',
           name: 'hr-contracts',
           component: ContractListView,
-          meta: { roles: ['Admin', 'HR'] },
+          meta: { roles: ['Admin', 'HR', 'PayrollStaff'] },
         },
 
         // ── Attendance
@@ -101,13 +101,13 @@ export const router = createRouter({
           path: 'attendance/shifts',
           name: 'attendance-shifts',
           component: ShiftListView,
-          meta: { roles: ['Admin', 'HR'] },
+          meta: { roles: ['Admin', 'HR', 'Manager', 'PayrollStaff'] },
         },
         {
           path: 'attendance/work-schedules',
           name: 'attendance-work-schedules',
           component: WorkScheduleListView,
-          meta: { roles: ['Admin', 'HR', 'Manager', 'Employee'] },
+          meta: { roles: ['Admin', 'HR', 'Manager', 'PayrollStaff', 'Employee'] },
         },
         {
           path: 'attendance/checkin',
@@ -174,7 +174,7 @@ export const router = createRouter({
           path: 'payroll/payslips',
           name: 'payroll-payslips',
           component: PayslipListView,
-          meta: { roles: ['Admin', 'PayrollStaff'] },
+          meta: { roles: ['Admin', 'HR', 'Manager', 'PayrollStaff'] },
         },
         {
           path: 'payroll/payslips/:id',
@@ -198,7 +198,7 @@ export const router = createRouter({
           path: 'admin/users',
           name: 'admin-users',
           component: UserManagementView,
-          meta: { roles: ['Admin', 'HR'] },
+          meta: { roles: ['Admin'] },
         },
 
         // ── Profile (tất cả roles)

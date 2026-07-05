@@ -92,24 +92,24 @@ const menuGroups = computed(() => {
     ],
   })
 
-  // HR Core — Admin, HR, Manager
+  // HR Core — Admin, HR, Manager, PayrollStaff
   const hrItems: any[] = []
   hrItems.push({ to: '/hr/departments', name: 'hr-departments', label: t('nav.departments'), icon: Building2 })
 
   if (auth.isHR) {
     hrItems.push({ to: '/hr/positions', name: 'hr-positions', label: t('nav.positions'), icon: Briefcase })
   }
-  if (auth.isManager) {
+  if (auth.isManager || auth.isPayrollStaff) {
     hrItems.push({ to: '/hr/employees', name: 'hr-employees', label: t('nav.employees'), icon: Users })
   }
-  if (auth.isHR) {
+  if (auth.isHR || auth.isPayrollStaff) {
     hrItems.push({ to: '/hr/contracts', name: 'hr-contracts', label: t('nav.contracts'), icon: FileText })
   }
   groups.push({ label: t('nav.hr'), items: hrItems })
 
   // Attendance — all logged in
   const attItems: any[] = []
-  if (auth.isHR) {
+  if (auth.isHR || auth.isManager || auth.isPayrollStaff) {
     attItems.push({ to: '/attendance/shifts', name: 'attendance-shifts', label: t('nav.shifts'), icon: Clock })
   }
   attItems.push({
@@ -153,17 +153,19 @@ const menuGroups = computed(() => {
       { to: '/payroll/deductions', name: 'payroll-deductions', label: t('nav.deductions'), icon: Wallet },
     )
   }
-  if (auth.isPayrollStaff) {
+  if (auth.isPayrollStaff || auth.isHR || auth.isManager) {
     payItems.push({ to: '/payroll/payslips', name: 'payroll-payslips', label: t('nav.allPayslips'), icon: ScrollText })
   }
-  payItems.push({ to: '/payroll/my-payslip', name: 'payroll-my-payslip', label: t('nav.myPayslip'), icon: BadgeDollarSign })
+  if (!auth.isAdmin) {
+    payItems.push({ to: '/payroll/my-payslip', name: 'payroll-my-payslip', label: t('nav.myPayslip'), icon: BadgeDollarSign })
+  }
   if (auth.hasAnyRole(['Admin', 'HR', 'PayrollStaff', 'Manager'])) {
     payItems.push({ to: '/payroll/reports', name: 'payroll-reports', label: t('nav.reports'), icon: BarChart3 })
   }
   groups.push({ label: t('nav.payroll'), items: payItems })
 
-  // Admin / HR — Quản trị tài khoản
-  if (auth.isAdmin || auth.isHR) {
+  // Admin — Quản trị tài khoản
+  if (auth.isAdmin) {
     groups.push({
       label: t('user.title'),
       items: [

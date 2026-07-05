@@ -48,7 +48,7 @@ const filtered = computed(() =>
 async function load() {
   loading.value = true
   try {
-    if (!auth.isHR && auth.employeeId) {
+    if (!auth.isHR && !auth.isPayrollStaff && auth.employeeId) {
       const emp = await employeeService.getById(auth.employeeId)
       const allDepts = await departmentService.getAll()
       departments.value = allDepts.filter(d => d.id === emp.departmentId)

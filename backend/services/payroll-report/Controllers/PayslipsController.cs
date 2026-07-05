@@ -4,9 +4,11 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Hrms.PayrollReport.Application.Dtos;
 using Hrms.PayrollReport.Application.Interfaces;
+using Hrms.PayrollReport.Infrastructure.Persistence;
 using Hrms.Shared.Domain;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Hrms.PayrollReport.Controllers;
 
@@ -16,10 +18,12 @@ namespace Hrms.PayrollReport.Controllers;
 public class PayslipsController : ControllerBase
 {
     private readonly IPayslipService _payslipService;
+    private readonly PayrollReportDbContext _dbContext;
 
-    public PayslipsController(IPayslipService payslipService)
+    public PayslipsController(IPayslipService payslipService, PayrollReportDbContext dbContext)
     {
         _payslipService = payslipService;
+        _dbContext = dbContext;
     }
 
     [HttpGet]
@@ -28,19 +32,46 @@ public class PayslipsController : ControllerBase
         [FromQuery] Guid? employeeId,
         [FromQuery] Guid? departmentId)
     {
-        // Enforce role permission: only Admin and PayrollStaff can query any employee's payslips
-        if (!User.IsInRole("Admin") && !User.IsInRole("PayrollStaff"))
+        var isSuperPrivileged = User.IsInRole("Admin") || User.IsInRole("HR") || User.IsInRole("PayrollStaff");
+        var isManager = User.IsInRole("Manager");
+        var currentEmployeeId = GetCurrentEmployeeId();
+
+        if (!isSuperPrivileged)
         {
-            var currentEmployeeId = GetCurrentEmployeeId();
-            if (currentEmployeeId == Guid.Empty)
+            if (isManager)
             {
-                return Forbid();
+                var managerEmp = await _dbContext.EmployeeProjections.FindAsync(currentEmployeeId);
+                var managerDeptId = managerEmp?.DepartmentId;
+
+                if (employeeId.HasValue)
+                {
+                    var targetEmp = await _dbContext.EmployeeProjections.FindAsync(employeeId.Value);
+                    if (targetEmp == null || (targetEmp.DepartmentId != managerDeptId && targetEmp.ManagerEmployeeId != currentEmployeeId))
+                    {
+                        return Forbid();
+                    }
+                }
+                else
+                {
+                    if (departmentId.HasValue && departmentId.Value != managerDeptId)
+                    {
+                        return Forbid();
+                    }
+                    departmentId = managerDeptId;
+                }
             }
-            if (employeeId.HasValue && employeeId.Value != currentEmployeeId)
+            else // Employee
             {
-                return Forbid();
+                if (currentEmployeeId == Guid.Empty)
+                {
+                    return Forbid();
+                }
+                if (employeeId.HasValue && employeeId.Value != currentEmployeeId)
+                {
+                    return Forbid();
+                }
+                employeeId = currentEmployeeId;
             }
-            employeeId = currentEmployeeId;
         }
 
         var result = await _payslipService.GetPayslipsAsync(periodId, employeeId, departmentId);
@@ -53,7 +84,6 @@ public class PayslipsController : ControllerBase
         var employeeId = GetCurrentEmployeeId();
         if (employeeId == Guid.Empty)
         {
-            // Return empty list instead of failing with 400 Bad Request to handle non-employee accounts (like admin) gracefully
             return Ok(ApiResponse<IEnumerable<PayslipDto>>.Ok(Array.Empty<PayslipDto>(), "User is not associated with an Employee account."));
         }
 
@@ -70,13 +100,34 @@ public class PayslipsController : ControllerBase
             return NotFound(ApiResponse<PayslipDto>.Fail(result.Errors, result.Message));
         }
 
-        // Enforce role permission: only Admin and PayrollStaff can view any employee's payslip
-        if (!User.IsInRole("Admin") && !User.IsInRole("PayrollStaff"))
+        var isSuperPrivileged = User.IsInRole("Admin") || User.IsInRole("HR") || User.IsInRole("PayrollStaff");
+        var isManager = User.IsInRole("Manager");
+
+        if (!isSuperPrivileged)
         {
             var currentEmployeeId = GetCurrentEmployeeId();
-            if (result.Value!.EmployeeId != currentEmployeeId)
+            if (currentEmployeeId == Guid.Empty)
             {
                 return Forbid();
+            }
+
+            if (isManager)
+            {
+                var managerEmp = await _dbContext.EmployeeProjections.FindAsync(currentEmployeeId);
+                var managerDeptId = managerEmp?.DepartmentId;
+
+                var targetEmp = await _dbContext.EmployeeProjections.FindAsync(result.Value!.EmployeeId);
+                if (targetEmp == null || (targetEmp.DepartmentId != managerDeptId && targetEmp.ManagerEmployeeId != currentEmployeeId && targetEmp.Id != currentEmployeeId))
+                {
+                    return Forbid();
+                }
+            }
+            else // Employee
+            {
+                if (result.Value!.EmployeeId != currentEmployeeId)
+                {
+                    return Forbid();
+                }
             }
         }
 
@@ -84,9 +135,34 @@ public class PayslipsController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin,PayrollStaff")]
+    [Authorize(Roles = "Admin,HR,Manager,PayrollStaff")]
     public async Task<ActionResult<ApiResponse<PayslipDto>>> Update(Guid id, [FromBody] UpdatePayslipDto request)
     {
+        var isSuperPrivileged = User.IsInRole("Admin") || User.IsInRole("HR") || User.IsInRole("PayrollStaff");
+        if (!isSuperPrivileged && User.IsInRole("Manager"))
+        {
+            var currentEmployeeId = GetCurrentEmployeeId();
+            if (currentEmployeeId == Guid.Empty)
+            {
+                return Forbid();
+            }
+
+            var managerEmp = await _dbContext.EmployeeProjections.FindAsync(currentEmployeeId);
+            var managerDeptId = managerEmp?.DepartmentId;
+
+            var existingPayslip = await _payslipService.GetByIdAsync(id);
+            if (existingPayslip.IsFailure)
+            {
+                return NotFound(ApiResponse<PayslipDto>.Fail(existingPayslip.Errors, existingPayslip.Message));
+            }
+
+            var targetEmp = await _dbContext.EmployeeProjections.FindAsync(existingPayslip.Value!.EmployeeId);
+            if (targetEmp == null || (targetEmp.DepartmentId != managerDeptId && targetEmp.ManagerEmployeeId != currentEmployeeId))
+            {
+                return Forbid();
+            }
+        }
+
         var result = await _payslipService.UpdatePayslipAsync(id, request);
         if (result.IsFailure)
         {

@@ -25,10 +25,10 @@ Tài liệu này định nghĩa chi tiết quyền hạn, luồng xử lý và g
 | **Ca làm việc (Shifts)** | **CRUD** | **CRUD** | **CRUD** | Xem | Xem |
 | **Lịch làm việc (Work Schedules)** | **CRUD** | **CRUD** | **CRUD** | Xem | Xem (Cá nhân) |
 | **Chấm công (Attendance Records)** | Xem | Xem | Xem (Phòng ban) | Xem | **Check-in/out / Xem cá nhân** |
-| **Đơn nghỉ phép (Leave Requests)** | Xem | Xem | **Duyệt (Phòng ban)** | Không | **Tạo mới / Xem cá nhân** |
+| **Đơn nghỉ phép (Leave Requests)** | **Duyệt (Phòng ban)** | **Duyệt (Phòng ban)** | **Duyệt (Phòng ban)** | Không | **Tạo mới / Xem cá nhân** |
 | **Phụ cấp & Khấu trừ (Allowance/Deduction)**| **CRUD** | **CRUD** | Không | **CRUD** | Không |
 | **Tính & Khóa lương (Payroll Calculation)**| **CRUD** | Không | Không | **CRUD** | Không |
-| **Phiếu lương (Payslips)** | Xem | Không | Không | **CRUD** | Xem (Cá nhân) |
+| **Phiếu lương (Payslips)** | **CRUD** | **CRUD** | **CRUD** | **CRUD** | Xem (Cá nhân) |
 | **Báo cáo (Reports)** | Toàn quyền | Nhân sự | Phòng ban | Lương/Công | Không |
 
 *Ghi chú ký hiệu:*
