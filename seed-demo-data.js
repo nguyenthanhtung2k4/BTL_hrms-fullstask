@@ -29,11 +29,11 @@ async function main() {
     // 2. Departments
     STEP("2. Departments");
     const depts = [
-        { name: "Ban Giam Doc", code: "BGD", description: "Ban lanh dao cong ty" },
-        { name: "Phong Nhan Su", code: "HR", description: "Quan ly nhan su" },
-        { name: "Phong Ky Thuat", code: "IT", description: "Phat trien he thong" },
-        { name: "Phong Ke Toan", code: "ACC", description: "Quan ly tai chinh" },
-        { name: "Phong Kinh Doanh", code: "SALES", description: "Ban hang" }
+        { name: "Ban Giám Đốc", code: "BGD", description: "Ban lãnh đạo công ty" },
+        { name: "Phòng Nhân Sự", code: "HR", description: "Quản lý nhân sự" },
+        { name: "Phòng Kỹ Thuật", code: "IT", description: "Phát triển hệ thống và AI" },
+        { name: "Phòng Kế Toán", code: "ACC", description: "Quản lý tài chính" },
+        { name: "Phòng Kinh Doanh", code: "SALES", description: "Kinh doanh và Marketing" }
     ];
     const deptIds = {};
     for (const d of depts) {
@@ -55,12 +55,12 @@ async function main() {
     // 3. Positions
     STEP("3. Positions");
     const positions = [
-        { name: "Giam Doc", code: "GD", level: 1, description: "Nguoi dung dau cong ty" },
-        { name: "Truong Phong", code: "TP", level: 2, description: "Truong cac phong ban" },
-        { name: "Nhan Vien", code: "NV", level: 3, description: "Nhan vien thuc thi" },
-        { name: "Ky Su Phan Mem", code: "SW", level: 3, description: "Lap trinh vien" },
-        { name: "Ke Toan Vien", code: "KTV", level: 3, description: "Nhan vien ke toan" },
-        { name: "Chuyen Vien NS", code: "CVNS", level: 3, description: "Tuyen dung nhan su" }
+        { name: "Giám Đốc", code: "GD", level: 1, description: "Người đứng đầu công ty" },
+        { name: "Trưởng Phòng", code: "TP", level: 2, description: "Trưởng các phòng ban" },
+        { name: "Nhân Viên", code: "NV", level: 3, description: "Nhân viên thực thi" },
+        { name: "Kỹ Sư Phần Mềm", code: "SW", level: 3, description: "Lập trình viên" },
+        { name: "Kế Toán Viên", code: "KTV", level: 3, description: "Nhân viên kế toán" },
+        { name: "Chuyên Viên NS", code: "CVNS", level: 3, description: "Tuyển dụng và quản lý nhân sự" }
     ];
     const posIds = {};
     for (const p of positions) {
@@ -79,18 +79,78 @@ async function main() {
         }
     }
 
-    // 4. Employees
+    // 4. Employees Generator
     STEP("4. Employees");
+    const viLast = ["Nguyễn", "Trần", "Lê", "Phạm", "Hoàng", "Vũ", "Đặng", "Bùi", "Đỗ", "Hồ", "Ngô", "Dương", "Lý"];
+    const viMale = ["Thế Dân", "Minh Hoàng", "Văn Đức", "Quốc Bảo", "Hữu Nghĩa", "Văn Minh", "Minh Trí", "Thanh Tùng", "Tuấn Anh", "Đức Nam", "Quang Huy", "Khánh Duy", "Xuân Trường"];
+    const viFemale = ["Thị Lan Anh", "Thị Thanh Tuyền", "Thị Mai", "Thị Hương", "Thị Thủy", "Bích Phương", "Ngọc Trinh", "Thanh Hà", "Hồng Vân", "Thùy Linh", "Hải Yến"];
+
+    const enMale = ["David Miller", "Jean-Luc Picard", "Rajesh Kumar", "John Smith", "Park Ji-sung", "Michael Johnson", "Alexandre Dupont", "Hans Schmidt", "Yuki Tanaka", "Daniel Evans"];
+    const enFemale = ["Sarah Jenkins", "Elena Rostova", "Emily Watson", "Sophia Martinez", "Chloe Dubois", "Maria Rossi", "Anna Johansson", "Li Wei", "Priya Patel"];
+
     const emps = [
-        { code: "NV002", name: "Nguyen Thi Lan Anh", email: "lan.anh@hrms.com", phone: "0901234567", gender: "Female", dob: "1990-05-15", hire: "2022-01-10", dept: "HR", pos: "TP" },
-        { code: "NV003", name: "Tran Minh Hoang",    email: "minh.hoang@hrms.com", phone: "0902345678", gender: "Male", dob: "1995-08-20", hire: "2022-06-01", dept: "IT", pos: "SW" },
-        { code: "NV004", name: "Le Thi Thanh Tuyen", email: "thanh.tuyen@hrms.com", phone: "0903456789", gender: "Female", dob: "1993-03-12", hire: "2021-09-15", dept: "IT", pos: "SW" },
-        { code: "NV005", name: "Pham Van Duc",       email: "van.duc@hrms.com", phone: "0904567890", gender: "Male", dob: "1988-11-30", hire: "2020-03-01", dept: "ACC", pos: "KTV" },
-        { code: "NV006", name: "Hoang Thi Mai",      email: "thi.mai@hrms.com", phone: "0905678901", gender: "Female", dob: "1992-07-25", hire: "2023-02-14", dept: "ACC", pos: "KTV" },
-        { code: "NV007", name: "Nguyen Quoc Bao",    email: "quoc.bao@hrms.com", phone: "0906789012", gender: "Male", dob: "1991-02-08", hire: "2021-07-20", dept: "SALES", pos: "NV" },
-        { code: "NV008", name: "Vu Thi Huong",       email: "thi.huong@hrms.com", phone: "0907890123", gender: "Female", dob: "1994-09-14", hire: "2022-11-01", dept: "SALES", pos: "NV" },
-        { code: "NV009", name: "Dang Huu Nghia",     email: "huu.nghia@hrms.com", phone: "0908901234", gender: "Male", dob: "1989-04-03", hire: "2020-12-15", dept: "IT", pos: "TP" }
+        { code: "NV001", name: "Nguyễn Thế Dân", email: "dan.the@hrms.com", phone: "0901112223", gender: "Male", dob: "1980-01-01", hire: "2020-01-01", dept: "BGD", pos: "GD", manager: null, sal: 150000000 },
+        { code: "NV002", name: "David Miller", email: "david.miller@hrms.com", phone: "0901234567", gender: "Male", dob: "1985-04-12", hire: "2020-01-01", dept: "BGD", pos: "GD", manager: "NV001", sal: 120000000 },
+        { code: "NV003", name: "Nguyễn Thị Lan Anh", email: "lan.anh@hrms.com", phone: "0902345678", gender: "Female", dob: "1990-05-15", hire: "2022-01-10", dept: "HR", pos: "TP", manager: "NV001", sal: 25000000 },
+        { code: "NV004", name: "Phạm Văn Đức", email: "van.duc@hrms.com", phone: "0903456789", gender: "Male", dob: "1988-11-30", hire: "2020-03-01", dept: "ACC", pos: "TP", manager: "NV001", sal: 30000000 },
+        { code: "NV005", name: "Nguyễn Quốc Bảo", email: "quoc.bao@hrms.com", phone: "0904567890", gender: "Male", dob: "1991-02-08", hire: "2021-07-20", dept: "SALES", pos: "TP", manager: "NV001", sal: 28000000 },
+        { code: "NV006", name: "Đặng Hữu Nghĩa", email: "huu.nghia@hrms.com", phone: "0905678901", gender: "Male", dob: "1989-04-03", hire: "2020-12-15", dept: "IT", pos: "TP", manager: "NV002", sal: 60000000 }
     ];
+
+    for (let i = 7; i <= 150; i++) {
+        const code = `NV${String(i).padStart(3, '0')}`;
+        const gender = (i % 2 === 0) ? "Female" : "Male";
+        const isForeign = (i % 4 === 0);
+
+        let name = "";
+        if (isForeign) {
+            name = (gender === "Male") ? enMale[i % enMale.length] : enFemale[i % enFemale.length];
+        } else {
+            const last = viLast[i % viLast.length];
+            const first = (gender === "Male") ? viMale[i % viMale.length] : viFemale[i % viFemale.length];
+            name = `${last} ${first}`;
+        }
+
+        const mod = i % 10;
+        let dept = "IT";
+        let pos = "SW";
+        let manager = "NV006";
+        let sal = 20000000 + (i % 7) * 5000000;
+
+        if (mod === 6) {
+            dept = "HR";
+            pos = "CVNS";
+            manager = "NV003";
+            sal = 15000000 + (i % 5) * 2000000;
+        } else if (mod === 7) {
+            dept = "ACC";
+            pos = "KTV";
+            manager = "NV004";
+            sal = 15000000 + (i % 5) * 2000000;
+        } else if (mod === 8 || mod === 9) {
+            dept = "SALES";
+            pos = "NV";
+            manager = "NV005";
+            sal = 12000000 + (i % 6) * 2000000;
+        }
+
+        const emailPrefix = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/ /g, "").replace(/đ/g, "d");
+        const email = `${emailPrefix}${i}@hrms.com`;
+        const phone = `090${1000000 + i * 123}`;
+
+        const dobYear = 1980 + (i % 20);
+        const dobMonth = 1 + (i % 12);
+        const dobDay = 1 + (i % 28);
+        const dob = `${dobYear}-${String(dobMonth).padStart(2, '0')}-${String(dobDay).padStart(2, '0')}`;
+
+        const hireYear = 2021 + (i % 4);
+        const hireMonth = 1 + (i % 12);
+        const hireDay = 1 + (i % 28);
+        const hire = `${hireYear}-${String(hireMonth).padStart(2, '0')}-${String(hireDay).padStart(2, '0')}`;
+
+        emps.push({ code, name, email, phone, gender, dob, hire, dept, pos, manager, sal });
+    }
+
     const empIds = {};
     for (const e of emps) {
         try {
@@ -104,7 +164,8 @@ async function main() {
                 hireDate: e.hire,
                 status: "Active",
                 departmentId: deptIds[e.dept],
-                positionId: posIds[e.pos]
+                positionId: posIds[e.pos],
+                managerEmployeeId: e.manager ? empIds[e.manager] : null
             };
             const response = await fetch(`${BASE}/hr/employees`, {
                 method: "POST",
@@ -114,7 +175,7 @@ async function main() {
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const r = await response.json();
             empIds[e.code] = r.data.id;
-            OK(`Employee: ${e.name}`);
+            OK(`Employee: ${e.name} (${e.code})`);
         } catch (e) {
             ERR(`Employee ${e.name} failed`, e.message);
         }
@@ -122,27 +183,17 @@ async function main() {
 
     // 5. Contracts
     STEP("5. Contracts");
-    const cts = [
-        { emp: "NV002", sal: 18000000, start: "2022-01-10" },
-        { emp: "NV003", sal: 22000000, start: "2022-06-01" },
-        { emp: "NV004", sal: 20000000, start: "2021-09-15" },
-        { emp: "NV005", sal: 16000000, start: "2020-03-01" },
-        { emp: "NV006", sal: 15000000, start: "2023-02-14" },
-        { emp: "NV007", sal: 14000000, start: "2021-07-20" },
-        { emp: "NV008", sal: 13000000, start: "2022-11-01" },
-        { emp: "NV009", sal: 25000000, start: "2020-12-15" }
-    ];
     let idx = 1;
-    for (const ct of cts) {
-        if (empIds[ct.emp]) {
+    for (const e of emps) {
+        if (empIds[e.code]) {
             try {
                 const no = `HD-2024-${String(idx).padStart(3, '0')}`;
                 const body = {
                     contractNumber: no,
-                    employeeId: empIds[ct.emp],
-                    contractType: "Chinh thuc",
-                    startDate: ct.start,
-                    baseSalary: ct.sal
+                    employeeId: empIds[e.code],
+                    contractType: "Chính thức",
+                    startDate: e.hire,
+                    baseSalary: e.sal
                 };
                 const response = await fetch(`${BASE}/hr/contracts`, {
                     method: "POST",
@@ -150,10 +201,10 @@ async function main() {
                     body: JSON.stringify(body)
                 });
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                OK(`Contract ${no} for ${ct.emp} - ${ct.sal} VND`);
+                OK(`Contract ${no} for ${e.code} - ${e.sal} VND`);
                 idx++;
             } catch (e) {
-                ERR(`Contract for ${ct.emp} failed`, e.message);
+                ERR(`Contract for ${e.code} failed`, e.message);
             }
         }
     }
@@ -161,9 +212,9 @@ async function main() {
     // 6. Shifts
     STEP("6. Work Shifts");
     const shifts = [
-        { code: "CA_HC", name: "Ca Hanh Chinh", start: "08:30:00", end: "17:30:00", brk: 90 },
-        { code: "CA_SANG", name: "Ca Sang", start: "08:00:00", end: "17:00:00", brk: 60 },
-        { code: "CA_CHIEU", name: "Ca Chieu", start: "13:00:00", end: "22:00:00", brk: 60 }
+        { code: "CA_HC", name: "Ca Hành Chính", start: "08:30:00", end: "17:30:00", brk: 90 },
+        { code: "CA_SANG", name: "Ca Sáng", start: "08:00:00", end: "17:00:00", brk: 60 },
+        { code: "CA_CHIEU", name: "Ca Chiều", start: "13:00:00", end: "22:00:00", brk: 60 }
     ];
     const shiftIds = {};
     for (const sh of shifts) {
@@ -189,9 +240,30 @@ async function main() {
         }
     }
 
-    // 7. Work Schedules (Bypassed - Handled in bulk by Step 5 sqlcmd)
+    // 7. Work Schedules
     STEP("7. Work Schedules");
-    console.log("  Info: Skipping API scheduling. Work schedules are bulk-seeded via SQL in Step 5.");
+    const defaultShift = shiftIds["CA_HC"];
+    if (defaultShift) {
+        for (const ec of Object.keys(empIds)) {
+            try {
+                const body = {
+                    employeeId: empIds[ec],
+                    shiftId: defaultShift,
+                    startDate: "2025-07-01",
+                    endDate: "2026-12-31"
+                };
+                const response = await fetch(`${BASE}/attendance/work-schedules`, {
+                    method: "POST",
+                    headers: headers,
+                    body: JSON.stringify(body)
+                });
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                OK(`Schedule for ${ec}`);
+            } catch (e) {
+                ERR(`Schedule for ${ec} failed`, e.message);
+            }
+        }
+    }
 
     // 8. Payroll Rule
     STEP("8. Payroll Rule");
@@ -199,7 +271,7 @@ async function main() {
     try {
         const body = {
             code: "QT_CHUAN",
-            name: "Quy tac luong chuan 2024",
+            name: "Quy tắc lương chuẩn 2025-2026",
             workDayHours: 8,
             paidLeaveCountsAsWork: true,
             overtimeRate: 1.5,
@@ -213,7 +285,7 @@ async function main() {
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const r = await response.json();
         ruleId = r.data.id;
-        OK(`Rule: Quy tac luong chuan [ID: ${ruleId}]`);
+        OK(`Rule: Quy tắc lương chuẩn [ID: ${ruleId}]`);
     } catch (e) {
         ERR("Payroll Rule failed", e.message);
     }
@@ -224,7 +296,7 @@ async function main() {
         try {
             const body = {
                 code: "PERIOD_2026_06",
-                name: "Luong thang 6/2026",
+                name: "Lương tháng 6/2026",
                 fromDate: "2026-06-01",
                 toDate: "2026-06-30",
                 standardWorkDays: 22,
@@ -238,7 +310,7 @@ async function main() {
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const r = await response.json();
             const periodId = r.data.id;
-            OK(`Period: Luong thang 6/2026 [ID: ${periodId}]`);
+            OK(`Period: Lương tháng 6/2026 [ID: ${periodId}]`);
         } catch (e) {
             ERR("Period failed", e.message);
         }

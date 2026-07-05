@@ -64,8 +64,8 @@ IF OBJECT_ID('dbo.AttendanceRecords', 'U') IS NOT NULL DELETE FROM dbo.Attendanc
 IF OBJECT_ID('dbo.WorkSchedules', 'U') IS NOT NULL DELETE FROM dbo.WorkSchedules;
 IF OBJECT_ID('dbo.InboxMessages', 'U') IS NOT NULL DELETE FROM dbo.InboxMessages;
 IF OBJECT_ID('dbo.OutboxMessages', 'U') IS NOT NULL DELETE FROM dbo.OutboxMessages;
-IF OBJECT_ID('dbo.EmployeeProjections', 'U') IS NOT NULL DELETE FROM dbo.EmployeeProjections WHERE EmployeeCode <> 'EMP000';
 IF OBJECT_ID('dbo.LeaveBalances', 'U') IS NOT NULL DELETE FROM dbo.LeaveBalances;
+IF OBJECT_ID('dbo.EmployeeProjections', 'U') IS NOT NULL DELETE FROM dbo.EmployeeProjections WHERE EmployeeCode <> 'EMP000';
 IF OBJECT_ID('dbo.LeaveTypes', 'U') IS NOT NULL DELETE FROM dbo.LeaveTypes;
 IF OBJECT_ID('dbo.Shifts', 'U') IS NOT NULL DELETE FROM dbo.Shifts;
 IF OBJECT_ID('dbo.PositionProjections', 'U') IS NOT NULL DELETE FROM dbo.PositionProjections WHERE Code <> 'POS001';
