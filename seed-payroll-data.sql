@@ -119,34 +119,36 @@ PRINT 'Salary Projections synchronized';
 
 -- ── 6. Seed EmployeeAllowances Dynamically ──────────────────
 -- Mọi nhân viên đều có phụ cấp ăn trưa: 680,000 VND
-INSERT INTO dbo.EmployeeAllowances (Id, EmployeeId, PayrollPeriodId, AllowanceTypeId, Amount, Note)
-SELECT NEWID(), ep.EmployeeId, p.Id, @AllowEatId, 680000, N'Ăn trưa ' + p.Name
+INSERT INTO dbo.EmployeeAllowances (Id, EmployeeId, PayrollPeriodId, AllowanceTypeId, Amount, Note, CreatedAt)
+SELECT NEWID(), ep.EmployeeId, p.Id, @AllowEatId, 680000, N'Ăn trưa ' + p.Name, GETUTCDATE()
 FROM EmployeeProjections ep
 CROSS JOIN PayrollPeriods p
 WHERE ep.EmployeeCode <> 'EMP000';
 
 -- Phụ cấp đi lại & điện thoại: Trưởng phòng/Giám đốc (Lương >= 25M) nhận 500k, Nhân viên khác nhận 200k/300k
-INSERT INTO dbo.EmployeeAllowances (Id, EmployeeId, PayrollPeriodId, AllowanceTypeId, Amount, Note)
+INSERT INTO dbo.EmployeeAllowances (Id, EmployeeId, PayrollPeriodId, AllowanceTypeId, Amount, Note, CreatedAt)
 SELECT 
     NEWID(), 
     ep.EmployeeId, 
     p.Id, 
     @AllowFuelId, 
     CASE WHEN esp.BaseSalary >= 25000000 THEN 500000 ELSE 300000 END,
-    N'Đi lại ' + p.Name
+    N'Đi lại ' + p.Name,
+    GETUTCDATE()
 FROM EmployeeProjections ep
 JOIN EmployeeSalaryProjections esp ON ep.EmployeeId = esp.EmployeeId
 CROSS JOIN PayrollPeriods p
 WHERE ep.EmployeeCode <> 'EMP000';
 
-INSERT INTO dbo.EmployeeAllowances (Id, EmployeeId, PayrollPeriodId, AllowanceTypeId, Amount, Note)
+INSERT INTO dbo.EmployeeAllowances (Id, EmployeeId, PayrollPeriodId, AllowanceTypeId, Amount, Note, CreatedAt)
 SELECT 
     NEWID(), 
     ep.EmployeeId, 
     p.Id, 
     @AllowTelId, 
     CASE WHEN esp.BaseSalary >= 25000000 THEN 500000 ELSE 200000 END,
-    N'Điện thoại ' + p.Name
+    N'Điện thoại ' + p.Name,
+    GETUTCDATE()
 FROM EmployeeProjections ep
 JOIN EmployeeSalaryProjections esp ON ep.EmployeeId = esp.EmployeeId
 CROSS JOIN PayrollPeriods p
@@ -156,28 +158,30 @@ PRINT 'Employee allowances seeded dynamically';
 
 -- ── 7. Seed EmployeeDeductions Dynamically ──────────────────
 -- Khấu trừ Bảo hiểm xã hội: 10.5% lương cơ bản
-INSERT INTO dbo.EmployeeDeductions (Id, EmployeeId, PayrollPeriodId, DeductionTypeId, Amount, Note)
+INSERT INTO dbo.EmployeeDeductions (Id, EmployeeId, PayrollPeriodId, DeductionTypeId, Amount, Note, CreatedAt)
 SELECT 
     NEWID(), 
     ep.EmployeeId, 
     p.Id, 
     @DedInsId, 
     CAST(esp.BaseSalary * 0.105 AS INT),
-    N'BHXH bắt buộc 10.5% ' + p.Name
+    N'BHXH bắt buộc 10.5% ' + p.Name,
+    GETUTCDATE()
 FROM EmployeeProjections ep
 JOIN EmployeeSalaryProjections esp ON ep.EmployeeId = esp.EmployeeId
 CROSS JOIN PayrollPeriods p
 WHERE ep.EmployeeCode <> 'EMP000';
 
 -- Khấu trừ đi muộn: Mỗi ngày đi muộn phạt 100,000 VND
-INSERT INTO dbo.EmployeeDeductions (Id, EmployeeId, PayrollPeriodId, DeductionTypeId, Amount, Note)
+INSERT INTO dbo.EmployeeDeductions (Id, EmployeeId, PayrollPeriodId, DeductionTypeId, Amount, Note, CreatedAt)
 SELECT 
     NEWID(), 
     ep.EmployeeId, 
     p.Id, 
     @DedPenaltyId, 
     lateCount.TotalLate * 100000,
-    N'Phạt đi muộn ' + CAST(lateCount.TotalLate AS VARCHAR) + N' lần ' + p.Name
+    N'Phạt đi muộn ' + CAST(lateCount.TotalLate AS VARCHAR) + N' lần ' + p.Name,
+    GETUTCDATE()
 FROM EmployeeProjections ep
 CROSS JOIN PayrollPeriods p
 JOIN (
@@ -191,7 +195,7 @@ JOIN (
 WHERE ep.EmployeeCode <> 'EMP000' AND lateCount.TotalLate > 0;
 
 -- Thuế TNCN: Tạm tính 10% phần thu nhập tính thuế vượt trên 11 triệu (sau khi trừ BHXH)
-INSERT INTO dbo.EmployeeDeductions (Id, EmployeeId, PayrollPeriodId, DeductionTypeId, Amount, Note)
+INSERT INTO dbo.EmployeeDeductions (Id, EmployeeId, PayrollPeriodId, DeductionTypeId, Amount, Note, CreatedAt)
 SELECT 
     NEWID(), 
     ep.EmployeeId, 
@@ -202,7 +206,8 @@ SELECT
             THEN CAST((esp.BaseSalary - (esp.BaseSalary * 0.105) - 11000000) * 0.10 AS INT)
         ELSE 0 
     END,
-    N'Thuế TNCN tạm tính ' + p.Name
+    N'Thuế TNCN tạm tính ' + p.Name,
+    GETUTCDATE()
 FROM EmployeeProjections ep
 JOIN EmployeeSalaryProjections esp ON ep.EmployeeId = esp.EmployeeId
 CROSS JOIN PayrollPeriods p

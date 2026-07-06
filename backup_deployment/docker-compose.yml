@@ -1,0 +1,145 @@
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: hrms-sqlserver
+    mem_limit: 2g
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Developer"
+      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD:-Hrms@123456789}"
+    ports:
+      - "1434:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+      - ./infra/sqlserver/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: [ "CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$${MSSQL_SA_PASSWORD}\" -C -Q \"SELECT 1\" || /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P \"$${MSSQL_SA_PASSWORD}\" -Q \"SELECT 1\"" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: always
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: hrms-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: always
+
+  hr-core:
+    image: hrms-hr-core:latest
+    container_name: hrms-hr-core
+    build:
+      context: .
+      dockerfile: backend/services/hr-core/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=HRMS_HrCoreDb;User Id=sa;Password=${MSSQL_SA_PASSWORD:-Hrms@123456789};TrustServerCertificate=True
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Username=guest
+      - RabbitMQ__Password=guest
+    ports:
+      - "5001:5001"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: always
+
+  attendance:
+    image: hrms-attendance:latest
+    container_name: hrms-attendance
+    build:
+      context: .
+      dockerfile: backend/services/attendance/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=HRMS_AttendanceDb;User Id=sa;Password=${MSSQL_SA_PASSWORD:-Hrms@123456789};TrustServerCertificate=True
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Username=guest
+      - RabbitMQ__Password=guest
+    ports:
+      - "5002:5002"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: always
+
+  payroll-report:
+    image: hrms-payroll-report:latest
+    container_name: hrms-payroll-report
+    build:
+      context: .
+      dockerfile: backend/services/payroll-report/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=HRMS_PayrollReportDb;User Id=sa;Password=${MSSQL_SA_PASSWORD:-Hrms@123456789};TrustServerCertificate=True
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Username=guest
+      - RabbitMQ__Password=guest
+    ports:
+      - "5003:5003"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: always
+
+  gateway:
+    image: hrms-gateway:latest
+    container_name: hrms-gateway
+    build:
+      context: .
+      dockerfile: backend/gateway/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ReverseProxy__Clusters__hr-core-cluster__Destinations__hr-core-api__Address=http://hr-core:5001/
+      - ReverseProxy__Clusters__attendance-cluster__Destinations__attendance-api__Address=http://attendance:5002/
+      - ReverseProxy__Clusters__payroll-cluster__Destinations__payroll-api__Address=http://payroll-report:5003/
+      # Allowed Origins for CORS
+      - Cors__AllowedOrigins__0=http://localhost
+      - Cors__AllowedOrigins__1=http://localhost:5173
+      - Cors__AllowedOrigins__2=http://localhost:80
+      - Cors__AllowedOrigins__3=http://chamcongso.site
+      - Cors__AllowedOrigins__4=https://chamcongso.site
+      - Cors__AllowedOrigins__5=http://www.chamcongso.site
+      - Cors__AllowedOrigins__6=https://www.chamcongso.site
+    ports:
+      - "5000:5000"
+    depends_on:
+      - hr-core
+      - attendance
+      - payroll-report
+    restart: always
+
+  frontend:
+    image: hrms-frontend:latest
+    container_name: hrms-frontend
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        # Use relative URL to leverage same-origin routing via Nginx proxy
+        - VITE_API_BASE_URL=/
+    ports:
+      - "80:80"
+    depends_on:
+      - gateway
+    restart: always
+
+volumes:
+  sqlserver_data:
+  rabbitmq_data:
