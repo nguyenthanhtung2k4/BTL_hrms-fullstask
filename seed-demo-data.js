@@ -188,11 +188,30 @@ async function main() {
         if (empIds[e.code]) {
             try {
                 const no = `HD-2024-${String(idx).padStart(3, '0')}`;
+                
+                const hireParts = e.hire.split("-");
+                const hireYear = parseInt(hireParts[0]);
+                const hireMonth = hireParts[1];
+                const hireDay = hireParts[2];
+                
+                let endDate = null;
+                const empNum = parseInt(e.code.replace("NV", ""));
+                if (e.code !== "NV001" && e.code !== "NV002" && e.code !== "NV003" && e.code !== "NV004" && e.code !== "NV005" && e.code !== "NV006") {
+                    if (empNum % 3 === 0) {
+                        // 1-year contract
+                        endDate = `${hireYear + 1}-${hireMonth}-${hireDay}`;
+                    } else if (empNum % 3 === 1) {
+                        // 3-year contract
+                        endDate = `${hireYear + 3}-${hireMonth}-${hireDay}`;
+                    }
+                }
+
                 const body = {
                     contractNumber: no,
                     employeeId: empIds[e.code],
                     contractType: "Chính thức",
                     startDate: e.hire,
+                    endDate: endDate,
                     baseSalary: e.sal
                 };
                 const response = await fetch(`${BASE}/hr/contracts`, {
@@ -201,7 +220,35 @@ async function main() {
                     body: JSON.stringify(body)
                 });
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                OK(`Contract ${no} for ${e.code} - ${e.sal} VND`);
+                const r = await response.json();
+                const contractId = r.data.id;
+
+                if (endDate) {
+                    const endD = new Date(endDate);
+                    const now = new Date("2026-07-06");
+                    if (endD < now) {
+                        // Update status to Expired
+                        const updateBody = {
+                            contractType: "Chính thức",
+                            startDate: e.hire,
+                            endDate: endDate,
+                            baseSalary: e.sal,
+                            status: "Expired",
+                            attachmentUrl: null
+                        };
+                        const putResponse = await fetch(`${BASE}/hr/contracts/${contractId}`, {
+                            method: "PUT",
+                            headers: headers,
+                            body: JSON.stringify(updateBody)
+                        });
+                        if (!putResponse.ok) throw new Error(`PUT error! status: ${putResponse.status}`);
+                        OK(`Contract ${no} for ${e.code} marked as EXPIRED (Ended: ${endDate})`);
+                    } else {
+                        OK(`Contract ${no} for ${e.code} - ${e.sal} VND (Ends: ${endDate})`);
+                    }
+                } else {
+                    OK(`Contract ${no} for ${e.code} - ${e.sal} VND (Indefinite)`);
+                }
                 idx++;
             } catch (e) {
                 ERR(`Contract for ${e.code} failed`, e.message);

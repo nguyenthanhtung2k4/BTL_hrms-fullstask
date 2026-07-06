@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { workScheduleService } from '../../../services/workSchedule.service'
 import { employeeService } from '../../../services/employee.service'
 import { shiftService } from '../../../services/shift.service'
@@ -12,6 +12,7 @@ import type { WorkSchedule, Shift, AttendanceRecord } from '../../../types/atten
 import type { Employee, Department } from '../../../types/hr.types'
 import PageHeader from '../../../components/layout/PageHeader.vue'
 import AppTable from '../../../components/ui/AppTable.vue'
+import AppSkeleton from '../../../components/ui/AppSkeleton.vue'
 import AppButton from '../../../components/ui/AppButton.vue'
 import AppPagination from '../../../components/ui/AppPagination.vue'
 import { usePagination } from '../../../composables/usePagination'
@@ -183,6 +184,28 @@ const filteredEmployeesForGrid = computed(() => {
   })
 })
 
+// Phân trang cho Grid View (Phân trang theo nhân sự để đảm bảo mượt mà)
+const gridCurrentPage = ref(1)
+const gridPerPage = ref(10)
+
+const paginatedEmployeesForGrid = computed(() => {
+  const start = (gridCurrentPage.value - 1) * gridPerPage.value
+  const end = start + gridPerPage.value
+  return filteredEmployeesForGrid.value.slice(start, end)
+})
+
+// Đưa trang hiện tại về 1 khi người dùng thực hiện lọc phòng ban hoặc tìm kiếm
+watch([search, selectedDeptId], () => {
+  gridCurrentPage.value = 1
+})
+
+watch(filteredEmployeesForGrid, (newList) => {
+  const maxPage = Math.max(1, Math.ceil(newList.length / gridPerPage.value))
+  if (gridCurrentPage.value > maxPage) {
+    gridCurrentPage.value = maxPage
+  }
+})
+
 const filtered = computed(() => {
   let result = schedules.value
 
@@ -221,9 +244,19 @@ async function load() {
   try {
     // Quyền view-all: Admin, HR, Manager, PayrollStaff
     const canViewAll = auth.isManager || auth.isPayrollStaff
-    const params = canViewAll ? {} : { employeeId: auth.employeeId ?? undefined }
     
-    // Tải song song tất cả các nguồn dữ liệu bao gồm cả bảng chấm công
+    // Lấy khoảng thời gian của lịch làm việc đang xem trên giao diện để tối ưu hóa truy vấn backend
+    const fromDateStr = formatDateToYMD(currentDays.value[0])
+    const toDateStr = formatDateToYMD(currentDays.value[currentDays.value.length - 1])
+    
+    const params: any = { fromDate: fromDateStr, toDate: toDateStr }
+    if (!canViewAll) {
+      params.employeeId = auth.employeeId ?? undefined
+    }
+
+    const attendanceParams = { fromDate: fromDateStr, toDate: toDateStr }
+    
+    // Tải song song tất cả các nguồn dữ liệu bao gồm cả bảng chấm công theo khoảng ngày
     const [resSchedules, resEmployees, resShifts, resDepts, resAttendance] = await Promise.all([
       workScheduleService.getAll(params),
       canViewAll
@@ -231,7 +264,7 @@ async function load() {
         : (auth.employeeId ? employeeService.getById(auth.employeeId).then((e) => [e]) : Promise.resolve([])),
       shiftService.getAll(),
       departmentService.getAll(),
-      canViewAll ? attendanceService.getAll() : attendanceService.getMyRecords()
+      canViewAll ? attendanceService.getAll(attendanceParams) : attendanceService.getMyRecords(attendanceParams)
     ])
     schedules.value = resSchedules
     employees.value = resEmployees
@@ -244,6 +277,11 @@ async function load() {
     loading.value = false
   }
 }
+
+// Tự động tải lại dữ liệu khi đổi khoảng thời gian (ngày hiện tại hoặc chế độ tuần/tháng)
+watch([currentDate, gridRangeMode], () => {
+  load()
+})
 
 function validate() {
   errors.value = {}
@@ -377,10 +415,27 @@ function getShiftExpectedMinutes(shift: Shift): number {
   return endMinutes - startMinutes - breakMins
 }
 
+// Bản đồ tìm kiếm nhanh O(1) tránh duyệt vòng lặp O(N*M)
+const schedulesMap = computed(() => {
+  const map = new Map<string, WorkSchedule>()
+  for (let i = 0; i < schedules.value.length; i++) {
+    const s = schedules.value[i]
+    map.set(`${s.employeeId}_${s.workDate}`, s)
+  }
+  return map
+})
+
+const attendanceMap = computed(() => {
+  const map = new Map<string, AttendanceRecord>()
+  for (let i = 0; i < attendanceRecords.value.length; i++) {
+    const r = attendanceRecords.value[i]
+    map.set(`${r.employeeId}_${r.workDate}`, r)
+  }
+  return map
+})
+
 function getScheduleStatusInfo(schedule: WorkSchedule) {
-  const record = attendanceRecords.value.find(
-    (r) => r.employeeId === schedule.employeeId && r.workDate === schedule.workDate
-  )
+  const record = attendanceMap.value.get(`${schedule.employeeId}_${schedule.workDate}`)
   
   const scheduleDate = new Date(schedule.workDate)
   scheduleDate.setHours(0, 0, 0, 0)
@@ -448,9 +503,7 @@ function getScheduleStatusInfo(schedule: WorkSchedule) {
 // Find schedule helper for the weekly grid cells
 function findSchedule(employeeId: string, date: Date): WorkSchedule | undefined {
   const dateStr = formatDateToYMD(date)
-  return schedules.value.find(
-    (s) => s.employeeId === employeeId && s.workDate === dateStr
-  )
+  return schedulesMap.value.get(`${employeeId}_${dateStr}`)
 }
 
 const { currentPage, perPage, paginatedData, total } = usePagination(filtered)
@@ -610,8 +663,8 @@ onMounted(load)
           </div>
         </div>
 
-        <!-- Right: Period Nav (Grid View only) -->
-        <div v-if="viewMode === 'grid'" class="flex items-center gap-2">
+        <!-- Right: Period Nav -->
+        <div class="flex items-center gap-2">
           <!-- Toggle Week / Month -->
           <div class="inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200 mr-2 shadow-sm">
             <button
@@ -642,104 +695,122 @@ onMounted(load)
         </div>
       </div>
 
-      <!-- Date display row (Grid View only) -->
-      <div v-if="viewMode === 'grid'" class="flex items-center justify-between border-t border-slate-100 pt-2.5">
+      <!-- Date display row -->
+      <div class="flex items-center justify-between border-t border-slate-100 pt-2.5">
         <div class="text-xs font-bold text-slate-700 flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
           <Calendar class="h-4 w-4 text-emerald-600" />
           <span>Lịch làm việc từ <span class="text-emerald-700 font-extrabold">{{ fmt(formatDateToYMD(currentDays[0])) }}</span> đến <span class="text-emerald-700 font-extrabold">{{ fmt(formatDateToYMD(currentDays[currentDays.length - 1])) }}</span></span>
         </div>
-        <div class="text-[11px] text-slate-400 font-medium">
+        <div v-if="viewMode === 'grid'" class="text-[11px] text-slate-400 font-medium">
           Mẹo: Nhấp dấu cộng (+) để thêm lịch nhanh cho nhân viên
         </div>
       </div>
     </div>
 
     <!-- 1. BẢNG TUẦN/THÁNG (GRID VIEW) -->
-    <div v-if="viewMode === 'grid'" class="overflow-x-auto rounded-2xl border border-slate-150 shadow-sm bg-white">
-      <table class="min-w-full divide-y divide-slate-150">
-        <thead class="bg-slate-50/70 backdrop-blur-sm">
-          <tr>
-            <th class="px-4 py-4 text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider sticky left-0 bg-slate-50/95 border-r border-slate-200 z-10 w-[240px] shadow-[2px_0_5px_rgba(0,0,0,0.02)]">
-              Nhân viên
-            </th>
-            <th v-for="(day, index) in currentDays" :key="index" :class="['px-3 py-4 text-center text-xs font-bold border-r border-slate-250 last:border-r-0', gridRangeMode === 'month' ? 'min-w-[110px]' : 'min-w-[140px]']">
-              <div class="text-slate-600 font-semibold">{{ ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'][day.getDay()] }}</div>
-              <div class="text-[10px] text-slate-400 font-bold mt-0.5">{{ day.getDate() }}/{{ day.getMonth() + 1 }}</div>
-            </th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-150 bg-white">
-          <tr v-if="filteredEmployeesForGrid.length === 0">
-            <td :colspan="currentDays.length + 1" class="px-6 py-12 text-center text-sm text-slate-400 font-medium">
-              Không tìm thấy nhân viên phù hợp bộ lọc.
-            </td>
-          </tr>
-          <tr v-for="emp in filteredEmployeesForGrid" :key="emp.id" class="hover:bg-slate-50/40 transition-colors group">
-            <!-- Cột tên nhân viên -->
-            <td class="px-4 py-3.5 sticky left-0 bg-white group-hover:bg-slate-50/90 z-10 border-r border-slate-200 w-[240px] shadow-[2px_0_5px_rgba(0,0,0,0.02)] transition-colors">
-              <div class="flex items-center gap-2.5">
-                <div class="h-9 w-9 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 text-white flex items-center justify-center font-extrabold text-xs uppercase shadow-sm shrink-0">
-                  {{ emp.fullName.charAt(0) }}
-                </div>
-                <div class="min-w-0">
-                  <div class="font-bold text-slate-800 text-sm truncate" :title="emp.fullName">
-                     {{ emp.fullName }}
+    <div v-if="viewMode === 'grid'">
+      <div class="overflow-x-auto rounded-2xl border border-slate-150 shadow-sm bg-white">
+        <table class="min-w-full divide-y divide-slate-150">
+          <thead class="bg-slate-50/70 backdrop-blur-sm">
+            <tr>
+              <th class="px-4 py-4 text-left text-[11px] font-bold text-slate-500 uppercase tracking-wider sticky left-0 bg-slate-50/95 border-r border-slate-200 z-10 w-[240px] shadow-[2px_0_5px_rgba(0,0,0,0.02)]">
+                Nhân viên
+              </th>
+              <th v-for="(day, index) in currentDays" :key="index" :class="['px-3 py-4 text-center text-xs font-bold border-r border-slate-250 last:border-r-0', gridRangeMode === 'month' ? 'min-w-[110px]' : 'min-w-[140px]']">
+                <div class="text-slate-600 font-semibold">{{ ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'][day.getDay()] }}</div>
+                <div class="text-[10px] text-slate-400 font-bold mt-0.5">{{ day.getDate() }}/{{ day.getMonth() + 1 }}</div>
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-150 bg-white">
+            <!-- Loading skeleton rows (YouTube style shimmer) -->
+            <AppSkeleton v-if="loading" type="table-row" :count="5" :cols="currentDays.length" />
+
+            <template v-else>
+              <tr v-if="filteredEmployeesForGrid.length === 0">
+                <td :colspan="currentDays.length + 1" class="px-6 py-12 text-center text-sm text-slate-400 font-medium">
+                  Không tìm thấy nhân viên phù hợp bộ lọc.
+                </td>
+              </tr>
+              <tr v-for="emp in paginatedEmployeesForGrid" :key="emp.id" class="hover:bg-slate-50/40 transition-colors group">
+                <!-- Cột tên nhân viên -->
+                <td class="px-4 py-3.5 sticky left-0 bg-white group-hover:bg-slate-50/90 z-10 border-r border-slate-200 w-[240px] shadow-[2px_0_5px_rgba(0,0,0,0.02)] transition-colors">
+                  <div class="flex items-center gap-2.5">
+                    <div class="h-9 w-9 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 text-white flex items-center justify-center font-extrabold text-xs uppercase shadow-sm shrink-0">
+                      {{ emp.fullName.charAt(0) }}
+                    </div>
+                    <div class="min-w-0">
+                      <div class="font-bold text-slate-800 text-sm truncate" :title="emp.fullName">
+                         {{ emp.fullName }}
+                      </div>
+                      <div class="text-[10px] text-slate-400 font-bold tracking-wide mt-0.5 uppercase">
+                        {{ emp.departmentName || 'Chưa gán phòng' }}
+                      </div>
+                    </div>
                   </div>
-                  <div class="text-[10px] text-slate-400 font-bold tracking-wide mt-0.5 uppercase">
-                    {{ emp.departmentName || 'Chưa gán phòng' }}
+                </td>
+
+                <!-- Các cột ca làm của các thứ -->
+                <td v-for="(day, idx) in currentDays" :key="idx" class="px-2.5 py-3.5 border-r border-slate-100 last:border-r-0 text-center">
+                  <div v-if="findSchedule(emp.id, day)" class="group/cell relative p-2.5 rounded-xl border border-slate-200 bg-white shadow-sm flex flex-col items-center gap-1.5 transition-all hover:border-emerald-400 hover:shadow-md hover:-translate-y-0.5">
+                    <div class="text-[11px] font-bold text-slate-700 truncate max-w-full">
+                      {{ findSchedule(emp.id, day)?.shiftName }}
+                    </div>
+                    <span :class="['inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider border', getScheduleStatusInfo(findSchedule(emp.id, day)!).class]">
+                      {{ getScheduleStatusInfo(findSchedule(emp.id, day)!).label }}
+                    </span>
+
+                    <!-- Quick actions on cell hover -->
+                    <div v-if="auth.isManager" class="absolute inset-0 bg-slate-900/5 rounded-xl opacity-0 group-hover/cell:opacity-100 flex items-center justify-center gap-1.5 transition-all">
+                      <button
+                        type="button"
+                        @click="openEdit(findSchedule(emp.id, day)!)"
+                        class="h-6 w-6 rounded bg-white text-emerald-600 border border-slate-200 shadow-md flex items-center justify-center hover:bg-emerald-50 transition-colors"
+                        title="Sửa"
+                      >
+                        <Edit class="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        @click="deleteTarget = findSchedule(emp.id, day)!"
+                        class="h-6 w-6 rounded bg-white text-red-600 border border-slate-200 shadow-md flex items-center justify-center hover:bg-red-50 transition-colors"
+                        title="Xóa"
+                      >
+                        <Trash2 class="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              </div>
-            </td>
 
-            <!-- Các cột ca làm của các thứ -->
-            <td v-for="(day, idx) in currentDays" :key="idx" class="px-2.5 py-3.5 border-r border-slate-100 last:border-r-0 text-center">
-              <div v-if="findSchedule(emp.id, day)" class="group/cell relative p-2.5 rounded-xl border border-slate-200 bg-white shadow-sm flex flex-col items-center gap-1.5 transition-all hover:border-emerald-400 hover:shadow-md hover:-translate-y-0.5">
-                <div class="text-[11px] font-bold text-slate-700 truncate max-w-full">
-                  {{ findSchedule(emp.id, day)?.shiftName }}
-                </div>
-                <span :class="['inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider border', getScheduleStatusInfo(findSchedule(emp.id, day)!).class]">
-                  {{ getScheduleStatusInfo(findSchedule(emp.id, day)!).label }}
-                </span>
+                  <!-- Cell empty: Allow quick assigning if user is Manager -->
+                  <div v-else>
+                    <button
+                      v-if="auth.isManager"
+                      type="button"
+                      @click="quickAssign(emp.id, day)"
+                      class="h-10 w-full rounded-xl border-2 border-dashed border-slate-150 hover:border-emerald-300 hover:bg-emerald-50/20 flex items-center justify-center text-slate-350 hover:text-emerald-600 transition-all"
+                      title="Click để phân lịch"
+                    >
+                      <Plus class="h-4 w-4" />
+                    </button>
+                    <div v-else class="text-xs text-slate-300 italic py-2">--</div>
+                  </div>
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
 
-                <!-- Quick actions on cell hover -->
-                <div v-if="auth.isManager" class="absolute inset-0 bg-slate-900/5 rounded-xl opacity-0 group-hover/cell:opacity-100 flex items-center justify-center gap-1.5 transition-all">
-                  <button
-                    type="button"
-                    @click="openEdit(findSchedule(emp.id, day)!)"
-                    class="h-6 w-6 rounded bg-white text-emerald-600 border border-slate-200 shadow-md flex items-center justify-center hover:bg-emerald-50 transition-colors"
-                    title="Sửa"
-                  >
-                    <Edit class="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    @click="deleteTarget = findSchedule(emp.id, day)!"
-                    class="h-6 w-6 rounded bg-white text-red-600 border border-slate-200 shadow-md flex items-center justify-center hover:bg-red-50 transition-colors"
-                    title="Xóa"
-                  >
-                    <Trash2 class="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </div>
-
-              <!-- Cell empty: Allow quick assigning if user is Manager -->
-              <div v-else>
-                <button
-                  v-if="auth.isManager"
-                  type="button"
-                  @click="quickAssign(emp.id, day)"
-                  class="h-10 w-full rounded-xl border-2 border-dashed border-slate-150 hover:border-emerald-300 hover:bg-emerald-50/20 flex items-center justify-center text-slate-350 hover:text-emerald-600 transition-all"
-                  title="Click để phân lịch"
-                >
-                  <Plus class="h-4 w-4" />
-                </button>
-                <div v-else class="text-xs text-slate-300 italic py-2">--</div>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <!-- Phân trang cho Grid View -->
+      <div class="mt-4 bg-white border border-slate-150 rounded-2xl p-4 shadow-sm">
+        <AppPagination
+          :total="filteredEmployeesForGrid.length"
+          :current="gridCurrentPage"
+          :per-page="gridPerPage"
+          @change="gridCurrentPage = $event"
+          @per-page-change="gridPerPage = $event"
+        />
+      </div>
     </div>
 
     <!-- 2. BẢNG DANH SÁCH (LIST VIEW) -->

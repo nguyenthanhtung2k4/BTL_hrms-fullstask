@@ -20,13 +20,18 @@ public class PayslipService : IPayslipService
         _dbContext = dbContext;
     }
 
-    public async Task<Result<IEnumerable<PayslipDto>>> GetPayslipsAsync(Guid? periodId, Guid? employeeId, Guid? departmentId)
+    public async Task<Result<IEnumerable<PayslipDto>>> GetPayslipsAsync(Guid? periodId, Guid? employeeId, Guid? departmentId, bool onlyCalculatedOrClosed = false)
     {
         var query = _dbContext.Payslips
             .Include(p => p.Employee)
             .Include(p => p.PayrollPeriod)
             .Include(p => p.Items)
             .AsQueryable();
+
+        if (onlyCalculatedOrClosed)
+        {
+            query = query.Where(p => p.PayrollPeriod != null && (p.PayrollPeriod.Status == "Calculated" || p.PayrollPeriod.Status == "Closed"));
+        }
 
         if (periodId.HasValue)
         {
@@ -42,6 +47,8 @@ public class PayslipService : IPayslipService
         {
             query = query.Where(p => p.Employee != null && p.Employee.DepartmentId == departmentId.Value);
         }
+
+        query = query.OrderByDescending(p => p.PayrollPeriod.FromDate);
 
         var list = await query
             .Select(p => new PayslipDto(

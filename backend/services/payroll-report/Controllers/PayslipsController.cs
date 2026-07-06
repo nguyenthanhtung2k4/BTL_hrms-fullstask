@@ -87,7 +87,7 @@ public class PayslipsController : ControllerBase
             return Ok(ApiResponse<IEnumerable<PayslipDto>>.Ok(Array.Empty<PayslipDto>(), "User is not associated with an Employee account."));
         }
 
-        var result = await _payslipService.GetPayslipsAsync(null, employeeId, null);
+        var result = await _payslipService.GetPayslipsAsync(null, employeeId, null, onlyCalculatedOrClosed: true);
         return Ok(ApiResponse<IEnumerable<PayslipDto>>.Ok(result.Value ?? Array.Empty<PayslipDto>(), result.Message));
     }
 

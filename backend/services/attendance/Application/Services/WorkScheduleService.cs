@@ -20,7 +20,7 @@ public class WorkScheduleService : IWorkScheduleService
         _dbContext = dbContext;
     }
 
-    public async Task<Result<IEnumerable<WorkScheduleDto>>> GetSchedulesAsync(Guid? employeeId, DateOnly? fromDate, DateOnly? toDate)
+    public async Task<Result<IEnumerable<WorkScheduleDto>>> GetSchedulesAsync(Guid? employeeId, DateOnly? fromDate, DateOnly? toDate, List<Guid>? allowedEmployeeIds = null)
     {
         var query = _dbContext.WorkSchedules
             .Include(w => w.Employee)
@@ -30,6 +30,10 @@ public class WorkScheduleService : IWorkScheduleService
         if (employeeId.HasValue)
         {
             query = query.Where(w => w.EmployeeId == employeeId.Value);
+        }
+        else if (allowedEmployeeIds != null)
+        {
+            query = query.Where(w => allowedEmployeeIds.Contains(w.EmployeeId));
         }
 
         if (fromDate.HasValue)

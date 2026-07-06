@@ -23,7 +23,7 @@ IF OBJECT_ID('tempdb..#WD') IS NOT NULL DROP TABLE #WD;
 CREATE TABLE #WD (D DATE);
 
 DECLARE @d DATE='2025-07-01';
-WHILE @d<='2026-06-30' BEGIN
+WHILE @d<='2026-07-06' BEGIN
     -- Loại bỏ thứ Bảy (7) và Chủ Nhật (1)
     IF DATEPART(WEEKDAY, @d) NOT IN (1, 7) 
         INSERT INTO #WD VALUES (@d);
@@ -50,12 +50,13 @@ INSERT INTO #Months VALUES
 (2026, 3, '2026-03-01', '2026-03-31'),
 (2026, 4, '2026-04-01', '2026-04-30'),
 (2026, 5, '2026-05-01', '2026-05-31'),
-(2026, 6, '2026-06-01', '2026-06-30');
+(2026, 6, '2026-06-01', '2026-06-30'),
+(2026, 7, '2026-07-01', '2026-07-31');
 
 -- Xóa dữ liệu cũ trong tầm ảnh hưởng
-DELETE FROM AttendanceRecords WHERE WorkDate >= '2025-07-01' AND WorkDate <= '2026-06-30';
-DELETE FROM LeaveRequests WHERE FromDate >= '2025-07-01' AND ToDate <= '2026-06-30';
-DELETE FROM WorkSchedules WHERE WorkDate >= '2025-07-01' AND WorkDate <= '2026-06-30';
+DELETE FROM AttendanceRecords WHERE WorkDate >= '2025-07-01' AND WorkDate <= '2026-07-06';
+DELETE FROM LeaveRequests WHERE FromDate >= '2025-07-01' AND ToDate <= '2026-07-06';
+DELETE FROM WorkSchedules WHERE WorkDate >= '2025-07-01' AND WorkDate <= '2026-07-06';
 DELETE FROM LeaveBalances;
 PRINT 'Old records cleared';
 
@@ -152,7 +153,7 @@ WHERE ep.EmployeeCode <> 'EMP000'
 -- Cập nhật số phút làm việc thực tế (WorkedMinutes = CheckOutAt - CheckInAt - 90 phút nghỉ trưa)
 UPDATE AttendanceRecords
 SET WorkedMinutes = DATEDIFF(MINUTE, CheckInAt, CheckOutAt) - 90
-WHERE WorkDate >= '2025-07-01' AND WorkDate <= '2026-06-30';
+WHERE WorkDate >= '2025-07-01' AND WorkDate <= '2026-07-06';
 
 PRINT 'AttendanceRecords seeded and updated';
 
@@ -161,7 +162,7 @@ UPDATE ar
 SET ar.WorkScheduleId = ws.Id
 FROM AttendanceRecords ar
 JOIN WorkSchedules ws ON ar.EmployeeId = ws.EmployeeId AND ar.WorkDate = ws.WorkDate
-WHERE ar.WorkDate >= '2025-07-01' AND ar.WorkDate <= '2026-06-30';
+WHERE ar.WorkDate >= '2025-07-01' AND ar.WorkDate <= '2026-07-06';
 PRINT 'AttendanceRecords linked to WorkSchedules';
 
 -- ── 6. Seed Timesheets Dynamically ─────────────────

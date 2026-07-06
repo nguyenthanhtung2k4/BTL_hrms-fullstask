@@ -54,16 +54,15 @@ public class WorkSchedulesController : ControllerBase
                 }
                 else
                 {
-                    var result = await _scheduleService.GetSchedulesAsync(null, fromDate, toDate);
+                    var allowedEmpIds = await _dbContext.EmployeeProjections
+                        .Where(e => e.DepartmentId == managerDeptId || e.ManagerEmployeeId == claimEmpId || e.Id == claimEmpId)
+                        .Select(e => e.Id)
+                        .ToListAsync();
+
+                    var result = await _scheduleService.GetSchedulesAsync(null, fromDate, toDate, allowedEmpIds);
                     if (result.IsSuccess && result.Value != null)
                     {
-                        var allowedEmpIds = await _dbContext.EmployeeProjections
-                            .Where(e => e.DepartmentId == managerDeptId || e.ManagerEmployeeId == claimEmpId)
-                            .Select(e => e.Id)
-                            .ToListAsync();
-                        
-                        var filtered = result.Value.Where(s => allowedEmpIds.Contains(s.EmployeeId) || s.EmployeeId == claimEmpId);
-                        return Ok(ApiResponse<IEnumerable<WorkScheduleDto>>.Ok(filtered, result.Message));
+                        return Ok(ApiResponse<IEnumerable<WorkScheduleDto>>.Ok(result.Value, result.Message));
                     }
                     return Ok(ApiResponse<IEnumerable<WorkScheduleDto>>.Ok(Array.Empty<WorkScheduleDto>(), result?.Message ?? "Success"));
                 }

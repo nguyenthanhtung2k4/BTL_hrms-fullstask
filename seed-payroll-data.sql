@@ -25,13 +25,13 @@ GO
 INSERT INTO AttendanceProjections (AttendanceRecordId, EmployeeId, WorkDate, WorkedMinutes, Status, LastSyncedAt)
 SELECT Id, EmployeeId, WorkDate, WorkedMinutes, Status, GETUTCDATE()
 FROM HRMS_AttendanceDb.dbo.AttendanceRecords
-WHERE WorkDate >= '2025-07-01' AND WorkDate <= '2026-06-30';
+WHERE WorkDate >= '2025-07-01' AND WorkDate <= '2026-07-06';
 
 INSERT INTO LeaveProjections (LeaveRequestId, EmployeeId, FromDate, ToDate, TotalDays, IsPaid, LastSyncedAt)
 SELECT lr.Id, lr.EmployeeId, lr.FromDate, lr.ToDate, lr.TotalDays, lt.IsPaid, GETUTCDATE()
 FROM HRMS_AttendanceDb.dbo.LeaveRequests lr
 JOIN HRMS_AttendanceDb.dbo.LeaveTypes lt ON lr.LeaveTypeId = lt.Id
-WHERE lr.Status = 'Approved' AND lr.FromDate >= '2025-07-01' AND lr.ToDate <= '2026-06-30';
+WHERE lr.Status = 'Approved' AND lr.FromDate >= '2025-07-01' AND lr.ToDate <= '2026-07-06';
 
 PRINT 'Projections synced from Attendance DB';
 
@@ -42,7 +42,7 @@ IF NOT EXISTS (SELECT 1 FROM dbo.PayrollRules WHERE Code = 'RULE_STANDARD')
 
 DECLARE @RuleId UNIQUEIDENTIFIER = (SELECT TOP 1 Id FROM dbo.PayrollRules WHERE Code = 'RULE_STANDARD');
 
--- Bảng 12 chu kỳ tính lương
+-- Bảng chu kỳ tính lương
 IF OBJECT_ID('tempdb..#PeriodDef') IS NOT NULL DROP TABLE #PeriodDef;
 CREATE TABLE #PeriodDef (
     Code VARCHAR(50),
@@ -64,10 +64,28 @@ INSERT INTO #PeriodDef VALUES
 ('PERIOD_2026_03', N'Lương T3/2026', '2026-03-01', '2026-03-31', 22),
 ('PERIOD_2026_04', N'Lương T4/2026', '2026-04-01', '2026-04-30', 22),
 ('PERIOD_2026_05', N'Lương T5/2026', '2026-05-01', '2026-05-31', 21),
-('PERIOD_2026_06', N'Lương T6/2026', '2026-06-01', '2026-06-30', 22);
+('PERIOD_2026_06', N'Lương T6/2026', '2026-06-01', '2026-06-30', 22),
+('PERIOD_2026_07', N'Lương T7/2026', '2026-07-01', '2026-07-31', 23);
 
-INSERT INTO dbo.PayrollPeriods (Id, Code, Name, FromDate, ToDate, StandardWorkDays, PayrollRuleId, Status, CreatedAt)
-SELECT NEWID(), Code, Name, FromD, ToD, WDays, @RuleId, 'Draft', GETUTCDATE()
+INSERT INTO dbo.PayrollPeriods (Id, Code, Name, FromDate, ToDate, StandardWorkDays, PayrollRuleId, Status, ClosedAt, CreatedAt)
+SELECT 
+    NEWID(), 
+    Code, 
+    Name, 
+    FromD, 
+    ToD, 
+    WDays, 
+    @RuleId, 
+    CASE 
+        WHEN Code = 'PERIOD_2026_07' THEN 'Draft'
+        WHEN Code = 'PERIOD_2026_06' THEN 'Calculated'
+        ELSE 'Closed'
+    END, 
+    CASE 
+        WHEN Code NOT IN ('PERIOD_2026_06', 'PERIOD_2026_07') THEN GETUTCDATE()
+        ELSE NULL
+    END,
+    GETUTCDATE()
 FROM #PeriodDef;
 
 PRINT '12 Payroll periods seeded';
@@ -282,8 +300,23 @@ SET Net = Gross - TotalDed;
 
 -- Insert dữ liệu vào bảng Payslips
 INSERT INTO dbo.Payslips (Id, PayrollPeriodId, EmployeeId, BaseSalary, WorkedDays, PaidLeaveDays, GrossSalary, TotalDeduction, NetSalary, Status, CreatedAt)
-SELECT SlipId, PeriodId, EmployeeId, BaseSalary, WorkedDays, PaidLeaveDays, Gross, TotalDed, Net, 'Approved', GETUTCDATE()
-FROM #CalcSlips;
+SELECT 
+    cs.SlipId, 
+    cs.PeriodId, 
+    cs.EmployeeId, 
+    cs.BaseSalary, 
+    cs.WorkedDays, 
+    cs.PaidLeaveDays, 
+    cs.Gross, 
+    cs.TotalDed, 
+    cs.Net, 
+    CASE 
+        WHEN pp.Status = 'Closed' THEN 'Closed'
+        ELSE 'Approved'
+    END, 
+    GETUTCDATE()
+FROM #CalcSlips cs
+JOIN dbo.PayrollPeriods pp ON cs.PeriodId = pp.Id;
 
 PRINT 'Payslips seeded successfully';
 
