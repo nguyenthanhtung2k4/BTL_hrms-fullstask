@@ -18,10 +18,31 @@ public class AttendanceDbContext : DbContext
     public DbSet<LeaveType> LeaveTypes => Set<LeaveType>();
     public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
     public DbSet<Timesheet> Timesheets => Set<Timesheet>();
+    public DbSet<LeaveBalance> LeaveBalances => Set<LeaveBalance>();
+    public DbSet<AttendanceAdjustment> AttendanceAdjustments => Set<AttendanceAdjustment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        
+        // LeaveBalance
+        modelBuilder.Entity<LeaveBalance>(entity =>
+        {
+            entity.ToTable("LeaveBalances");
+            entity.HasKey(e => e.Id);
+
+            entity.HasOne(e => e.Employee)
+                .WithMany()
+                .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.LeaveType)
+                .WithMany()
+                .HasForeignKey(e => e.LeaveTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => new { e.EmployeeId, e.LeaveTypeId, e.Year }).IsUnique();
+        });
 
         // DepartmentProjection
         modelBuilder.Entity<DepartmentProjection>(entity =>
@@ -50,6 +71,7 @@ public class AttendanceDbContext : DbContext
         {
             entity.ToTable("EmployeeProjections");
             entity.HasKey(e => e.Id);
+            entity.HasQueryFilter(e => !e.IsDeleted);
             entity.Property(e => e.Id).HasColumnName("EmployeeId");
             entity.Property(e => e.EmployeeCode).HasMaxLength(50).IsRequired();
             entity.Property(e => e.FullName).HasMaxLength(200).IsRequired();
@@ -169,6 +191,30 @@ public class AttendanceDbContext : DbContext
             entity.HasOne(e => e.Employee)
                 .WithMany()
                 .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // AttendanceAdjustment
+        modelBuilder.Entity<AttendanceAdjustment>(entity =>
+        {
+            entity.ToTable("AttendanceAdjustments");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Status).HasMaxLength(30).IsRequired();
+            entity.Property(e => e.Reason).HasMaxLength(500).IsRequired();
+
+            entity.HasOne(e => e.Employee)
+                .WithMany()
+                .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Shift)
+                .WithMany()
+                .HasForeignKey(e => e.ShiftId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.HandledBy)
+                .WithMany()
+                .HasForeignKey(e => e.HandledByEmployeeId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }

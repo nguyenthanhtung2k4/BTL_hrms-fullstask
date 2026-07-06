@@ -10,4 +10,5 @@ export const employeeService = {
   update: (id: string, dto: UpdateEmployeeDto) => apiClient.put<{ data: Employee }>(`${BASE}/${id}`, dto).then(extractData),
   changeStatus: (id: string, dto: ChangeStatusDto) => apiClient.put(`${BASE}/${id}/status`, dto),
   delete: (id: string) => apiClient.delete(`${BASE}/${id}`),
+  deleteMultiple: (ids: string[]) => apiClient.delete(`${BASE}/list-employees`, { data: ids }),
 }

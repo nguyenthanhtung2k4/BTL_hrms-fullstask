@@ -40,6 +40,11 @@ export interface PayrollRule {
   overtimeRate: number
   isActive: boolean
   createdAt: string
+  gracePeriodMinutes: number
+  lateDeductionRate: number
+  weekendOvertimeRate: number
+  holidayOvertimeRate: number
+  roundingMinutes: number
 }
 
 export interface CreatePayrollRuleDto {
@@ -49,6 +54,11 @@ export interface CreatePayrollRuleDto {
   paidLeaveCountsAsWork: boolean
   overtimeRate: number
   isActive?: boolean
+  gracePeriodMinutes: number
+  lateDeductionRate: number
+  weekendOvertimeRate: number
+  holidayOvertimeRate: number
+  roundingMinutes: number
 }
 
 // ---
@@ -65,6 +75,7 @@ export interface EmployeeAllowance {
   payrollPeriodId: string
   periodName?: string
   employeeId: string
+  employeeCode?: string
   employeeName?: string
   allowanceTypeId: string
   allowanceTypeName?: string
@@ -95,6 +106,7 @@ export interface EmployeeDeduction {
   payrollPeriodId: string
   periodName?: string
   employeeId: string
+  employeeCode?: string
   employeeName?: string
   deductionTypeId: string
   deductionTypeName?: string
@@ -136,6 +148,8 @@ export interface Payslip {
   netSalary: number
   status: string
   items?: PayslipItem[]
+  periodName?: string
+  periodCode?: string
 }
 
 // ---

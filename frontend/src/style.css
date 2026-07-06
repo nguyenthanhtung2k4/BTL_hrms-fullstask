@@ -1,34 +1,333 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
+
+/* ─────────────────────────────────────────────────────────
+   CSS Design Tokens — Light Mode (Premium Forest Mint)
+   ───────────────────────────────────────────────────────── */
 :root {
-  font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
-  color: #172026;
-  background: #f6f8fb;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* Backgrounds */
+  --bg-page:       hsl(160, 20%, 97.5%);
+  --bg-surface:    hsl(0, 0%, 100%);
+  --bg-subtle:     hsl(160, 15%, 95.5%);
+  --bg-muted:      hsl(160, 12%, 92.5%);
+
+  /* Borders */
+  --border:        hsl(160, 12%, 90%);
+  --border-strong: hsl(160, 10%, 82%);
+
+  /* Text */
+  --text-primary:   hsl(160, 40%, 11%);
+  --text-secondary: hsl(160, 15%, 38%);
+  --text-tertiary:  hsl(160, 10%, 58%);
+  --text-inverse:   hsl(0, 0%, 100%);
+
+  /* Brand — Emerald Premium */
+  --color-primary:       hsl(161, 84%, 38%);
+  --color-primary-hover: hsl(161, 84%, 31%);
+  --color-primary-light: hsl(161, 84%, 96%);
+  --color-primary-text:  hsl(161, 84%, 25%);
+
+  /* Semantic */
+  --color-success:       hsl(150, 75%, 38%);
+  --color-success-light: hsl(150, 75%, 95%);
+  --color-warning:       hsl(42, 95%, 45%);
+  --color-warning-light: hsl(42, 95%, 94%);
+  --color-danger:        hsl(356, 85%, 55%);
+  --color-danger-light:  hsl(356, 85%, 96%);
+  --color-info:          hsl(198, 90%, 46%);
+  --color-info-light:    hsl(198, 90%, 95%);
+
+  /* Shadows */
+  --shadow-sm:   0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md:   0 4px 12px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-lg:   0 12px 28px rgba(0, 0, 0, 0.07);
+  --shadow-xl:   0 24px 68px rgba(0, 0, 0, 0.10);
+
+  /* Sidebar */
+  --sidebar-bg:     hsl(0, 0%, 100%);
+  --sidebar-border: hsl(160, 12%, 90%);
+  --sidebar-hover:  hsl(161, 84%, 96%);
+  --sidebar-active: hsl(161, 84%, 93%);
+  --sidebar-active-text: hsl(161, 84%, 25%);
+
+  /* Transitions */
+  --transition-fast:   150ms ease-out;
+  --transition-base:   200ms ease-out;
+  --transition-slow:   300ms ease-out;
+
+  /* Border Radius */
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  14px;
+  --radius-xl:  18px;
+  --radius-full: 9999px;
 }
 
+/* ─────────────────────────────────────────────────────────
+   Dark Mode — [data-theme="dark"] (Emerald Jade Midnight)
+   ───────────────────────────────────────────────────────── */
+[data-theme="dark"] {
+  --bg-page:       hsl(160, 15%, 6%);
+  --bg-surface:    hsl(160, 12%, 10%);
+  --bg-subtle:     hsl(160, 12%, 14%);
+  --bg-muted:      hsl(160, 8%, 18%);
+
+  --border:        hsl(160, 8%, 18%);
+  --border-strong: hsl(160, 10%, 25%);
+
+  --text-primary:   hsl(160, 20%, 96%);
+  --text-secondary: hsl(160, 10%, 72%);
+  --text-tertiary:  hsl(160, 8%, 52%);
+  --text-inverse:   hsl(160, 15%, 6%);
+
+  --color-primary-light: hsl(161, 84%, 12%);
+  --color-primary-text:  hsl(161, 80%, 65%);
+
+  --color-success-light: hsl(150, 75%, 11%);
+  --color-warning-light: hsl(42, 50%, 11%);
+  --color-danger-light:  hsl(356, 40%, 11%);
+  --color-info-light:    hsl(198, 50%, 11%);
+
+  --shadow-sm:   0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-md:   0 4px 16px rgba(0, 0, 0, 0.35);
+  --shadow-lg:   0 12px 32px rgba(0, 0, 0, 0.45);
+  --shadow-xl:   0 24px 72px rgba(0, 0, 0, 0.55);
+
+  --sidebar-bg:     hsl(160, 12%, 10%);
+  --sidebar-border: hsl(160, 8%, 18%);
+  --sidebar-hover:  hsl(161, 30%, 14%);
+  --sidebar-active: hsl(161, 30%, 17%);
+  --sidebar-active-text: hsl(161, 80%, 65%);
+}
+
+/* ─────────────────────────────────────────────────────────
+   Base Styles
+───────────────────────────────────────────────────────── */
 * {
   box-sizing: border-box;
 }
 
+html {
+  color-scheme: light;
+  scroll-behavior: smooth;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+
 body {
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-feature-settings: 'cv11', 'ss01';
+  font-variation-settings: 'opsz' 32;
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
+  color: var(--text-primary);
+  background-color: var(--bg-page);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  transition: background-color var(--transition-base), color var(--transition-base);
 }
 
-button,
-input,
-select {
+/* Monospace for money/codes */
+.font-mono,
+[data-mono] {
+  font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+}
+
+button, input, select, textarea {
   font: inherit;
 }
 
 #app {
   min-height: 100vh;
 }
+
+/* ─────────────────────────────────────────────────────────
+   Scrollbar Styling (subtle)
+───────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+}
+
+/* ─────────────────────────────────────────────────────────
+   Focus Ring — Accessible & Consistent
+───────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ─────────────────────────────────────────────────────────
+   Page Transition
+───────────────────────────────────────────────────────── */
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(4px);
+}
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+/* ─────────────────────────────────────────────────────────
+   Dark Mode Global Contrast Overrides
+   Ensures static light utility classes adapt to dark mode
+───────────────────────────────────────────────────────── */
+[data-theme="dark"] .bg-white,
+[data-theme="dark"] .bg-white\/80 {
+  background-color: var(--bg-surface) !important;
+}
+[data-theme="dark"] .bg-slate-50,
+[data-theme="dark"] .bg-gray-50,
+[data-theme="dark"] .bg-slate-100 {
+  background-color: var(--bg-subtle) !important;
+}
+[data-theme="dark"] .text-slate-900,
+[data-theme="dark"] .text-slate-950,
+[data-theme="dark"] .text-slate-800,
+[data-theme="dark"] .text-gray-900,
+[data-theme="dark"] .text-gray-800,
+[data-theme="dark"] .text-slate-700,
+[data-theme="dark"] .text-gray-700 {
+  color: var(--text-primary) !important;
+}
+[data-theme="dark"] .text-slate-600,
+[data-theme="dark"] .text-gray-600,
+[data-theme="dark"] .text-slate-500,
+[data-theme="dark"] .text-gray-500 {
+  color: var(--text-secondary) !important;
+}
+[data-theme="dark"] .border-slate-100,
+[data-theme="dark"] .border-slate-200,
+[data-theme="dark"] .border-gray-100,
+[data-theme="dark"] .border-gray-200 {
+  border-color: var(--border) !important;
+}
+[data-theme="dark"] .border-slate-300,
+[data-theme="dark"] .border-gray-300 {
+  border-color: var(--border-strong) !important;
+}
+
+/* Form input dark mode overrides */
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background-color: var(--bg-surface) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-strong) !important;
+}
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] select::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: var(--text-tertiary) !important;
+}
+
+/* ─────────────────────────────────────────────────────────
+   Premium SaaS Form Controls & Inputs overrides
+   ───────────────────────────────────────────────────────── */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+input[type="datetime-local"],
+input[type="search"],
+select {
+  height: 2.375rem !important; /* Clean corporate height (38px) */
+  border-radius: var(--radius-md) !important;
+  border: 1px solid var(--border-strong) !important;
+  padding: 0.5rem 0.875rem !important;
+  font-size: 0.8125rem !important;
+  background-color: var(--bg-surface) !important;
+  color: var(--text-primary) !important;
+  transition: all var(--transition-fast) !important;
+  outline: none !important;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+input[type="date"]:focus,
+input[type="datetime-local"]:focus,
+input[type="search"]:focus,
+select:focus {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 12%, transparent) !important;
+}
+
+textarea {
+  border-radius: var(--radius-md) !important;
+  border: 1px solid var(--border-strong) !important;
+  padding: 0.5rem 0.875rem !important;
+  font-size: 0.8125rem !important;
+  background-color: var(--bg-surface) !important;
+  color: var(--text-primary) !important;
+  transition: all var(--transition-fast) !important;
+  outline: none !important;
+}
+
+textarea:focus {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 12%, transparent) !important;
+}
+
+/* ─────────────────────────────────────────────────────────
+   Premium Table Customizations (Spacious & Clean)
+   ───────────────────────────────────────────────────────── */
+.app-table-wrap {
+  box-shadow: var(--shadow-md) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-xl) !important;
+  overflow: hidden !important;
+}
+
+.app-table__th {
+  padding: 0.875rem 1.25rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.05em !important;
+  background-color: color-mix(in srgb, var(--bg-subtle) 80%, transparent) !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+.app-table__td {
+  padding: 0.925rem 1.25rem !important;
+  font-size: 0.8125rem !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+.app-table__row {
+  transition: background-color var(--transition-base) !important;
+}
+
+.app-table__row:hover td {
+  background-color: color-mix(in srgb, var(--color-primary) 2.5%, var(--bg-subtle)) !important;
+}
+
+.app-table__pagination {
+  border-top: 1px solid var(--border) !important;
+  background-color: var(--bg-surface) !important;
+  padding: 1rem 1.25rem !important;
+}
+</style>
 

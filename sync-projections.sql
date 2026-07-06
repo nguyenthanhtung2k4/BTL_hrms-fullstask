@@ -73,10 +73,11 @@ WHEN MATCHED THEN
         target.PositionId = source.PositionId,
         target.ManagerEmployeeId = source.ManagerEmployeeId,
         target.Status = source.Status,
+        target.HireDate = source.HireDate,
         target.LastSyncedAt = GETUTCDATE()
 WHEN NOT MATCHED THEN
-    INSERT (EmployeeId, EmployeeCode, FullName, Email, DepartmentId, PositionId, ManagerEmployeeId, Status, LastSyncedAt)
-    VALUES (source.Id, source.EmployeeCode, source.FullName, source.Email, source.DepartmentId, source.PositionId, source.ManagerEmployeeId, source.Status, GETUTCDATE());
+    INSERT (EmployeeId, EmployeeCode, FullName, Email, DepartmentId, PositionId, ManagerEmployeeId, Status, HireDate, LastSyncedAt)
+    VALUES (source.Id, source.EmployeeCode, source.FullName, source.Email, source.DepartmentId, source.PositionId, source.ManagerEmployeeId, source.Status, source.HireDate, GETUTCDATE());
 
 -- 6. Sync EmployeeProjections to HRMS_PayrollReportDb
 MERGE HRMS_PayrollReportDb.dbo.EmployeeProjections AS target
@@ -91,10 +92,11 @@ WHEN MATCHED THEN
         target.PositionId = source.PositionId,
         target.ManagerEmployeeId = source.ManagerEmployeeId,
         target.Status = source.Status,
+        target.HireDate = source.HireDate,
         target.LastSyncedAt = GETUTCDATE()
 WHEN NOT MATCHED THEN
-    INSERT (EmployeeId, EmployeeCode, FullName, Email, DepartmentId, PositionId, ManagerEmployeeId, Status, LastSyncedAt)
-    VALUES (source.Id, source.EmployeeCode, source.FullName, source.Email, source.DepartmentId, source.PositionId, source.ManagerEmployeeId, source.Status, GETUTCDATE());
+    INSERT (EmployeeId, EmployeeCode, FullName, Email, DepartmentId, PositionId, ManagerEmployeeId, Status, HireDate, LastSyncedAt)
+    VALUES (source.Id, source.EmployeeCode, source.FullName, source.Email, source.DepartmentId, source.PositionId, source.ManagerEmployeeId, source.Status, source.HireDate, GETUTCDATE());
 
 -- 7. Sync EmployeeSalaryProjections to HRMS_PayrollReportDb (Contracts -> SalaryProjections)
 MERGE HRMS_PayrollReportDb.dbo.EmployeeSalaryProjections AS target

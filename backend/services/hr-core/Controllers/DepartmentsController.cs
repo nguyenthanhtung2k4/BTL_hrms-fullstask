@@ -41,6 +41,7 @@ public class DepartmentsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin,HR")]
     public async Task<ActionResult<ApiResponse<DepartmentDto>>> Create([FromBody] CreateDepartmentDto dto)
     {
         var result = await _departmentService.CreateAsync(dto);
@@ -53,6 +54,7 @@ public class DepartmentsController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Roles = "Admin,HR")]
     public async Task<ActionResult<ApiResponse<DepartmentDto>>> Update(Guid id, [FromBody] UpdateDepartmentDto dto)
     {
         var result = await _departmentService.UpdateAsync(id, dto);
@@ -65,6 +67,7 @@ public class DepartmentsController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Roles = "Admin,HR")]
     public async Task<ActionResult<ApiResponse>> Delete(Guid id)
     {
         var result = await _departmentService.DeleteAsync(id);
@@ -74,5 +77,17 @@ public class DepartmentsController : ControllerBase
         }
 
         return Ok(ApiResponse.Ok(result.Message));
+    }
+
+    [HttpGet("my")]
+    [Authorize(Roles = "Manager")]
+    public async Task<ActionResult<ApiResponse<IEnumerable<DepartmentDto>>>> GetMyDepartments()
+    {
+        var employeeIdClaim = User.FindFirst("employeeId")?.Value;
+        if (!Guid.TryParse(employeeIdClaim, out var managerId))
+            return Forbid();
+
+        var result = await _departmentService.GetMyDepartmentsAsync(managerId);
+        return Ok(ApiResponse<IEnumerable<DepartmentDto>>.Ok(result.Value!, result.Message));
     }
 }

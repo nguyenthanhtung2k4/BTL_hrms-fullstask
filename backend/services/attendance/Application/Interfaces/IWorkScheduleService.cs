@@ -8,7 +8,7 @@ namespace Hrms.Attendance.Application.Interfaces;
 
 public interface IWorkScheduleService
 {
-    Task<Result<IEnumerable<WorkScheduleDto>>> GetSchedulesAsync(Guid? employeeId, DateOnly? fromDate, DateOnly? toDate);
+    Task<Result<IEnumerable<WorkScheduleDto>>> GetSchedulesAsync(Guid? employeeId, DateOnly? fromDate, DateOnly? toDate, List<Guid>? allowedEmployeeIds = null);
     Task<Result<WorkScheduleDto>> GetByIdAsync(Guid id);
     Task<Result<WorkScheduleDto>> CreateAsync(CreateWorkScheduleDto dto);
     Task<Result<WorkScheduleDto>> UpdateAsync(Guid id, UpdateWorkScheduleDto dto);

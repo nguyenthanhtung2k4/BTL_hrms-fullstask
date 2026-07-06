@@ -12,7 +12,9 @@ public class EmployeeProjection : BaseEntity
     public Guid? PositionId { get; set; }
     public Guid? ManagerEmployeeId { get; set; }
     public string Status { get; set; } = "Active";
+    public DateTime HireDate { get; set; } = DateTime.UtcNow;
     public DateTime LastSyncedAt { get; set; } = DateTime.UtcNow;
+    public bool IsDeleted { get; set; } = false;
 
     // Navigation properties
     public DepartmentProjection? Department { get; set; }

@@ -1,6 +1,6 @@
 $ErrorActionPreference = "Stop"
 
-$ports = @(5000, 5001, 5002, 5003, 5173)
+$ports = @(5000, 5001, 5002, 5003, 5005, 5173)
 $processIds = foreach ($port in $ports) {
     Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue |
         Select-Object -ExpandProperty OwningProcess

@@ -115,12 +115,20 @@ BEGIN
         PasswordHash NVARCHAR(500) NOT NULL,
         IsActive BIT NOT NULL CONSTRAINT DF_Users_IsActive DEFAULT (1),
         LastLoginAt DATETIME2(0) NULL,
+        AvatarUrl NVARCHAR(MAX) NULL,
         CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Users_CreatedAt DEFAULT SYSUTCDATETIME(),
         UpdatedAt DATETIME2(0) NULL,
         CONSTRAINT PK_Users PRIMARY KEY (Id),
         CONSTRAINT UQ_Users_Email UNIQUE (Email),
         CONSTRAINT FK_Users_Employee FOREIGN KEY (EmployeeId) REFERENCES dbo.Employees(Id)
     );
+END
+ELSE
+BEGIN
+    IF COL_LENGTH(N'dbo.Users', N'AvatarUrl') IS NULL
+    BEGIN
+        ALTER TABLE dbo.Users ADD AvatarUrl NVARCHAR(MAX) NULL;
+    END
 END
 GO
 
@@ -164,6 +172,7 @@ BEGIN
         EndDate DATE NULL,
         BaseSalary DECIMAL(18, 2) NOT NULL,
         Status NVARCHAR(30) NOT NULL CONSTRAINT DF_Contracts_Status DEFAULT (N'Active'),
+        AttachmentUrl NVARCHAR(MAX) NULL,   -- <--- THÊM DÒNG NÀY
         CreatedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Contracts_CreatedAt DEFAULT SYSUTCDATETIME(),
         UpdatedAt DATETIME2(0) NULL,
         CONSTRAINT PK_Contracts PRIMARY KEY (Id),
@@ -223,10 +232,42 @@ BEGIN
         RetryCount INT NOT NULL CONSTRAINT DF_OutboxMessages_RetryCount DEFAULT (0),
         ErrorMessage NVARCHAR(1000) NULL,
         Status NVARCHAR(30) NOT NULL CONSTRAINT DF_OutboxMessages_Status DEFAULT (N'Pending'),
-        CONSTRAINT PK_OutboxMessages PRIMARY KEY (Id)
     );
 END
 GO
+
+IF OBJECT_ID(N'dbo.RefreshTokens', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.RefreshTokens
+    (
+        Id UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_RefreshTokens_Id DEFAULT NEWSEQUENTIALID(),
+        UserId UNIQUEIDENTIFIER NOT NULL,
+        Token NVARCHAR(512) NOT NULL,
+        ExpiresAt DATETIME2 NOT NULL,
+        IsRevoked BIT NOT NULL CONSTRAINT DF_RefreshTokens_IsRevoked DEFAULT (0),
+        DeviceInfo NVARCHAR(255) NULL,
+        CreatedAt DATETIME2 NOT NULL CONSTRAINT DF_RefreshTokens_CreatedAt DEFAULT SYSUTCDATETIME(),
+        UpdatedAt DATETIME2 NULL,
+        CreatedBy NVARCHAR(100) NULL,
+        UpdatedBy NVARCHAR(100) NULL,
+        CONSTRAINT PK_RefreshTokens PRIMARY KEY (Id),
+        CONSTRAINT FK_RefreshTokens_Users FOREIGN KEY (UserId) REFERENCES dbo.Users(Id) ON DELETE CASCADE
+    );
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_RefreshTokens_Token')
+    CREATE UNIQUE INDEX IX_RefreshTokens_Token ON dbo.RefreshTokens(Token);
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_RefreshTokens_UserId')
+    CREATE INDEX IX_RefreshTokens_UserId ON dbo.RefreshTokens(UserId);
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_RefreshTokens_ExpiresAt')
+    CREATE INDEX IX_RefreshTokens_ExpiresAt ON dbo.RefreshTokens(ExpiresAt);
+GO
+
 
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UX_Users_EmployeeId_NotNull')
     CREATE UNIQUE INDEX UX_Users_EmployeeId_NotNull ON dbo.Users(EmployeeId) WHERE EmployeeId IS NOT NULL;
@@ -309,6 +350,7 @@ BEGIN
         PositionId UNIQUEIDENTIFIER NULL,
         ManagerEmployeeId UNIQUEIDENTIFIER NULL,
         Status NVARCHAR(30) NOT NULL,
+        HireDate DATETIME2(0) NOT NULL CONSTRAINT DF_Att_EmployeeProjections_HireDate DEFAULT SYSUTCDATETIME(),
         LastSyncedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Att_EmployeeProjections_LastSyncedAt DEFAULT SYSUTCDATETIME(),
         CONSTRAINT PK_Att_EmployeeProjections PRIMARY KEY (EmployeeId),
         CONSTRAINT UQ_Att_EmployeeProjections_EmployeeCode UNIQUE (EmployeeCode),
@@ -563,6 +605,7 @@ BEGIN
         PositionId UNIQUEIDENTIFIER NULL,
         ManagerEmployeeId UNIQUEIDENTIFIER NULL,
         Status NVARCHAR(30) NOT NULL,
+        HireDate DATETIME2(0) NOT NULL CONSTRAINT DF_Pay_EmployeeProjections_HireDate DEFAULT SYSUTCDATETIME(),
         LastSyncedAt DATETIME2(0) NOT NULL CONSTRAINT DF_Pay_EmployeeProjections_LastSyncedAt DEFAULT SYSUTCDATETIME(),
         CONSTRAINT PK_Pay_EmployeeProjections PRIMARY KEY (EmployeeId),
         CONSTRAINT UQ_Pay_EmployeeProjections_EmployeeCode UNIQUE (EmployeeCode),

@@ -1,4 +1,4 @@
-# 💰 Module 4: Payroll & Report — Tính lương & Báo cáo
+﻿# 💰 Module 4: Payroll & Report — Tính lương & Báo cáo
 
 > **Service:** Payroll (`/api/v1/payroll/`)  
 > **Files:** `src/modules/payroll/`  
@@ -9,41 +9,41 @@
 ## Checklist thực hiện
 
 ### Kỳ lương (Payroll Periods)
-- [ ] `payrollPeriod.service.ts`
-- [ ] `PeriodListView.vue`
-- [ ] `PeriodFormModal.vue`
-- [ ] `PeriodDetailView.vue` — Xem phiếu lương trong kỳ + tính lương + đóng kỳ
-- [ ] `usePayrollPeriods.ts`
+- [x] `payrollPeriod.service.ts`
+- [x] `PeriodListView.vue`
+- [x] `PeriodFormModal.vue`
+- [x] `PeriodDetailView.vue` — Xem phiếu lương trong kỳ + tính lương + đóng kỳ
+- [x] `usePayrollPeriods.ts`
 
 ### Quy tắc lương (Payroll Rules)
-- [ ] `payrollRule.service.ts`
-- [ ] `RuleListView.vue`
-- [ ] `RuleFormModal.vue`
-- [ ] `usePayrollRules.ts`
+- [x] `payrollRule.service.ts`
+- [x] `RuleListView.vue`
+- [x] `RuleFormModal.vue`
+- [x] `usePayrollRules.ts`
 
 ### Phụ cấp (Allowances)
-- [ ] `allowance.service.ts`
-- [ ] `AllowanceListView.vue`
-- [ ] `AllowanceFormModal.vue`
-- [ ] `useAllowances.ts`
+- [x] `allowance.service.ts`
+- [x] `AllowanceListView.vue`
+- [x] `AllowanceFormModal.vue`
+- [x] `useAllowances.ts`
 
 ### Khấu trừ (Deductions)
-- [ ] `deduction.service.ts`
-- [ ] `DeductionListView.vue`
-- [ ] `DeductionFormModal.vue`
-- [ ] `useDeductions.ts`
+- [x] `deduction.service.ts`
+- [x] `DeductionListView.vue`
+- [x] `DeductionFormModal.vue`
+- [x] `useDeductions.ts`
 
 ### Phiếu lương (Payslips)
-- [ ] `payslip.service.ts`
-- [ ] `PayslipListView.vue` — Admin/PayrollStaff xem tất cả
-- [ ] `MyPayslipView.vue` — Employee xem của mình
-- [ ] `PayslipDetailView.vue` — Chi tiết phiếu lương
-- [ ] `usePayslips.ts`
+- [x] `payslip.service.ts`
+- [x] `PayslipListView.vue` — Admin/PayrollStaff xem tất cả
+- [x] `MyPayslipView.vue` — Employee xem của mình
+- [x] `PayslipDetailView.vue` — Chi tiết phiếu lương
+- [x] `usePayslips.ts`
 
 ### Báo cáo (Reports)
-- [ ] `report.service.ts`
-- [ ] `ReportView.vue` — Báo cáo tổng hợp + biểu đồ
-- [ ] `useReports.ts`
+- [x] `report.service.ts`
+- [x] `ReportView.vue` — Báo cáo tổng hợp + biểu đồ
+- [x] `useReports.ts`
 
 ---
 
@@ -335,3 +335,4 @@ export interface PayrollSummaryReport {
   totalNet: number
 }
 ```
+

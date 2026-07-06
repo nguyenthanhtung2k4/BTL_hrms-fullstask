@@ -19,12 +19,13 @@ public static class DependencyInjection
             options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
         // Register MassTransit RabbitMQ and Consumers
-        services.AddSharedMassTransit(configuration, x =>
+        services.AddSharedMassTransit(configuration, "attendance", x =>
         {
             x.AddConsumer<DepartmentEventConsumer>();
             x.AddConsumer<PositionEventConsumer>();
             x.AddConsumer<EmployeeEventConsumer>();
             x.AddConsumer<EmployeeStatusChangedConsumer>();
+            x.AddConsumer<EmployeeDeletedConsumer>();
         });
         
         return services;

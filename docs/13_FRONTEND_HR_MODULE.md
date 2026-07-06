@@ -1,4 +1,4 @@
-# 👥 Module 2: HR Core — Nhân sự
+﻿# 👥 Module 2: HR Core — Nhân sự
 
 > **Service:** HR Core (`/api/v1/hr/`)  
 > **Files:** `src/modules/hr/`  
@@ -9,30 +9,30 @@
 ## Checklist thực hiện
 
 ### Phòng ban (Departments)
-- [ ] `department.service.ts` — CRUD API calls
-- [ ] `DepartmentListView.vue` — Danh sách + search + filter
-- [ ] `DepartmentFormModal.vue` — Modal tạo/sửa
-- [ ] `useDepartments.ts` — Composable logic
+- [x] `department.service.ts` — CRUD API calls
+- [x] `DepartmentListView.vue` — Danh sách + search + filter
+- [x] `DepartmentFormModal.vue` — Modal tạo/sửa
+- [x] `useDepartments.ts` — Composable logic
 
 ### Chức vụ (Positions)
-- [ ] `position.service.ts`
-- [ ] `PositionListView.vue`
-- [ ] `PositionFormModal.vue`
-- [ ] `usePositions.ts`
+- [x] `position.service.ts`
+- [x] `PositionListView.vue`
+- [x] `PositionFormModal.vue`
+- [x] `usePositions.ts`
 
 ### Nhân viên (Employees)
-- [ ] `employee.service.ts`
-- [ ] `EmployeeListView.vue` — Danh sách + filter theo phòng ban/trạng thái
-- [ ] `EmployeeDetailView.vue` — Chi tiết + tab hợp đồng
-- [ ] `EmployeeFormModal.vue` — Tạo/sửa hồ sơ
-- [ ] `EmployeeStatusModal.vue` — Đổi trạng thái (Active/Inactive/Resigned)
-- [ ] `useEmployees.ts`
+- [x] `employee.service.ts`
+- [x] `EmployeeListView.vue` — Danh sách + filter theo phòng ban/trạng thái
+- [x] `EmployeeDetailView.vue` — Chi tiết + tab hợp đồng
+- [x] `EmployeeFormModal.vue` — Tạo/sửa hồ sơ
+- [x] `EmployeeStatusModal.vue` — Đổi trạng thái (Active/Inactive/Resigned)
+- [x] `useEmployees.ts`
 
 ### Hợp đồng (Contracts)
-- [ ] `contract.service.ts`
-- [ ] `ContractListView.vue`
-- [ ] `ContractFormModal.vue`
-- [ ] `useContracts.ts`
+- [x] `contract.service.ts`
+- [x] `ContractListView.vue`
+- [x] `ContractFormModal.vue`
+- [x] `useContracts.ts`
 
 ---
 
@@ -263,3 +263,4 @@ export interface Contract {
   status: 'Active' | 'Expired' | 'Terminated'
 }
 ```
+

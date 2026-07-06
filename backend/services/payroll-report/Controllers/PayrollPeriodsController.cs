@@ -23,6 +23,7 @@ public class PayrollPeriodsController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "Admin,HR,Manager,PayrollStaff")]
     public async Task<ActionResult<ApiResponse<IEnumerable<PayrollPeriodDto>>>> GetAll()
     {
         var result = await _periodService.GetAllAsync();
@@ -30,6 +31,7 @@ public class PayrollPeriodsController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [Authorize(Roles = "Admin,HR,Manager,PayrollStaff")]
     public async Task<ActionResult<ApiResponse<PayrollPeriodDto>>> GetById(Guid id)
     {
         var result = await _periodService.GetByIdAsync(id);
@@ -41,6 +43,7 @@ public class PayrollPeriodsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin,PayrollStaff")]
     public async Task<ActionResult<ApiResponse<PayrollPeriodDto>>> Create([FromBody] CreatePayrollPeriodDto request)
     {
         var result = await _periodService.CreateAsync(request);
@@ -52,6 +55,7 @@ public class PayrollPeriodsController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin,PayrollStaff")]
     public async Task<ActionResult<ApiResponse<PayrollPeriodDto>>> Update(Guid id, [FromBody] UpdatePayrollPeriodDto request)
     {
         var result = await _periodService.UpdateAsync(id, request);
@@ -63,6 +67,7 @@ public class PayrollPeriodsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin,PayrollStaff")]
     public async Task<ActionResult<ApiResponse>> Delete(Guid id)
     {
         var result = await _periodService.DeleteAsync(id);
@@ -74,6 +79,7 @@ public class PayrollPeriodsController : ControllerBase
     }
 
     [HttpPost("{id}/calculate")]
+    [Authorize(Roles = "Admin,PayrollStaff")]
     public async Task<ActionResult<ApiResponse>> Calculate(Guid id)
     {
         var result = await _periodService.CalculateAsync(id);
@@ -85,6 +91,7 @@ public class PayrollPeriodsController : ControllerBase
     }
 
     [HttpPost("{id}/close")]
+    [Authorize(Roles = "Admin,PayrollStaff")]
     public async Task<ActionResult<ApiResponse>> Close(Guid id)
     {
         var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

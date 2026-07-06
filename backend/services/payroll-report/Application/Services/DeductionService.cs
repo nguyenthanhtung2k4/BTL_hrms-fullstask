@@ -186,4 +186,65 @@ public class DeductionService : IDeductionService
 
         return Result<IEnumerable<DeductionTypeDto>>.Success(types, "Successfully retrieved deduction types.");
     }
+
+    public async Task<Result<DeductionTypeDto>> CreateDeductionTypeAsync(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return Result<DeductionTypeDto>.Failure("InvalidName", "Deduction type name cannot be empty.");
+        }
+
+        var trimmedName = name.Trim();
+        var exists = await _dbContext.DeductionTypes.AnyAsync(t => t.Name == trimmedName);
+        if (exists)
+        {
+            return Result<DeductionTypeDto>.Failure("DeductionTypeExists", "A deduction type with this name already exists.");
+        }
+
+        string baseCode = GenerateCodeFromName("DED", trimmedName);
+        string code = baseCode;
+        int counter = 1;
+        while (await _dbContext.DeductionTypes.AnyAsync(t => t.Code == code))
+        {
+            code = $"{baseCode}_{counter++}";
+        }
+
+        var newType = new DeductionType
+        {
+            Id = Guid.NewGuid(),
+            Code = code,
+            Name = trimmedName,
+            IsActive = true
+        };
+
+        _dbContext.DeductionTypes.Add(newType);
+        await _dbContext.SaveChangesAsync();
+
+        var dto = new DeductionTypeDto(newType.Id, newType.Code, newType.Name, newType.IsActive);
+        return Result<DeductionTypeDto>.Success(dto, "Successfully created new deduction type.");
+    }
+
+    private string GenerateCodeFromName(string prefix, string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return prefix + "_" + Guid.NewGuid().ToString().Substring(0, 8).ToUpper();
+        
+        string normalized = name.Normalize(System.Text.NormalizationForm.FormD);
+        var sb = new System.Text.StringBuilder();
+        foreach (char c in normalized)
+        {
+            var unicodeCategory = System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c);
+            if (unicodeCategory != System.Globalization.UnicodeCategory.NonSpacingMark)
+            {
+                if (char.IsLetterOrDigit(c)) sb.Append(char.ToUpper(c));
+                else if (c == ' ' || c == '_' || c == '-') sb.Append('_');
+            }
+        }
+        
+        string codeName = sb.ToString();
+        while (codeName.Contains("__")) codeName = codeName.Replace("__", "_");
+        codeName = codeName.Trim('_');
+        
+        if (string.IsNullOrEmpty(codeName)) return prefix + "_" + Guid.NewGuid().ToString().Substring(0, 8).ToUpper();
+        return prefix + "_" + codeName;
+    }
 }

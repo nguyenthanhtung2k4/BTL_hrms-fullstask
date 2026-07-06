@@ -8,6 +8,9 @@ using Hrms.Shared.Domain;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
+using Hrms.Attendance.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
+
 namespace Hrms.Attendance.Controllers;
 
 [ApiController]
@@ -16,10 +19,12 @@ namespace Hrms.Attendance.Controllers;
 public class LeaveRequestsController : ControllerBase
 {
     private readonly ILeaveRequestService _leaveService;
+    private readonly AttendanceDbContext _dbContext;
 
-    public LeaveRequestsController(ILeaveRequestService leaveService)
+    public LeaveRequestsController(ILeaveRequestService leaveService, AttendanceDbContext dbContext)
     {
         _leaveService = leaveService;
+        _dbContext = dbContext;
     }
 
     [HttpGet("types")]
@@ -67,6 +72,35 @@ public class LeaveRequestsController : ControllerBase
         [FromQuery] DateOnly? fromDate,
         [FromQuery] DateOnly? toDate)
     {
+        var isPrivileged = User.IsInRole("Admin") || User.IsInRole("HR");
+        var isManager = User.IsInRole("Manager");
+
+        if (!isPrivileged)
+        {
+            if (isManager)
+            {
+                var currentEmpId = GetCurrentEmployeeId();
+                if (currentEmpId == Guid.Empty)
+                {
+                    return BadRequest(ApiResponse<IEnumerable<LeaveRequestDto>>.Fail("InvalidUser", "User must be associated with an active Employee account."));
+                }
+
+                var managerEmp = await _dbContext.EmployeeProjections.FindAsync(currentEmpId);
+                var managerDeptId = managerEmp?.DepartmentId;
+
+                if (departmentId.HasValue && departmentId.Value != managerDeptId)
+                {
+                    return Forbid();
+                }
+                departmentId = managerDeptId;
+            }
+            else
+            {
+                // Standard Employees or PayrollStaff are forbidden from querying this endpoint
+                return Forbid();
+            }
+        }
+
         var result = await _leaveService.GetRequestsAsync(status, departmentId, fromDate, toDate);
         return Ok(ApiResponse<IEnumerable<LeaveRequestDto>>.Ok(result.Value!, result.Message));
     }
@@ -74,6 +108,45 @@ public class LeaveRequestsController : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<ApiResponse<LeaveRequestDto>>> GetById(Guid id)
     {
+        var isPrivileged = User.IsInRole("Admin") || User.IsInRole("HR");
+        var isManager = User.IsInRole("Manager");
+
+        if (!isPrivileged)
+        {
+            var currentEmpId = GetCurrentEmployeeId();
+            if (currentEmpId == Guid.Empty)
+            {
+                return BadRequest(ApiResponse<LeaveRequestDto>.Fail("InvalidUser", "User must be associated with an active Employee account."));
+            }
+
+            var request = await _dbContext.LeaveRequests
+                .Include(l => l.Employee)
+                .FirstOrDefaultAsync(l => l.Id == id);
+
+            if (request == null)
+            {
+                return NotFound(ApiResponse<LeaveRequestDto>.Fail("NotFound", "Leave request not found."));
+            }
+
+            if (isManager)
+            {
+                var managerEmp = await _dbContext.EmployeeProjections.FindAsync(currentEmpId);
+                var managerDeptId = managerEmp?.DepartmentId;
+
+                if (request.Employee.DepartmentId != managerDeptId && request.Employee.ManagerEmployeeId != currentEmpId)
+                {
+                    return Forbid();
+                }
+            }
+            else // Employee / PayrollStaff
+            {
+                if (request.EmployeeId != currentEmpId)
+                {
+                    return Forbid();
+                }
+            }
+        }
+
         var result = await _leaveService.GetByIdAsync(id);
         if (result.IsFailure)
         {
@@ -83,12 +156,34 @@ public class LeaveRequestsController : ControllerBase
     }
 
     [HttpPut("{id:guid}/approve")]
+    [Authorize(Roles = "Admin,HR,Manager")]
     public async Task<ActionResult<ApiResponse<LeaveRequestDto>>> Approve(Guid id)
     {
         var approvedBy = GetCurrentEmployeeId();
         if (approvedBy == Guid.Empty)
         {
             return BadRequest(ApiResponse<LeaveRequestDto>.Fail("InvalidUser", "Approver must be associated with an active Employee account."));
+        }
+
+        var isPrivileged = User.IsInRole("Admin") || User.IsInRole("HR");
+        if (!isPrivileged) // Manager check
+        {
+            var request = await _dbContext.LeaveRequests
+                .Include(l => l.Employee)
+                .FirstOrDefaultAsync(l => l.Id == id);
+
+            if (request == null)
+            {
+                return NotFound(ApiResponse<LeaveRequestDto>.Fail("NotFound", "Leave request not found."));
+            }
+
+            var managerEmp = await _dbContext.EmployeeProjections.FindAsync(approvedBy);
+            var managerDeptId = managerEmp?.DepartmentId;
+
+            if (request.Employee.DepartmentId != managerDeptId && request.Employee.ManagerEmployeeId != approvedBy)
+            {
+                return Forbid();
+            }
         }
 
         var result = await _leaveService.ApproveAsync(id, approvedBy);
@@ -100,12 +195,34 @@ public class LeaveRequestsController : ControllerBase
     }
 
     [HttpPut("{id:guid}/reject")]
+    [Authorize(Roles = "Admin,HR,Manager")]
     public async Task<ActionResult<ApiResponse<LeaveRequestDto>>> Reject(Guid id)
     {
         var approvedBy = GetCurrentEmployeeId();
         if (approvedBy == Guid.Empty)
         {
             return BadRequest(ApiResponse<LeaveRequestDto>.Fail("InvalidUser", "Approver must be associated with an active Employee account."));
+        }
+
+        var isPrivileged = User.IsInRole("Admin") || User.IsInRole("HR");
+        if (!isPrivileged) // Manager check
+        {
+            var request = await _dbContext.LeaveRequests
+                .Include(l => l.Employee)
+                .FirstOrDefaultAsync(l => l.Id == id);
+
+            if (request == null)
+            {
+                return NotFound(ApiResponse<LeaveRequestDto>.Fail("NotFound", "Leave request not found."));
+            }
+
+            var managerEmp = await _dbContext.EmployeeProjections.FindAsync(approvedBy);
+            var managerDeptId = managerEmp?.DepartmentId;
+
+            if (request.Employee.DepartmentId != managerDeptId && request.Employee.ManagerEmployeeId != approvedBy)
+            {
+                return Forbid();
+            }
         }
 
         var result = await _leaveService.RejectAsync(id, approvedBy);

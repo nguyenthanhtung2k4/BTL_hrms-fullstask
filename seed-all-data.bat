@@ -26,11 +26,11 @@ if %errorlevel% neq 0 (
 )
 echo.
 
-echo [3/6] Seeding Master/Demo Data via REST API Gateway (port 5000)...
+echo [3/6] Seeding Master/Demo Data via REST API Gateway (port 5005)...
 echo Note: This requires the Backend Microservices (Gateway, HR-Core, etc.) to be running.
 echo If they are not running, this step will show connection errors.
 echo.
-powershell -ExecutionPolicy Bypass -File seed-demo-data.ps1
+node seed-demo-data.js
 echo.
 
 echo [4/6] Synchronizing projection databases...

@@ -13,6 +13,8 @@ public class AttendanceRecord : AuditableEntity
     public DateTime? CheckOutAt { get; set; }
     public int WorkedMinutes { get; set; } = 0;
     public string Status { get; set; } = "CheckedIn";
+    public string? CheckInReason { get; set; }
+    public string? CheckOutReason { get; set; }
 
     // Navigation properties
     public EmployeeProjection Employee { get; set; } = null!;

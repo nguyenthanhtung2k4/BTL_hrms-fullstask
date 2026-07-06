@@ -10,6 +10,7 @@ using Hrms.HrCore.Infrastructure.Persistence;
 using Hrms.Shared.Domain;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Hrms.HrCore.Application.Services;
 
@@ -17,22 +18,35 @@ public class DepartmentService : IDepartmentService
 {
     private readonly HrDbContext _dbContext;
     private readonly IPublishEndpoint _publishEndpoint;
+    private readonly IMemoryCache _cache;
+    private const string CacheKey = "departments_all";
 
-    public DepartmentService(HrDbContext dbContext, IPublishEndpoint publishEndpoint)
+    public DepartmentService(HrDbContext dbContext, IPublishEndpoint publishEndpoint, IMemoryCache cache)
     {
         _dbContext = dbContext;
         _publishEndpoint = publishEndpoint;
+        _cache = cache;
     }
 
     public async Task<Result<IEnumerable<DepartmentDto>>> GetAllAsync()
     {
-        var departments = await _dbContext.Departments
-            .Include(d => d.ParentDepartment)
-            .Include(d => d.ManagerEmployee)
-            .ToListAsync();
+        if (!_cache.TryGetValue(CacheKey, out IEnumerable<DepartmentDto>? dtos))
+        {
+            var departments = await _dbContext.Departments
+                .Include(d => d.ParentDepartment)
+                .Include(d => d.ManagerEmployee)
+                .ToListAsync();
 
-        var dtos = departments.Select(d => MapToDto(d));
-        return Result<IEnumerable<DepartmentDto>>.Success(dtos);
+            dtos = departments.Select(d => MapToDto(d)).ToList();
+
+            var cacheOptions = new MemoryCacheEntryOptions()
+                .SetAbsoluteExpiration(TimeSpan.FromMinutes(30))
+                .SetSlidingExpiration(TimeSpan.FromMinutes(5));
+
+            _cache.Set(CacheKey, dtos, cacheOptions);
+        }
+
+        return Result<IEnumerable<DepartmentDto>>.Success(dtos!);
     }
 
     public async Task<Result<DepartmentDto>> GetByIdAsync(Guid id)
@@ -83,6 +97,8 @@ public class DepartmentService : IDepartmentService
 
         await _dbContext.Departments.AddAsync(department);
         await _dbContext.SaveChangesAsync();
+
+        _cache.Remove(CacheKey);
 
         // Publish integration event
         var integrationEvent = new IntegrationEvent<DepartmentPayload>(
@@ -137,6 +153,8 @@ public class DepartmentService : IDepartmentService
 
         await _dbContext.SaveChangesAsync();
 
+        _cache.Remove(CacheKey);
+
         // Publish integration event
         var integrationEvent = new IntegrationEvent<DepartmentPayload>(
             EventId: Guid.NewGuid(),
@@ -173,7 +191,25 @@ public class DepartmentService : IDepartmentService
         _dbContext.Departments.Remove(department);
         await _dbContext.SaveChangesAsync();
 
+        _cache.Remove(CacheKey);
+
         return Result.Success("Department deleted successfully.");
+    }
+
+    public async Task<Result<IEnumerable<DepartmentDto>>> GetMyDepartmentsAsync(Guid managerId)
+    {
+        // Lấy department mà Manager này thuộc về
+        var employee = await _dbContext.Employees.FindAsync(managerId);
+        if (employee == null)
+            return Result<IEnumerable<DepartmentDto>>.Failure("Employee not found.");
+
+        var departments = await _dbContext.Departments
+            .Include(d => d.ParentDepartment)
+            .Include(d => d.ManagerEmployee)
+            .Where(d => d.Id == employee.DepartmentId && d.IsActive)
+            .ToListAsync();
+
+        return Result<IEnumerable<DepartmentDto>>.Success(departments.Select(MapToDto));
     }
 
     private static DepartmentDto MapToDto(Department d)

@@ -26,6 +26,19 @@ public class DeductionsController : ControllerBase
         [FromQuery] Guid? employeeId,
         [FromQuery] Guid? periodId)
     {
+        // Check permissions: Admin, HR, PayrollStaff can query any employee.
+        // Employee/Manager can only query their own employeeId.
+        var isPrivileged = User.IsInRole("Admin") || User.IsInRole("HR") || User.IsInRole("PayrollStaff");
+        if (!isPrivileged)
+        {
+            var employeeIdClaim = User.FindFirst("employeeId")?.Value;
+            if (string.IsNullOrEmpty(employeeIdClaim) || !Guid.TryParse(employeeIdClaim, out var claimGuid))
+            {
+                return Forbid();
+            }
+            employeeId = claimGuid; // Force to their own ID
+        }
+
         var result = await _deductionService.GetDeductionsAsync(employeeId, periodId);
         return Ok(ApiResponse<IEnumerable<EmployeeDeductionDto>>.Ok(result.Value!, result.Message));
     }
@@ -37,6 +50,20 @@ public class DeductionsController : ControllerBase
         return Ok(ApiResponse<IEnumerable<DeductionTypeDto>>.Ok(result.Value!, result.Message));
     }
 
+    [HttpPost("types")]
+    [Authorize(Roles = "Admin,HR,PayrollStaff")]
+    public async Task<ActionResult<ApiResponse<DeductionTypeDto>>> CreateDeductionType([FromBody] CreateTypeRequest request)
+    {
+        var result = await _deductionService.CreateDeductionTypeAsync(request.Name);
+        if (result.IsFailure)
+        {
+            return BadRequest(ApiResponse<DeductionTypeDto>.Fail(result.Errors, result.Message));
+        }
+        return Ok(ApiResponse<DeductionTypeDto>.Ok(result.Value!, result.Message));
+    }
+
+    public record CreateTypeRequest(string Name);
+
     [HttpGet("{id}")]
     public async Task<ActionResult<ApiResponse<EmployeeDeductionDto>>> GetById(Guid id)
     {
@@ -45,10 +72,23 @@ public class DeductionsController : ControllerBase
         {
             return NotFound(ApiResponse<EmployeeDeductionDto>.Fail(result.Errors, result.Message));
         }
+
+        // Employee/Manager can only read their own deduction record
+        var isPrivileged = User.IsInRole("Admin") || User.IsInRole("HR") || User.IsInRole("PayrollStaff");
+        if (!isPrivileged)
+        {
+            var employeeIdClaim = User.FindFirst("employeeId")?.Value;
+            if (string.IsNullOrEmpty(employeeIdClaim) || !Guid.TryParse(employeeIdClaim, out var claimGuid) || result.Value!.EmployeeId != claimGuid)
+            {
+                return Forbid();
+            }
+        }
+
         return Ok(ApiResponse<EmployeeDeductionDto>.Ok(result.Value!, result.Message));
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin,HR,PayrollStaff")]
     public async Task<ActionResult<ApiResponse<EmployeeDeductionDto>>> Create([FromBody] CreateEmployeeDeductionDto request)
     {
         var result = await _deductionService.CreateAsync(request);
@@ -60,6 +100,7 @@ public class DeductionsController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin,HR,PayrollStaff")]
     public async Task<ActionResult<ApiResponse<EmployeeDeductionDto>>> Update(Guid id, [FromBody] UpdateEmployeeDeductionDto request)
     {
         var result = await _deductionService.UpdateAsync(id, request);
@@ -71,6 +112,7 @@ public class DeductionsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin,HR,PayrollStaff")]
     public async Task<ActionResult<ApiResponse>> Delete(Guid id)
     {
         var result = await _deductionService.DeleteAsync(id);

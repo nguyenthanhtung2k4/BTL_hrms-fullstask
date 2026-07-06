@@ -1,4 +1,6 @@
 <script setup lang="ts">
+// AppModal — Dialog/modal with teleport, ESC to close, click-outside close, Dark Mode support
+
 import { onMounted, onUnmounted } from 'vue'
 
 const props = defineProps<{
@@ -24,30 +26,24 @@ onUnmounted(() => document.removeEventListener('keydown', onEsc))
 </script>
 
 <template>
-  <!-- Backdrop -->
   <Teleport to="body">
+    <!-- Backdrop -->
     <div
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
+      class="modal-backdrop"
       @mousedown.self="closable !== false && $emit('close')"
     >
       <!-- Panel -->
       <div
-        :class="[
-          'relative flex max-h-[92vh] w-full flex-col overflow-hidden rounded-2xl bg-white shadow-[0_24px_60px_rgba(15,23,42,0.18)]',
-          sizeClass[size ?? 'md'],
-        ]"
+        :class="['modal-panel', sizeClass[size ?? 'md']]"
         role="dialog"
         aria-modal="true"
       >
         <!-- Header -->
-        <div
-          v-if="title || closable !== false"
-          class="flex flex-shrink-0 items-center justify-between px-6 pb-0 pt-6"
-        >
-          <h2 class="text-lg font-semibold text-slate-900">{{ title }}</h2>
+        <div v-if="title || closable !== false" class="modal-header">
+          <h2 class="modal-title">{{ title }}</h2>
           <button
             v-if="closable !== false"
-            class="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+            class="modal-close-btn"
             type="button"
             @click="$emit('close')"
           >
@@ -58,18 +54,102 @@ onUnmounted(() => document.removeEventListener('keydown', onEsc))
         </div>
 
         <!-- Body -->
-        <div class="flex-1 overflow-y-auto px-6 py-6">
+        <div class="modal-body">
           <slot />
         </div>
 
         <!-- Footer -->
-        <div
-          v-if="$slots.footer"
-          class="flex flex-shrink-0 justify-end gap-3 px-6 pb-6 pt-0"
-        >
+        <div v-if="$slots.footer" class="modal-footer">
           <slot name="footer" />
         </div>
       </div>
     </div>
   </Teleport>
 </template>
+
+<style scoped>
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background-color: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
+  animation: backdropFadeIn 150ms ease-out;
+}
+
+@keyframes backdropFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.modal-panel {
+  position: relative;
+  width: 100%;
+  border-radius: var(--radius-lg);
+  background-color: var(--bg-surface);
+  box-shadow: var(--shadow-xl);
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  border: 1px solid var(--border);
+  animation: modalSlideIn 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalSlideIn {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.modal-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.modal-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+.modal-close-btn:hover {
+  background-color: var(--bg-subtle);
+  color: var(--text-primary);
+}
+
+.modal-body {
+  overflow-y: auto;
+  flex: 1;
+  padding: 1.25rem 1.5rem;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+</style>

@@ -14,6 +14,7 @@ public static class DependencyInjection
     {
         services.AddHttpContextAccessor();
         services.AddScoped<UpdateAuditableEntitiesInterceptor>();
+        services.AddMemoryCache();
 
         services.AddDbContext<PayrollReportDbContext>((sp, options) =>
         {
@@ -23,12 +24,13 @@ public static class DependencyInjection
         });
 
         // Register MassTransit RabbitMQ and Consumers
-        services.AddSharedMassTransit(configuration, x =>
+        services.AddSharedMassTransit(configuration, "payroll-report", x =>
         {
             x.AddConsumer<DepartmentEventConsumer>();
             x.AddConsumer<PositionEventConsumer>();
             x.AddConsumer<EmployeeEventConsumer>();
             x.AddConsumer<EmployeeStatusChangedConsumer>();
+            x.AddConsumer<EmployeeDeletedConsumer>();
             x.AddConsumer<ContractEventConsumer>();
             x.AddConsumer<AttendanceEventConsumer>();
             x.AddConsumer<LeaveEventConsumer>();

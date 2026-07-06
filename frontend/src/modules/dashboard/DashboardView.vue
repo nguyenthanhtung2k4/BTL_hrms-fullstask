@@ -1,211 +1,1436 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { employeeService } from '../../services/employee.service'
-import { departmentService } from '../../services/department.service'
-import { payrollPeriodService } from '../../services/payrollPeriod.service'
-import { leaveService } from '../../services/leave.service'
+/**
+ * DashboardView — Premium, Unified design, Responsive, supports Dark Mode & Multi-role layout.
+ */
+import { ref, onMounted, computed, watch, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
-import type { Employee } from '../../types/hr.types'
-import type { PayrollPeriod } from '../../types/payroll.types'
-import type { LeaveRequest } from '../../types/attendance.types'
+import { useToastStore } from '../../stores/toast'
+import { useDashboard } from '../../composables/useDashboard'
+import { leaveService } from '../../services/leave.service'
+import { payrollPeriodService } from '../../services/payrollPeriod.service'
+import { useTheme } from '../../composables/useTheme'
+import { useI18n } from 'vue-i18n'
 import StatCard from '../../components/layout/StatCard.vue'
 import AppBadge from '../../components/ui/AppBadge.vue'
-import { useRouter } from 'vue-router'
+import AppButton from '../../components/ui/AppButton.vue'
+import gsap from 'gsap'
+
+// Import Lucide Icons
+import {
+  Users,
+  CheckCircle,
+  Calendar,
+  AlertTriangle,
+  TrendingUp,
+  UserPlus,
+  FileText,
+  Activity,
+  Clock,
+  CreditCard,
+  ArrowRight,
+  RefreshCw,
+  ShieldCheck,
+  CheckSquare,
+  UserCircle,
+  UmbrellaOff
+} from '@lucide/vue'
+
+// Import Chart.js components
+import { Bar, Doughnut, Line } from 'vue-chartjs'
+import {
+  Chart as ChartJS,
+  Title,
+  Tooltip,
+  Legend,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  ArcElement,
+  Filler
+} from 'chart.js'
+
+ChartJS.register(
+  Title,
+  Tooltip,
+  Legend,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  ArcElement,
+  Filler
+)
 
 const auth = useAuthStore()
+const toast = useToastStore()
 const router = useRouter()
+const { isDark } = useTheme()
+const { t } = useI18n({ useScope: 'global' })
 
-const loading = ref(true)
-const employees = ref<Employee[]>([])
-const departments = ref<{ id: string; name: string }[]>([])
-const periods = ref<PayrollPeriod[]>([])
-const pendingLeaves = ref<LeaveRequest[]>([])
+const {
+  loading,
+  employees,
+  pendingLeaves,
+  allPayslips,
+  myPayslips,
+  myLeaves,
+  newHires,
+  expiringContracts,
+  todayAttendance,
+  attendanceHistory,
+  weeklyAttendanceHistory,
+  monthlyAttendanceHistory,
+  payrollTrend,
+  statusDist,
+  deptDist,
+  periodsNeedAction,
+  userAccounts,
+  load
+} = useDashboard()
 
-const totalEmployees = computed(() => employees.value.length)
-const activeEmployees = computed(() => employees.value.filter((e) => e.status === 'Active').length)
-const totalDepts = computed(() => departments.value.length)
-const openPeriods = computed(() => periods.value.filter((p) => p.status !== 'Closed').length)
+const attendanceInterval = ref<'day' | 'week' | 'month'>('day')
+const actionLoading = ref<Record<string, boolean>>({})
+
+function animateCards() {
+  gsap.fromTo('.animate-dash-card',
+    { opacity: 0, y: 15, scale: 0.98 },
+    { opacity: 1, y: 0, scale: 1, duration: 0.5, stagger: 0.04, ease: 'power2.out', clearProps: 'all' }
+  )
+}
+
+watch(loading, (newVal) => {
+  if (!newVal) {
+    nextTick(animateCards)
+  }
+})
+
+onMounted(async () => {
+  await load()
+  nextTick(animateCards)
+})
+
 const greeting = computed(() => {
   const h = new Date().getHours()
-  if (h < 12) return 'Chào buổi sáng'
-  if (h < 18) return 'Chào buổi chiều'
-  return 'Chào buổi tối'
+  if (h < 12) return t('dashboard.greeting_morning')
+  if (h < 18) return t('dashboard.greeting_afternoon')
+  return t('dashboard.greeting_evening')
 })
 
-const deptStats = computed(() => {
-  const map: Record<string, number> = {}
-  employees.value.forEach((e) => {
-    if (e.departmentName) map[e.departmentName] = (map[e.departmentName] ?? 0) + 1
-  })
-  return Object.entries(map)
-    .map(([name, count]) => ({ name, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5)
-})
-
-const deptBarClass = (name: string) => {
-  const palette = [
-    'bg-blue-600',
-    'bg-emerald-500',
-    'bg-violet-500',
-    'bg-amber-500',
-    'bg-cyan-500',
-  ]
-  let hash = 0
-  for (let i = 0; i < name.length; i += 1) {
-    hash = (hash * 31 + name.charCodeAt(i)) % palette.length
-  }
-  return palette[hash]
+// Formatting helpers
+function getEmployeeName(employeeId: string | null) {
+  if (!employeeId) return 'System Admin'
+  const emp = employees.value.find(e => e.id === employeeId)
+  return emp ? emp.fullName : 'Account Linked'
 }
 
-async function load() {
+function fmtMoney(n: number) {
+  return n.toLocaleString('vi-VN') + ' ₫'
+}
+
+function fmtDate(d: string) {
+  if (!d) return '—'
+  return new Date(d).toLocaleDateString('vi-VN')
+}
+
+// Inline Leave Approval/Rejection for managers/admins
+async function handleLeave(id: string, status: 'Approved' | 'Rejected') {
+  actionLoading.value[id] = true
   try {
-    const promises: Promise<any>[] = []
-
-    if (auth.isManager) {
-      promises.push(
-        employeeService.getAll().then((r) => (employees.value = r)),
-        departmentService.getAll().then((r) => (departments.value = r)),
-      )
+    if (status === 'Approved') {
+      await leaveService.approve(id)
+      toast.success('Đã phê duyệt đơn nghỉ phép')
+    } else {
+      await leaveService.reject(id)
+      toast.success('Đã từ chối đơn nghỉ phép')
     }
-    if (auth.isPayrollStaff) {
-      promises.push(payrollPeriodService.getAll().then((r) => (periods.value = r)))
-    }
-    if (auth.isManager) {
-      promises.push(leaveService.getAll({ status: 'Pending' }).then((r) => (pendingLeaves.value = r)))
-    }
-
-    await Promise.all(promises)
+    await load()
   } catch {
-    // silent
+    toast.error('Lỗi khi cập nhật trạng thái đơn nghỉ phép')
   } finally {
-    loading.value = false
+    actionLoading.value[id] = false
   }
 }
 
-onMounted(load)
+// Inline Period calculation trigger
+async function handleCalculatePeriod(periodId: string) {
+  actionLoading.value[periodId] = true
+  try {
+    await payrollPeriodService.calculate(periodId)
+    toast.success('Đã tính toán bảng lương thành công!')
+    await load()
+  } catch {
+    toast.error('Lỗi khi tính toán lương')
+  } finally {
+    actionLoading.value[periodId] = false
+  }
+}
+
+// Theme-aware Chart Styling
+const textPrimaryColor = computed(() => isDark() ? '#f8fafc' : '#0f172a')
+const borderLineColor = computed(() => isDark() ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)')
+
+const chartOptions = computed<any>(() => ({
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      position: 'bottom',
+      labels: {
+        boxWidth: 8,
+        boxHeight: 8,
+        color: textPrimaryColor.value,
+        font: { size: 11, family: 'Inter, system-ui' },
+        padding: 16
+      }
+    }
+  },
+  scales: {
+    x: {
+      grid: { display: false },
+      ticks: { color: textPrimaryColor.value, font: { size: 10 } }
+    },
+    y: {
+      grid: { color: borderLineColor.value },
+      ticks: { precision: 0, color: textPrimaryColor.value, font: { size: 10 } }
+    }
+  }
+}))
+
+const doughnutOptions = computed<any>(() => ({
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      position: 'right',
+      labels: {
+        boxWidth: 10,
+        color: textPrimaryColor.value,
+        font: { size: 11, family: 'Inter, system-ui' },
+        padding: 12
+      }
+    }
+  }
+}))
+
+// Chart Datas
+const statusChartData = computed<any>(() => ({
+  labels: ['Active', 'Inactive', 'On Leave', 'Resigned'],
+  datasets: [
+    {
+      data: [
+        statusDist.value.Active ?? 0,
+        statusDist.value.Inactive ?? 0,
+        statusDist.value.OnLeave ?? 0,
+        statusDist.value.Resigned ?? 0
+      ],
+      backgroundColor: ['#10b981', '#94a3b8', '#fbbf24', '#f87171'],
+      borderWidth: 0,
+      hoverOffset: 6
+    }
+  ]
+}))
+
+const deptChartData = computed<any>(() => ({
+  labels: deptDist.value.map(d => d.name),
+  datasets: [
+    {
+      label: t('employee.title'),
+      data: deptDist.value.map(d => d.count),
+      backgroundColor: 'rgba(59, 130, 246, 0.85)',
+      hoverBackgroundColor: 'rgba(59, 130, 246, 1)',
+      borderRadius: 6,
+      barThickness: 16
+    }
+  ]
+}))
+
+const payrollChartData = computed<any>(() => ({
+  labels: payrollTrend.value.map(p => p.name),
+  datasets: [
+    {
+      label: 'Gross',
+      data: payrollTrend.value.map(p => p.gross),
+      borderColor: '#f59e0b',
+      backgroundColor: 'transparent',
+      borderWidth: 2,
+      pointBackgroundColor: '#f59e0b',
+      tension: 0.3
+    },
+    {
+      label: 'Net',
+      data: payrollTrend.value.map(p => p.net),
+      borderColor: '#10b981',
+      backgroundColor: 'rgba(16, 185, 129, 0.06)',
+      borderWidth: 3,
+      fill: true,
+      pointBackgroundColor: '#10b981',
+      tension: 0.3
+    }
+  ]
+}))
+
+const attendanceHistoryChartData = computed<any>(() => {
+  let labels: string[] = []
+  let data: number[] = []
+
+  if (attendanceInterval.value === 'day') {
+    labels = attendanceHistory.value.map(a => a.date)
+    data = attendanceHistory.value.map(a => a.count)
+  } else if (attendanceInterval.value === 'week') {
+    labels = weeklyAttendanceHistory.value.map(a => a.name)
+    data = weeklyAttendanceHistory.value.map(a => a.count)
+  } else if (attendanceInterval.value === 'month') {
+    labels = monthlyAttendanceHistory.value.map(a => a.name)
+    data = monthlyAttendanceHistory.value.map(a => a.count)
+  }
+
+  return {
+    labels,
+    datasets: [
+      {
+        label: t('nav.attendance'),
+        data,
+        backgroundColor: 'rgba(16, 185, 129, 0.8)',
+        hoverBackgroundColor: 'rgba(16, 185, 129, 1)',
+        borderRadius: 4,
+        barThickness: attendanceInterval.value === 'day' ? 14 : (attendanceInterval.value === 'week' ? 20 : 28)
+      }
+    ]
+  }
+})
+
+const myPayslipsChartData = computed<any>(() => ({
+  labels: myPayslips.value.slice(-6).map(p => p.fullName.split(' ')[0]),
+  datasets: [
+    {
+      label: 'Net',
+      data: myPayslips.value.slice(-6).map(p => p.netSalary),
+      backgroundColor: 'rgba(16, 185, 129, 0.85)',
+      borderRadius: 6,
+      barThickness: 20
+    }
+  ]
+}))
 </script>
 
 <template>
-  <div class="mx-auto w-full max-w-7xl space-y-6">
-    <!-- Greeting -->
-    <div class="mb-6">
-      <h1 class="text-2xl font-bold text-slate-900">{{ greeting }}, {{ auth.displayName }} 👋</h1>
-      <p class="mt-0.5 text-sm text-slate-500">
-        {{ new Date().toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }}
-      </p>
-    </div>
-
-    <!-- Stat cards (chỉ cho Manager) -->
-    <div v-if="auth.isManager" class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <StatCard class="w-full" title="Tổng nhân viên" :value="totalEmployees" subtitle="Trong hệ thống" color="emerald" :loading="loading">
-        <template #icon>
-          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-        </template>
-      </StatCard>
-      <StatCard class="w-full" title="Đang làm việc" :value="activeEmployees" subtitle="Trạng thái Active" color="blue" :loading="loading">
-        <template #icon>
-          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-        </template>
-      </StatCard>
-      <StatCard class="w-full" title="Phòng ban" :value="totalDepts" subtitle="Đang hoạt động" color="violet" :loading="loading">
-        <template #icon>
-          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
-        </template>
-      </StatCard>
-      <StatCard class="w-full" title="Chờ duyệt nghỉ" :value="pendingLeaves.length" subtitle="Đơn nghỉ phép" color="amber" :loading="loading">
-        <template #icon>
-          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-        </template>
-      </StatCard>
-    </div>
-
-    <!-- Payroll stat (PayrollStaff) -->
-    <div v-if="auth.isPayrollStaff && !auth.isManager" class="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-3">
-      <StatCard title="Kỳ lương đang mở" :value="openPeriods" subtitle="Cần xử lý" color="amber" :loading="loading" />
-    </div>
-
-    <!-- Employee welcome card -->
-    <div v-if="auth.isEmployee && !auth.isManager && !auth.isPayrollStaff" class="mb-6">
-      <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-6">
-        <h2 class="text-base font-semibold text-emerald-900">Chào mừng đến HRMS! 🏢</h2>
-        <p class="mt-1 text-sm text-emerald-700">Bạn có thể sử dụng các chức năng bên trái để check-in, xem nghỉ phép và phiếu lương.</p>
-        <div class="mt-4 flex gap-3">
-          <button class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700" @click="router.push('/attendance/checkin')">Check-in ngay →</button>
-          <button class="rounded-lg border border-emerald-300 bg-white px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50" @click="router.push('/payroll/my-payslip')">Phiếu lương của tôi</button>
-        </div>
+  <div class="dash-container">
+    <!-- Header panel with greeting and refresh -->
+    <div class="dash-greeting-card">
+      <div class="dash-greeting-card__info">
+        <h1 class="dash-greeting-card__title">{{ greeting }}, {{ auth.displayName }} 👋</h1>
+        <p class="dash-greeting-card__subtitle">
+          {{ new Date().toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }}
+        </p>
+      </div>
+      <div>
+        <button class="dash-refresh-btn" @click="load">
+          <RefreshCw class="h-4 w-4" :class="{ 'animate-spin': loading }" />
+          {{ t('dashboard.refresh') }}
+        </button>
       </div>
     </div>
 
-    <!-- Bottom section for managers -->
-    <div v-if="auth.isManager" class="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-5">
-      <!-- Department breakdown -->
-      <div class="lg:col-span-3 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col">
-        <div class="mb-4 flex items-center justify-between">
-          <h2 class="text-sm font-semibold text-slate-900">Nhân viên theo phòng ban</h2>
-          <button class="text-xs text-emerald-600 hover:underline" @click="router.push('/hr/employees')">Xem tất cả →</button>
+    <!-- Cổng nội dung, được làm mờ khi loading = true -->
+    <div :class="['dash-content-area', { 'dash-content-area--blur': loading }]">
+      <!-- 👑 ROLE: ADMIN / HR DASHBOARD -->
+      <div v-if="auth.isHR || auth.isAdmin" class="space-y-6">
+        <!-- Row 1: Stat Cards -->
+        <div class="dash-stats-grid">
+          <StatCard class="animate-dash-card" :title="t('dashboard.totalEmployees')" :value="employees.length" :subtitle="t('employee.list')" color="emerald">
+            <template #icon><Users class="h-5 w-5" /></template>
+          </StatCard>
+          <StatCard class="animate-dash-card" :title="t('dashboard.presentToday')" :value="`${todayAttendance.checkedIn} NV`" :subtitle="`Tỷ lệ: ${todayAttendance.rate}%`" color="blue">
+            <template #icon><CheckCircle class="h-5 w-5" /></template>
+          </StatCard>
+          <StatCard class="animate-dash-card" title="Nhân viên mới" :value="newHires.length" subtitle="Gia nhập tháng này" color="violet">
+            <template #icon><UserPlus class="h-5 w-5" /></template>
+          </StatCard>
+          <StatCard class="animate-dash-card" title="Hợp đồng hết hạn" :value="expiringContracts.length" subtitle="Trong vòng 30 ngày" color="red">
+            <template #icon><AlertTriangle class="h-5 w-5" /></template>
+          </StatCard>
         </div>
-        <div class="flex-1">
-          <div v-if="loading" class="space-y-2">
-            <div v-for="n in 5" :key="n" class="h-6 animate-pulse rounded bg-slate-200" />
+
+        <!-- Row 2: Analysis Charts -->
+        <div class="dash-chart-row-1">
+          <!-- Human Resource Status -->
+          <div class="dash-chart-card animate-dash-card">
+            <h3 class="dash-chart-card__title">
+              <Activity class="h-4 w-4 text-success" /> Trạng thái nhân sự
+            </h3>
+            <div class="dash-chart-card__canvas-container">
+              <Doughnut :data="statusChartData" :options="doughnutOptions" />
+            </div>
           </div>
-          <div v-else class="space-y-3">
-            <div
-              v-for="dept in deptStats"
-              :key="dept.name"
-              class="space-y-2 w-full"
-            >
-              <div class="flex items-center justify-between gap-3 text-sm font-semibold text-slate-600">
-                <span class="truncate">{{ dept.name }}</span>
-                <span class="text-slate-800">{{ dept.count }}</span>
-              </div>
-              <div class="h-2 w-full overflow-hidden rounded-full bg-slate-100 border border-slate-200">
-                <div
-                  :class="['h-full rounded-full transition-all duration-500 ease-out shadow-inner', deptBarClass(dept.name)]"
-                  :style="{ width: `${(dept.count / totalEmployees) * 100}%` }"
-                />
-              </div>
+
+          <!-- Employees by Department -->
+          <div class="dash-chart-card dash-chart-card--span-2 animate-dash-card">
+            <h3 class="dash-chart-card__title">
+              <Users class="h-4 w-4 text-info" /> Nhân viên theo phòng ban
+            </h3>
+            <div class="dash-chart-card__canvas-container">
+              <Bar :data="deptChartData" :options="chartOptions" />
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Pending leave requests -->
-      <div class="lg:col-span-2 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col">
-        <div class="mb-4 flex items-center justify-between">
-          <h2 class="text-sm font-semibold text-slate-900">Đơn nghỉ phép chờ duyệt</h2>
-          <button class="text-xs text-emerald-600 hover:underline" @click="router.push('/attendance/leaves')">Xử lý →</button>
+        <!-- Row 3: Payroll Trend & Attendance History -->
+        <div class="dash-chart-row-2">
+          <!-- Payroll Trend -->
+          <div class="dash-chart-card animate-dash-card">
+            <h3 class="dash-chart-card__title">
+              <TrendingUp class="h-4 w-4 text-warning" /> Biến động quỹ lương (Net & Gross)
+            </h3>
+            <div class="dash-chart-card__canvas-container">
+              <Line v-if="payrollTrend.length > 0" :data="payrollChartData" :options="chartOptions" />
+              <div v-else class="dash-chart-card__empty">
+                Chưa có dữ liệu phiếu lương nào để phân tích.
+              </div>
+            </div>
+          </div>
+
+          <!-- Attendance Trends -->
+          <div class="dash-chart-card animate-dash-card">
+            <div class="dash-chart-card__header-row">
+              <h3 class="dash-chart-card__title">
+                <Clock class="h-4 w-4 text-success" /> Tần suất chấm công
+              </h3>
+              <div class="dash-interval-toggle">
+                <button :class="{ active: attendanceInterval === 'day' }" @click="attendanceInterval = 'day'">Ngày</button>
+                <button :class="{ active: attendanceInterval === 'week' }" @click="attendanceInterval = 'week'">Tuần</button>
+                <button :class="{ active: attendanceInterval === 'month' }" @click="attendanceInterval = 'month'">Tháng</button>
+              </div>
+            </div>
+            <div class="dash-chart-card__canvas-container">
+              <Bar :data="attendanceHistoryChartData" :options="chartOptions" />
+            </div>
+          </div>
         </div>
-        <div class="flex-1">
-          <div v-if="loading" class="space-y-2">
-            <div v-for="n in 3" :key="n" class="h-12 animate-pulse rounded bg-slate-200" />
-          </div>
-          <div v-else-if="pendingLeaves.length === 0" class="py-8 text-center text-sm text-slate-400">
-            ✓ Không có đơn nào chờ duyệt
-          </div>
-          <div v-else class="space-y-3">
-            <div
-              v-for="lv in pendingLeaves.slice(0, 5)"
-              :key="lv.id"
-              class="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-3 shadow-sm"
-            >
-              <div class="flex min-w-0 items-center gap-3">
-                <div class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-blue-50 text-sm font-semibold text-blue-700 ring-1 ring-blue-100">
-                  {{ lv.employeeName.split(' ').map((part) => part[0]).slice(0, 2).join('').toUpperCase() }}
+
+        <!-- Row 4: Actionable Lists -->
+        <div class="dash-grid-two-col">
+          <!-- Leaves waiting for approval -->
+          <div class="dash-list-card animate-dash-card">
+            <div class="dash-list-card__header">
+              <h3 class="dash-list-card__title">
+                <Calendar class="h-4 w-4 text-success" /> {{ t('dashboard.pendingLeaves') }}
+              </h3>
+              <span class="dash-list-card__link" @click="router.push('/attendance/leaves')">
+                Xem tất cả <ArrowRight class="h-3 w-3" />
+              </span>
+            </div>
+            <div v-if="pendingLeaves.length === 0" class="dash-list-card__empty">
+              {{ t('dashboard.noPendingLeaves') }}
+            </div>
+            <div v-else class="dash-list-card__items">
+              <div v-for="l in pendingLeaves.slice(0, 5)" :key="l.id" class="dash-list-card__item">
+                <div class="dash-list-card__item-left">
+                  <p class="dash-item-title">{{ l.employeeName }}</p>
+                  <p class="dash-item-desc">{{ l.leaveTypeName }} ({{ l.totalDays }} ngày: {{ fmtDate(l.fromDate) }} - {{ fmtDate(l.toDate) }})</p>
                 </div>
-                <div class="min-w-0">
-                  <div class="truncate text-sm font-medium text-slate-900">{{ lv.employeeName }}</div>
-                  <div class="text-xs text-slate-500">{{ lv.leaveTypeName }} · {{ lv.totalDays }} ngày</div>
+                <div class="dash-list-card__actions">
+                  <AppButton size="sm" variant="success" :loading="actionLoading[l.id]" @click="handleLeave(l.id, 'Approved')">Duyệt</AppButton>
+                  <AppButton size="sm" variant="danger" :loading="actionLoading[l.id]" @click="handleLeave(l.id, 'Rejected')">Từ chối</AppButton>
                 </div>
               </div>
-              <AppBadge status="Pending" />
             </div>
-            <div v-if="pendingLeaves.length > 5" class="text-center text-xs text-slate-400">
-              +{{ pendingLeaves.length - 5 }} đơn khác
+          </div>
+
+          <!-- Expiring Contracts -->
+          <div class="dash-list-card animate-dash-card">
+            <div class="dash-list-card__header">
+              <h3 class="dash-list-card__title">
+                <FileText class="h-4 w-4 text-danger" /> Hợp đồng sắp hết hạn (30 ngày)
+              </h3>
+              <span class="dash-list-card__link" @click="router.push('/hr/contracts')">
+                Xem tất cả <ArrowRight class="h-3 w-3" />
+              </span>
+            </div>
+            <div v-if="expiringContracts.length === 0" class="dash-list-card__empty">
+              Không có hợp đồng nào sắp hết hạn.
+            </div>
+            <div v-else class="dash-list-card__items">
+              <div v-for="c in expiringContracts.slice(0, 5)" :key="c.id" class="dash-list-card__item">
+                <div class="dash-list-card__item-left">
+                  <p class="dash-item-title">{{ c.employeeName }}</p>
+                  <p class="dash-item-desc">Mã: {{ c.contractNumber }} · Loại: {{ c.contractType }}</p>
+                </div>
+                <div class="dash-list-card__badge-col">
+                  <p class="dash-item-val font-semibold text-danger">{{ fmtDate(c.endDate || '') }}</p>
+                  <p class="dash-item-label">Hết hạn</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 5: System Login sessions (ADMIN only) -->
+        <div v-if="auth.isAdmin" class="dash-table-card animate-dash-card">
+          <div class="dash-table-card__header">
+            <h3 class="dash-table-card__title">
+              <ShieldCheck class="h-4 w-4 text-success" /> {{ t('dashboard.latestLogins') }}
+            </h3>
+            <div class="dash-table-card__stats">
+              <span>Đang hoạt động: <strong style="color: var(--color-success);">{{ userAccounts.filter(u => u.isActive).length }}</strong></span>
+              <span>Khóa: <strong style="color: var(--color-danger);">{{ userAccounts.filter(u => !u.isActive).length }}</strong></span>
+            </div>
+          </div>
+          <div v-if="userAccounts.length === 0" class="dash-table-card__empty">
+            Không có dữ liệu tài khoản hệ thống.
+          </div>
+          <div v-else class="dash-table-container">
+            <table class="dash-table">
+              <thead>
+                <tr>
+                  <th>Nhân viên</th>
+                  <th>Email</th>
+                  <th>{{ t('dashboard.role') }}</th>
+                  <th>Trạng thái</th>
+                  <th class="text-right">{{ t('dashboard.lastLogin') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="u in [...userAccounts].sort((a,b) => new Date(b.lastLoginAt || 0).getTime() - new Date(a.lastLoginAt || 0).getTime()).slice(0, 5)" :key="u.id">
+                  <td class="font-semibold">{{ getEmployeeName(u.employeeId) }}</td>
+                  <td class="font-mono text-xs" style="color: var(--text-secondary);">{{ u.email }}</td>
+                  <td>
+                    <div class="dash-badge-row">
+                      <span v-for="role in u.roles" :key="role" class="dash-small-badge">{{ role }}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span :class="['dash-status-dot', u.isActive ? 'dash-status-dot--active' : 'dash-status-dot--locked']">
+                      {{ u.isActive ? 'Hoạt động' : 'Bị khóa' }}
+                    </span>
+                  </td>
+                  <td class="text-right" style="color: var(--text-secondary);">
+                    {{ u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString('vi-VN') : 'Chưa từng đăng nhập' }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 👔 ROLE: MANAGER DASHBOARD -->
+      <div v-else-if="auth.isManager" class="space-y-6">
+        <div class="dash-stats-grid">
+          <StatCard class="animate-dash-card" :title="t('dashboard.managerTeam')" :value="employees.length" subtitle="Trực thuộc quyền quản lý" color="emerald">
+            <template #icon><Users class="h-5 w-5" /></template>
+          </StatCard>
+          <StatCard class="animate-dash-card" :title="t('dashboard.onLeaveTeam')" :value="employees.filter(e => e.status === 'OnLeave').length" subtitle="Nghỉ phép hôm nay" color="amber">
+            <template #icon><Calendar class="h-5 w-5" /></template>
+          </StatCard>
+          <StatCard class="animate-dash-card" :title="t('dashboard.pendingLeaves')" :value="pendingLeaves.length" subtitle="Cần xem xét" color="red">
+            <template #icon><Clock class="h-5 w-5" /></template>
+          </StatCard>
+        </div>
+
+        <div class="dash-chart-row-1">
+          <!-- Team attendance history -->
+          <div class="dash-chart-card dash-chart-card--span-2 animate-dash-card">
+            <h3 class="dash-chart-card__title">
+              <Clock class="h-4 w-4 text-success" /> {{ t('dashboard.attendanceTrendDept') }}
+            </h3>
+            <div class="dash-chart-card__canvas-container">
+              <Bar :data="attendanceHistoryChartData" :options="chartOptions" />
+            </div>
+          </div>
+
+          <!-- Team quick leave approval -->
+          <div class="dash-list-card animate-dash-card">
+            <h3 class="dash-list-card__title mb-4">
+              <CheckSquare class="h-4 w-4 text-success" /> {{ t('dashboard.leaveApprovalQuick') }}
+            </h3>
+            <div v-if="pendingLeaves.length === 0" class="dash-list-card__empty">
+              {{ t('dashboard.noPendingLeaves') }}
+            </div>
+            <div v-else class="dash-action-list">
+              <div v-for="l in pendingLeaves" :key="l.id" class="dash-action-item">
+                <div>
+                  <p class="font-semibold text-sm">{{ l.employeeName }}</p>
+                  <p class="text-xs" style="color: var(--text-secondary);">{{ l.leaveTypeName }} · {{ l.totalDays }} ngày</p>
+                  <p class="text-xs italic mt-1" style="color: var(--text-tertiary);">{{ t('dashboard.reason') }}: "{{ l.reason }}"</p>
+                </div>
+                <div class="dash-action-item__btns">
+                  <AppButton size="sm" variant="success" :loading="actionLoading[l.id]" @click="handleLeave(l.id, 'Approved')">Duyệt</AppButton>
+                  <AppButton size="sm" variant="danger" :loading="actionLoading[l.id]" @click="handleLeave(l.id, 'Rejected')">Từ chối</AppButton>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      <!-- 💰 ROLE: PAYROLL STAFF DASHBOARD -->
+      <div v-else-if="auth.isPayrollStaff" class="space-y-6">
+        <div class="dash-stats-grid">
+          <StatCard class="animate-dash-card" :title="t('dashboard.openPeriods')" :value="periodsNeedAction.length" subtitle="Cần xử lý" color="blue">
+            <template #icon><Calendar class="h-5 w-5" /></template>
+          </StatCard>
+          <StatCard class="animate-dash-card" :title="t('dashboard.totalPayslips')" :value="allPayslips.length" subtitle="Tất cả thời kỳ" color="emerald">
+            <template #icon><FileText class="h-5 w-5" /></template>
+          </StatCard>
+          <StatCard class="animate-dash-card" :title="t('dashboard.lastPeriodCost')" :value="allPayslips.slice(-1)[0] ? fmtMoney(allPayslips.slice(-1)[0].netSalary) : '0 ₫'" subtitle="Kỳ lương gần nhất" color="violet">
+            <template #icon><CreditCard class="h-5 w-5" /></template>
+          </StatCard>
+        </div>
+
+        <div class="dash-chart-row-1">
+          <!-- Payroll Expenses -->
+          <div class="dash-chart-card dash-chart-card--span-2 animate-dash-card">
+            <h3 class="dash-chart-card__title">
+              <TrendingUp class="h-4 w-4 text-success" /> Biến động chi lương (Net & Gross)
+            </h3>
+            <div class="dash-chart-card__canvas-container">
+              <Line v-if="payrollTrend.length > 0" :data="payrollChartData" :options="chartOptions" />
+              <div v-else class="dash-chart-card__empty">
+                Chưa có dữ liệu phiếu lương.
+              </div>
+            </div>
+          </div>
+
+          <!-- Open periods action -->
+          <div class="dash-list-card animate-dash-card">
+            <h3 class="dash-list-card__title mb-4">
+              <Calendar class="h-4 w-4 text-info" /> {{ t('dashboard.payrollPeriodsAction') }}
+            </h3>
+            <div v-if="periodsNeedAction.length === 0" class="dash-list-card__empty">
+              {{ t('dashboard.payrollPeriodsAllClosed') }}
+            </div>
+            <div v-else class="dash-action-list">
+              <div v-for="p in periodsNeedAction" :key="p.id" class="dash-action-item">
+                <div class="w-full">
+                  <div class="flex items-center justify-between">
+                     <span class="font-semibold text-sm">{{ p.name }}</span>
+                     <AppBadge :status="p.status" />
+                  </div>
+                  <p class="text-xs mt-1" style="color: var(--text-secondary);">Hạn: {{ fmtDate(p.fromDate) }} - {{ fmtDate(p.toDate) }}</p>
+                  <div class="flex justify-end mt-3">
+                    <AppButton v-if="p.status === 'Draft'" size="sm" variant="primary" :loading="actionLoading[p.id]" @click="handleCalculatePeriod(p.id)">
+                      {{ t('dashboard.payrollCalculateBtn') }}
+                    </AppButton>
+                    <AppButton v-else-if="p.status === 'Calculated'" size="sm" variant="success" @click="router.push(`/payroll/periods`)">
+                      {{ t('dashboard.viewAndClosePeriod') }}
+                    </AppButton>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 👤 ROLE: EMPLOYEE DASHBOARD -->
+      <div v-else-if="auth.isEmployee" class="space-y-6">
+        <div class="dash-grid-three-col">
+          <!-- Cổng thông tin & Thao tác nhanh -->
+          <div class="dash-portal-card group overflow-hidden animate-dash-card">
+            <!-- Decorative background elements -->
+            <div class="dash-portal-card__bg-blur1"></div>
+            <div class="dash-portal-card__bg-blur2"></div>
+            
+            <div class="relative z-10 flex h-full flex-col justify-between">
+              <div>
+                <div class="dash-portal-card__pill">
+                  <UserCircle class="h-4 w-4" /> Cổng Nhân Viên
+                </div>
+                <h3 class="dash-portal-card__title">{{ t('dashboard.personalPortal') }}</h3>
+                <p class="dash-portal-card__desc">{{ t('dashboard.personalPortalSub') }}</p>
+              </div>
+              
+              <div class="dash-portal-card__actions">
+                <button class="dash-portal-btn dash-portal-btn--primary group/btn" @click="router.push('/attendance/checkin')">
+                  <span class="flex items-center gap-2">
+                    <Clock class="h-4 w-4 text-emerald-600 transition-transform group-hover/btn:-rotate-12" />
+                    {{ t('dashboard.quickCheckin') }}
+                  </span>
+                  <ArrowRight class="h-4 w-4 opacity-50 transition-transform group-hover/btn:translate-x-1" />
+                </button>
+                <button class="dash-portal-btn dash-portal-btn--outline group/btn" @click="router.push('/attendance/leaves')">
+                  <span class="flex items-center gap-2">
+                    <UmbrellaOff class="h-4 w-4 transition-transform group-hover/btn:scale-110" />
+                    {{ t('dashboard.registerLeave') }}
+                  </span>
+                  <ArrowRight class="h-4 w-4 opacity-50 transition-transform group-hover/btn:translate-x-1" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Personal Net Salary Chart -->
+          <div class="dash-chart-card animate-dash-card">
+            <h3 class="dash-chart-card__title">
+              <TrendingUp class="h-4 w-4 text-success" /> {{ t('dashboard.netSalaryTrend6') }}
+            </h3>
+            <div class="dash-chart-card__canvas-container" style="height: 11rem;">
+              <Bar v-if="myPayslips.length > 0" :data="myPayslipsChartData" :options="chartOptions" />
+              <div v-else class="dash-chart-card__empty">
+                Chưa có dữ liệu phiếu lương.
+              </div>
+            </div>
+            <div class="dash-card-footer">
+              <span class="dash-footer-link" @click="router.push('/payroll/my-payslip')">
+                {{ t('dashboard.viewPayslipsDetail') }} →
+              </span>
+            </div>
+          </div>
+
+          <!-- Leaves overview -->
+          <div class="dash-list-card animate-dash-card">
+            <h3 class="dash-list-card__title">
+              <Calendar class="h-4 w-4 text-success" /> {{ t('dashboard.myLeavesRecent') }}
+            </h3>
+            <div v-if="myLeaves.length === 0" class="dash-list-card__empty">
+              {{ t('dashboard.noLeavesRegistered') }}
+            </div>
+            <div v-else class="dash-list-card__items">
+              <div v-for="l in myLeaves.slice(-3).reverse()" :key="l.id" class="dash-list-card__item pb-2 border-b last:border-0 last:pb-0">
+                <div>
+                  <p class="dash-item-title">{{ l.leaveTypeName }}</p>
+                  <p class="dash-item-desc">{{ l.totalDays }} ngày ({{ fmtDate(l.fromDate) }})</p>
+                </div>
+                <AppBadge :status="l.status" />
+              </div>
+            </div>
+            <div class="dash-card-footer">
+              <span class="dash-footer-link" @click="router.push('/attendance/leaves')">
+                {{ t('dashboard.leavesManagement') }} →
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 🏥 System Health Connection Status Bar (Visible to Admin/HR/PayrollStaff) -->
+      <div v-if="auth.isHR || auth.isAdmin || auth.isPayrollStaff" class="dash-health-card animate-dash-card">
+        <h3 class="dash-health-card__title">
+          <Activity class="h-4 w-4 text-success" /> {{ t('dashboard.systemHealth') }}
+        </h3>
+        <div class="dash-health-grid">
+          <div class="dash-health-item">
+            <span class="dash-health-item__name">HR Core API</span>
+            <span class="dash-health-item__status">
+              <span class="dash-pulse-dot"></span> {{ t('dashboard.healthActive') }}
+            </span>
+          </div>
+          <div class="dash-health-item">
+            <span class="dash-health-item__name">Attendance API</span>
+            <span class="dash-health-item__status">
+              <span class="dash-pulse-dot"></span> {{ t('dashboard.healthActive') }}
+            </span>
+          </div>
+          <div class="dash-health-item">
+            <span class="dash-health-item__name">Payroll API</span>
+            <span class="dash-health-item__status">
+              <span class="dash-pulse-dot"></span> {{ t('dashboard.healthActive') }}
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
+
+    <!-- Glassmorphic Loader Overlay -->
+    <Transition name="fade">
+      <div v-if="loading" class="dash-loading-overlay">
+        <div class="dash-loading-card">
+          <div class="dash-loading-spinner-wrapper">
+            <svg class="dash-loading-spinner" viewBox="0 0 24 24" fill="none">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+          </div>
+          <span class="dash-loading-text">Đang đồng bộ dữ liệu hệ thống...</span>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
+
+<style scoped>
+.dash-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Greeting card styling */
+.dash-greeting-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 2rem;
+  border-radius: var(--radius-xl);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 15%, var(--border));
+  background: linear-gradient(135deg, var(--bg-surface) 0%, color-mix(in srgb, var(--color-primary) 4%, var(--bg-surface)) 100%);
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+  transition: border-color var(--transition-base), background-color var(--transition-base), box-shadow var(--transition-base);
+}
+.dash-greeting-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-primary) 8%, transparent) 0%, transparent 70%);
+  pointer-events: none;
+}
+@media (min-width: 640px) {
+  .dash-greeting-card {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+.dash-greeting-card__title {
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin: 0;
+}
+.dash-greeting-card__subtitle {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin: 0.25rem 0 0;
+}
+.dash-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-strong);
+  background-color: var(--bg-subtle);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.dash-refresh-btn:hover {
+  background-color: var(--border);
+  color: var(--text-primary);
+}
+
+/* Stat Grid */
+.dash-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+@media (min-width: 640px) {
+  .dash-stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 1024px) {
+  .dash-stats-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* Skeletons */
+.dash-skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 1.25rem;
+}
+.dash-skeleton-card {
+  height: 6.5rem;
+  border-radius: var(--radius-lg);
+  background-color: var(--bg-muted);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Chart Cards and grids */
+.dash-chart-row-1 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+@media (min-width: 1024px) {
+  .dash-chart-row-1 { grid-template-columns: repeat(3, 1fr); }
+}
+.dash-chart-card--span-2 {
+  grid-column: span 1;
+}
+@media (min-width: 1024px) {
+  .dash-chart-card--span-2 { grid-column: span 2; }
+}
+
+.dash-chart-row-2 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+@media (min-width: 1024px) {
+  .dash-chart-row-2 { grid-template-columns: repeat(2, 1fr); }
+}
+
+.dash-chart-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1.25rem;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  background-color: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
+}
+.dash-chart-card__title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 1rem;
+}
+.dash-chart-card__header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.dash-chart-card__canvas-container {
+  position: relative;
+  height: 15rem;
+  width: 100%;
+}
+.dash-chart-card__empty {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  color: var(--text-tertiary);
+  font-size: 0.8125rem;
+  text-align: center;
+}
+
+.dash-interval-toggle {
+  display: flex;
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--border);
+  padding: 2px;
+  border-radius: var(--radius-sm);
+}
+.dash-interval-toggle button {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.dash-interval-toggle button.active {
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Grids for actionable cards */
+.dash-grid-two-col {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+@media (min-width: 1024px) {
+  .dash-grid-two-col { grid-template-columns: repeat(2, 1fr); }
+}
+
+.dash-grid-three-col {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+@media (min-width: 1024px) {
+  .dash-grid-three-col { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* List card styles */
+.dash-list-card {
+  padding: 1.25rem;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  background-color: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+}
+.dash-list-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.dash-list-card__title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+.dash-list-card__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-primary-text);
+  cursor: pointer;
+}
+.dash-list-card__link:hover {
+  text-decoration: underline;
+}
+.dash-list-card__empty {
+  display: grid;
+  place-items: center;
+  padding: 3rem 1rem;
+  color: var(--text-tertiary);
+  font-size: 0.8125rem;
+  text-align: center;
+}
+.dash-list-card__items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.dash-list-card__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+.dash-list-card__item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.dash-list-card__item-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+.dash-item-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+.dash-item-desc {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+.dash-list-card__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+.dash-list-card__badge-col {
+  text-align: right;
+}
+.dash-item-val {
+  font-size: 0.8125rem;
+  margin: 0;
+}
+.dash-item-label {
+  font-size: 0.6875rem;
+  color: var(--text-tertiary);
+  margin: 0;
+}
+
+/* Quick Action / Portal lists for employee */
+.dash-portal-card {
+  position: relative;
+  background-image: linear-gradient(135deg, var(--color-primary) 0%, #059669 100%);
+  padding: 1.75rem;
+  border-radius: var(--radius-2xl, 1rem);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 10px 40px -10px color-mix(in srgb, var(--color-primary) 50%, transparent);
+  min-height: 280px;
+}
+.dash-portal-card__bg-blur1 {
+  position: absolute;
+  top: -2rem;
+  right: -2rem;
+  height: 8rem;
+  width: 8rem;
+  border-radius: 9999px;
+  background-color: rgba(255, 255, 255, 0.1);
+  filter: blur(24px);
+  transition: background-color 0.5s ease;
+}
+.dash-portal-card:hover .dash-portal-card__bg-blur1 {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+.dash-portal-card__bg-blur2 {
+  position: absolute;
+  bottom: -2.5rem;
+  left: -2.5rem;
+  height: 10rem;
+  width: 10rem;
+  border-radius: 9999px;
+  background-color: rgba(0, 0, 0, 0.15);
+  filter: blur(40px);
+}
+.dash-portal-card__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  background-color: rgba(255, 255, 255, 0.2);
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: white;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 1.25rem;
+}
+.dash-portal-card__title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.dash-portal-card__desc {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  margin: 0.75rem 0 0;
+  color: rgba(255, 255, 255, 0.9);
+}
+.dash-portal-card__actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  margin-top: 2rem;
+}
+.dash-portal-btn {
+  width: 100%;
+  height: 3rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  border-radius: var(--radius-lg);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.25rem;
+}
+.dash-portal-btn--primary {
+  background-color: white;
+  color: var(--color-primary-text);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.dash-portal-btn--primary:hover {
+  background-color: var(--bg-muted);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+}
+.dash-portal-btn--outline {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(4px);
+}
+.dash-portal-btn--outline:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-color: white;
+  transform: translateY(-2px);
+}
+
+.dash-card-footer {
+  margin-top: auto;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+.dash-footer-link {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-primary-text);
+  cursor: pointer;
+}
+.dash-footer-link:hover {
+  text-decoration: underline;
+}
+
+/* Action Items for quick actions */
+.dash-action-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.dash-action-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 0.75rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background-color: var(--bg-subtle);
+  transition: border-color var(--transition-fast);
+}
+.dash-action-item:hover {
+  border-color: var(--border-strong);
+}
+.dash-action-item__btns {
+  display: flex;
+  gap: 0.375rem;
+  margin-top: 0.5rem;
+}
+
+/* Table card styling */
+.dash-table-card {
+  padding: 1.25rem;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  background-color: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
+}
+.dash-table-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+.dash-table-card__title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+.dash-table-card__stats {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.dash-table-card__empty {
+  display: grid;
+  place-items: center;
+  padding: 3rem 1rem;
+  color: var(--text-tertiary);
+  font-size: 0.8125rem;
+}
+.dash-table-container {
+  overflow-x: auto;
+}
+.dash-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+  text-align: left;
+}
+.dash-table th {
+  padding: 0.5rem 0.75rem;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+.dash-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border-strong);
+  color: var(--text-primary);
+}
+.dash-table tr:last-child td {
+  border-bottom: none;
+}
+.dash-badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+.dash-small-badge {
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 0.625rem;
+  font-weight: 500;
+}
+.dash-status-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-weight: 600;
+}
+.dash-status-dot::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.dash-status-dot--active { color: var(--color-success); }
+.dash-status-dot--active::before { background-color: var(--color-success); }
+.dash-status-dot--locked { color: var(--color-danger); }
+.dash-status-dot--locked::before { background-color: var(--color-danger); }
+
+/* Health connections bar */
+.dash-health-card {
+  padding: 1.25rem;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  background-color: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
+}
+.dash-health-card__title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 1rem;
+}
+.dash-health-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+@media (min-width: 768px) {
+  .dash-health-grid { grid-template-columns: repeat(3, 1fr); }
+}
+.dash-health-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background-color: var(--bg-subtle);
+}
+.dash-health-item__name {
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+}
+.dash-health-item__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-weight: 700;
+  color: var(--color-success);
+  font-size: 0.8125rem;
+}
+.dash-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--color-success);
+  animation: ping 1.5s infinite;
+}
+@keyframes ping {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+/* Premium Card hover effects and transitions */
+.dash-chart-card, .dash-list-card, .dash-table-card, .dash-health-card {
+  transition: transform var(--transition-base), box-shadow var(--transition-base), border-color var(--transition-base);
+  will-change: transform, box-shadow, border-color;
+}
+.dash-chart-card:hover, .dash-list-card:hover, .dash-table-card:hover, .dash-health-card:hover {
+  transform: translateY(-4px) scale(1.005);
+  box-shadow: var(--shadow-lg);
+  border-color: color-mix(in srgb, var(--color-primary) 25%, var(--border-strong));
+}
+
+/* Premium blur loading transition */
+.dash-content-area {
+  transition: filter 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+  opacity: 1;
+  filter: blur(0);
+}
+.dash-content-area--blur {
+  filter: blur(8px);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Glassmorphic Loader Overlay */
+.dash-loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background-color: rgba(255, 255, 255, 0.01);
+  pointer-events: none;
+}
+.dash-loading-card {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 1.125rem 1.75rem;
+  border-radius: var(--radius-xl);
+  border: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
+  background-color: color-mix(in srgb, var(--bg-surface) 80%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+  pointer-events: auto;
+  transform: translateY(16px);
+  animation: dashLoaderSlideUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes dashLoaderSlideUp {
+  to {
+    transform: translateY(0);
+  }
+}
+
+.dash-loading-spinner-wrapper {
+  color: var(--color-primary);
+  animation: spin 1s linear infinite;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+.dash-loading-spinner {
+  width: 100%;
+  height: 100%;
+}
+.dash-loading-text {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+/* Loader fade transition */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>

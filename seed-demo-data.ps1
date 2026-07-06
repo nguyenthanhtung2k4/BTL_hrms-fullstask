@@ -1,4 +1,4 @@
-$BASE = "http://localhost:5000/api/v1"
+$BASE = "http://localhost:5005/api/v1"
 $hdrs = @{ "Content-Type" = "application/json; charset=utf-8" }
 
 function OK($m) { Write-Host "  OK $m" -ForegroundColor Green }
@@ -17,11 +17,11 @@ try {
 # 2. Departments
 STEP "2. Departments"
 $depts = @(
-    [pscustomobject]@{ name="Ban Giam Doc"; code="BGD"; description="Ban lanh dao cong ty" },
-    [pscustomobject]@{ name="Phong Nhan Su"; code="HR"; description="Quan ly nhan su" },
-    [pscustomobject]@{ name="Phong Ky Thuat"; code="IT"; description="Phat trien he thong" },
-    [pscustomobject]@{ name="Phong Ke Toan"; code="ACC"; description="Quan ly tai chinh" },
-    [pscustomobject]@{ name="Phong Kinh Doanh"; code="SALES"; description="Ban hang" }
+    [pscustomobject]@{ name="Ban Giám Đốc"; code="BGD"; description="Ban lãnh đạo công ty" },
+    [pscustomobject]@{ name="Phòng Nhân Sự"; code="HR"; description="Quản lý nhân sự" },
+    [pscustomobject]@{ name="Phòng Kỹ Thuật"; code="IT"; description="Phát triển hệ thống và AI" },
+    [pscustomobject]@{ name="Phòng Kế Toán"; code="ACC"; description="Quản lý tài chính" },
+    [pscustomobject]@{ name="Phòng Kinh Doanh"; code="SALES"; description="Kinh doanh và Marketing" }
 )
 $deptIds = @{}
 foreach ($d in $depts) {
@@ -36,12 +36,12 @@ foreach ($d in $depts) {
 # 3. Positions
 STEP "3. Positions"
 $positions = @(
-    [pscustomobject]@{ name="Giam Doc"; code="GD"; level=1; description="Nguoi dung dau cong ty" },
-    [pscustomobject]@{ name="Truong Phong"; code="TP"; level=2; description="Truong cac phong ban" },
-    [pscustomobject]@{ name="Nhan Vien"; code="NV"; level=3; description="Nhan vien thuc thi" },
-    [pscustomobject]@{ name="Ky Su Phan Mem"; code="SW"; level=3; description="Lap trinh vien" },
-    [pscustomobject]@{ name="Ke Toan Vien"; code="KTV"; level=3; description="Nhan vien ke toan" },
-    [pscustomobject]@{ name="Chuyen Vien NS"; code="CVNS"; level=3; description="Tuyen dung nhan su" }
+    [pscustomobject]@{ name="Giám Đốc"; code="GD"; level=1; description="Người đứng đầu công ty" },
+    [pscustomobject]@{ name="Trưởng Phòng"; code="TP"; level=2; description="Trưởng các phòng ban" },
+    [pscustomobject]@{ name="Nhân Viên"; code="NV"; level=3; description="Nhân viên thực thi" },
+    [pscustomobject]@{ name="Kỹ Sư Phần Mềm"; code="SW"; level=3; description="Lập trình viên" },
+    [pscustomobject]@{ name="Kế Toán Viên"; code="KTV"; level=3; description="Nhân viên kế toán" },
+    [pscustomobject]@{ name="Chuyên Viên NS"; code="CVNS"; level=3; description="Tuyển dụng và quản lý nhân sự" }
 )
 $posIds = @{}
 foreach ($p in $positions) {
@@ -53,63 +53,129 @@ foreach ($p in $positions) {
     } catch { ERR "Position $($p.name): $_" }
 }
 
-# 4. Employees
+# 4. Employees Generator (150 Employees)
 STEP "4. Employees"
-$emps = @(
-    [pscustomobject]@{ code="NV002"; name="Nguyen Thi Lan Anh"; email="lan.anh@hrms.com"; phone="0901234567"; gender="Female"; dob="1990-05-15"; hire="2022-01-10"; dept="HR"; pos="TP" },
-    [pscustomobject]@{ code="NV003"; name="Tran Minh Hoang";    email="minh.hoang@hrms.com"; phone="0902345678"; gender="Male"; dob="1995-08-20"; hire="2022-06-01"; dept="IT"; pos="SW" },
-    [pscustomobject]@{ code="NV004"; name="Le Thi Thanh Tuyen"; email="thanh.tuyen@hrms.com"; phone="0903456789"; gender="Female"; dob="1993-03-12"; hire="2021-09-15"; dept="IT"; pos="SW" },
-    [pscustomobject]@{ code="NV005"; name="Pham Van Duc";       email="van.duc@hrms.com"; phone="0904567890"; gender="Male"; dob="1988-11-30"; hire="2020-03-01"; dept="ACC"; pos="KTV" },
-    [pscustomobject]@{ code="NV006"; name="Hoang Thi Mai";      email="thi.mai@hrms.com"; phone="0905678901"; gender="Female"; dob="1992-07-25"; hire="2023-02-14"; dept="ACC"; pos="KTV" },
-    [pscustomobject]@{ code="NV007"; name="Nguyen Quoc Bao";    email="quoc.bao@hrms.com"; phone="0906789012"; gender="Male"; dob="1991-02-08"; hire="2021-07-20"; dept="SALES"; pos="NV" },
-    [pscustomobject]@{ code="NV008"; name="Vu Thi Huong";       email="thi.huong@hrms.com"; phone="0907890123"; gender="Female"; dob="1994-09-14"; hire="2022-11-01"; dept="SALES"; pos="NV" },
-    [pscustomobject]@{ code="NV009"; name="Dang Huu Nghia";     email="huu.nghia@hrms.com"; phone="0908901234"; gender="Male"; dob="1989-04-03"; hire="2020-12-15"; dept="IT"; pos="TP" }
-)
+$viLast = @("Nguyễn", "Trần", "Lê", "Phạm", "Hoàng", "Vũ", "Đặng", "Bùi", "Đỗ", "Hồ", "Ngô", "Dương", "Lý")
+$viMale = @("Thế Dân", "Minh Hoàng", "Văn Đức", "Quốc Bảo", "Hữu Nghĩa", "Văn Minh", "Minh Trí", "Thanh Tùng", "Tuấn Anh", "Đức Nam", "Quang Huy", "Khánh Duy", "Xuân Trường")
+$viFemale = @("Thị Lan Anh", "Thị Thanh Tuyền", "Thị Mai", "Thị Hương", "Thị Thủy", "Bích Phương", "Ngọc Trinh", "Thanh Hà", "Hồng Vân", "Thùy Linh", "Hải Yến")
+
+$enMale = @("David Miller", "Jean-Luc Picard", "Rajesh Kumar", "John Smith", "Park Ji-sung", "Michael Johnson", "Alexandre Dupont", "Hans Schmidt", "Yuki Tanaka", "Daniel Evans")
+$enFemale = @("Sarah Jenkins", "Elena Rostova", "Emily Watson", "Sophia Martinez", "Chloe Dubois", "Maria Rossi", "Anna Johansson", "Li Wei", "Priya Patel")
+
+$emps = @()
+# Seed Tier 1 & 2 Heads
+$emps += [pscustomobject]@{ code="NV001"; name="Nguyễn Thế Dân"; email="dan.the@hrms.com"; phone="0901112223"; gender="Male"; dob="1980-01-01"; hire="2020-01-01"; dept="BGD"; pos="GD"; manager=$null; sal=150000000 }
+$emps += [pscustomobject]@{ code="NV002"; name="David Miller"; email="david.miller@hrms.com"; phone="0901234567"; gender="Male"; dob="1985-04-12"; hire="2020-01-01"; dept="BGD"; pos="GD"; manager="NV001"; sal=120000000 }
+$emps += [pscustomobject]@{ code="NV003"; name="Nguyễn Thị Lan Anh"; email="lan.anh@hrms.com"; phone="0902345678"; gender="Female"; dob="1990-05-15"; hire="2022-01-10"; dept="HR"; pos="TP"; manager="NV001"; sal=25000000 }
+$emps += [pscustomobject]@{ code="NV004"; name="Phạm Văn Đức"; email="van.duc@hrms.com"; phone="0903456789"; gender="Male"; dob="1988-11-30"; hire="2020-03-01"; dept="ACC"; pos="TP"; manager="NV001"; sal=30000000 }
+$emps += [pscustomobject]@{ code="NV005"; name="Nguyễn Quốc Bảo"; email="quoc.bao@hrms.com"; phone="0904567890"; gender="Male"; dob="1991-02-08"; hire="2021-07-20"; dept="SALES"; pos="TP"; manager="NV001"; sal=28000000 }
+$emps += [pscustomobject]@{ code="NV006"; name="Đặng Hữu Nghĩa"; email="huu.nghia@hrms.com"; phone="0905678901"; gender="Male"; dob="1989-04-03"; hire="2020-12-15"; dept="IT"; pos="TP"; manager="NV002"; sal=60000000 }
+
+for ($i = 7; $i -le 150; $i++) {
+    $code = "NV{0:D3}" -f $i
+    $gender = if ($i % 2 -eq 0) { "Female" } else { "Male" }
+    $isForeign = ($i % 4 -eq 0)
+    
+    $name = ""
+    if ($isForeign) {
+        if ($gender -eq "Male") {
+            $name = $enMale[$i % $enMale.Count]
+        } else {
+            $name = $enFemale[$i % $enFemale.Count]
+        }
+    } else {
+        $last = $viLast[$i % $viLast.Count]
+        $first = if ($gender -eq "Male") { $viMale[$i % $viMale.Count] } else { $viFemale[$i % $viFemale.Count] }
+        $name = "$last $first"
+    }
+    
+    $mod = $i % 10
+    $dept = "IT"
+    $pos = "SW"
+    $manager = "NV006"
+    $sal = 20000000 + ($i % 7) * 5000000
+    
+    if ($mod -eq 6) {
+        $dept = "HR"
+        $pos = "CVNS"
+        $manager = "NV003"
+        $sal = 15000000 + ($i % 5) * 2000000
+    } elseif ($mod -eq 7) {
+        $dept = "ACC"
+        $pos = "KTV"
+        $manager = "NV004"
+        $sal = 15000000 + ($i % 5) * 2000000
+    } elseif ($mod -eq 8 -or $mod -eq 9) {
+        $dept = "SALES"
+        $pos = "NV"
+        $manager = "NV005"
+        $sal = 12000000 + ($i % 6) * 2000000
+    }
+    
+    # Strip diacritics for realistic emails
+    $normalized = $name.Normalize([System.Text.NormalizationForm]::FormD)
+    $sb = [System.Text.StringBuilder]::new()
+    foreach ($c in $normalized.ToCharArray()) {
+        if ([System.Globalization.CharUnicodeInfo]::GetUnicodeCategory($c) -ne [System.Globalization.UnicodeCategory]::NonSpacingMark) {
+            [void]$sb.Append($c)
+        }
+    }
+    $emailPrefix = $sb.ToString().ToLower().Replace(" ", "").Replace("đ", "d")
+    $email = "$emailPrefix$i@hrms.com"
+    $phone = "090" + (1000000 + $i * 123)
+    
+    $dobYear = 1980 + ($i % 20)
+    $dobMonth = 1 + ($i % 12)
+    $dobDay = 1 + ($i % 28)
+    $dob = "{0:D4}-{1:D2}-{2:D2}" -f $dobYear, $dobMonth, $dobDay
+    
+    $hireYear = 2021 + ($i % 4)
+    $hireMonth = 1 + ($i % 12)
+    $hireDay = 1 + ($i % 28)
+    $hire = "{0:D4}-{1:D2}-{2:D2}" -f $hireYear, $hireMonth, $hireDay
+    
+    $emps += [pscustomobject]@{ code=$code; name=$name; email=$email; phone=$phone; gender=$gender; dob=$dob; hire=$hire; dept=$dept; pos=$pos; manager=$manager; sal=$sal }
+}
+
 $empIds = @{}
 foreach ($e in $emps) {
     try {
+        $mId = $null
+        if ($e.manager -and $empIds.ContainsKey($e.manager)) {
+            $mId = $empIds[$e.manager]
+        }
         $b = [ordered]@{
             employeeCode = $e.code; fullName = $e.name; email = $e.email; phone = $e.phone
             gender = $e.gender; dateOfBirth = $e.dob; hireDate = $e.hire; status = "Active"
-            departmentId = $deptIds[$e.dept]; positionId = $posIds[$e.pos]
+            departmentId = $deptIds[$e.dept]; positionId = $posIds[$e.pos]; managerEmployeeId = $mId
         } | ConvertTo-Json
         $r = Invoke-RestMethod -Method POST -Uri "$BASE/hr/employees" -Headers $ah -Body $b
         $empIds[$e.code] = $r.data.id
-        OK "Employee: $($e.name)"
+        OK "Employee: $($e.name) ($($e.code))"
     } catch { ERR "Employee $($e.name): $_" }
 }
 
 # 5. Contracts
 STEP "5. Contracts"
-$cts = @(
-    [pscustomobject]@{ emp="NV002"; sal=18000000; start="2022-01-10" },
-    [pscustomobject]@{ emp="NV003"; sal=22000000; start="2022-06-01" },
-    [pscustomobject]@{ emp="NV004"; sal=20000000; start="2021-09-15" },
-    [pscustomobject]@{ emp="NV005"; sal=16000000; start="2020-03-01" },
-    [pscustomobject]@{ emp="NV006"; sal=15000000; start="2023-02-14" },
-    [pscustomobject]@{ emp="NV007"; sal=14000000; start="2021-07-20" },
-    [pscustomobject]@{ emp="NV008"; sal=13000000; start="2022-11-01" },
-    [pscustomobject]@{ emp="NV009"; sal=25000000; start="2020-12-15" }
-)
 $idx = 1
-foreach ($ct in $cts) {
-    if ($empIds.ContainsKey($ct.emp)) {
+foreach ($e in $emps) {
+    if ($empIds.ContainsKey($e.code)) {
         try {
             $no = "HD-2024-{0:D3}" -f $idx
-            $b = [ordered]@{ contractNumber=$no; employeeId=$empIds[$ct.emp]; contractType="Chinh thuc"; startDate=$ct.start; baseSalary=$ct.sal } | ConvertTo-Json
+            $b = [ordered]@{ contractNumber=$no; employeeId=$empIds[$e.code]; contractType="Chính thức"; startDate=$e.hire; baseSalary=$e.sal } | ConvertTo-Json
             Invoke-RestMethod -Method POST -Uri "$BASE/hr/contracts" -Headers $ah -Body $b | Out-Null
-            OK "Contract $no for $($ct.emp) - $($ct.sal) VND"
+            OK "Contract $no for $($e.code) - $($e.sal) VND"
             $idx++
-        } catch { ERR "Contract for $($ct.emp): $_" }
+        } catch { ERR "Contract for $($e.code): $_" }
     }
 }
 
 # 6. Shifts
 STEP "6. Work Shifts"
 $shifts = @(
-    [pscustomobject]@{ code="CA_HC"; name="Ca Hanh Chinh"; start="08:30"; end="17:30"; brk=90 },
-    [pscustomobject]@{ code="CA_SANG"; name="Ca Sang"; start="08:00"; end="17:00"; brk=60 },
-    [pscustomobject]@{ code="CA_CHIEU"; name="Ca Chieu"; start="13:00"; end="22:00"; brk=60 }
+    [pscustomobject]@{ code="CA_HC"; name="Ca Hành Chính"; start="08:30"; end="17:30"; brk=90 },
+    [pscustomobject]@{ code="CA_SANG"; name="Ca Sáng"; start="08:00"; end="17:00"; brk=60 },
+    [pscustomobject]@{ code="CA_CHIEU"; name="Ca Chiều"; start="13:00"; end="22:00"; brk=60 }
 )
 $shiftIds = @{}
 foreach ($sh in $shifts) {
@@ -127,7 +193,7 @@ $defaultShift = $shiftIds["CA_HC"]
 if ($defaultShift) {
     foreach ($ec in $empIds.Keys) {
         try {
-            $b = [ordered]@{ employeeId=$empIds[$ec]; shiftId=$defaultShift; startDate="2026-06-01"; endDate="2026-12-31" } | ConvertTo-Json
+            $b = [ordered]@{ employeeId=$empIds[$ec]; shiftId=$defaultShift; startDate="2025-07-01"; endDate="2026-12-31" } | ConvertTo-Json
             Invoke-RestMethod -Method POST -Uri "$BASE/attendance/work-schedules" -Headers $ah -Body $b | Out-Null
             OK "Schedule for $ec"
         } catch { ERR "Schedule for $ec failed" }
@@ -138,20 +204,20 @@ if ($defaultShift) {
 STEP "8. Payroll Rule"
 $ruleId = $null
 try {
-    $b = [ordered]@{ code="QT_CHUAN"; name="Quy tac luong chuan 2024"; workDayHours=8; paidLeaveCountsAsWork=$true; overtimeRate=1.5; isActive=$true } | ConvertTo-Json
+    $b = [ordered]@{ code="QT_CHUAN"; name="Quy tắc lương chuẩn 2025-2026"; workDayHours=8; paidLeaveCountsAsWork=$true; overtimeRate=1.5; isActive=$true } | ConvertTo-Json
     $r = Invoke-RestMethod -Method POST -Uri "$BASE/payroll/payroll-rules" -Headers $ah -Body $b
     $ruleId = $r.data.id
-    OK "Rule: Quy tac luong chuan [ID: $ruleId]"
+    OK "Rule: Quy tắc lương chuẩn [ID: $ruleId]"
 } catch { ERR "Payroll Rule: $_" }
 
 # 9. Payroll Period
 STEP "9. Payroll Period"
 if ($ruleId) {
     try {
-        $b = [ordered]@{ name="Luong thang 6/2026"; fromDate="2026-06-01"; toDate="2026-06-30"; payrollRuleId=$ruleId } | ConvertTo-Json
+        $b = [ordered]@{ name="Lương tháng 6/2026"; fromDate="2026-06-01"; toDate="2026-06-30"; payrollRuleId=$ruleId } | ConvertTo-Json
         $r = Invoke-RestMethod -Method POST -Uri "$BASE/payroll/payroll-periods" -Headers $ah -Body $b
         $periodId = $r.data.id
-        OK "Period: Luong thang 6/2026 [ID: $periodId]"
+        OK "Period: Lương tháng 6/2026 [ID: $periodId]"
     } catch { ERR "Period: $_" }
 }
 
@@ -159,8 +225,8 @@ Write-Host ""
 Write-Host "============================================" -ForegroundColor Magenta
 Write-Host "  SEED COMPLETE!" -ForegroundColor Magenta
 Write-Host "============================================" -ForegroundColor Magenta
-Write-Host "  5 departments | 6 positions | 8 employees"
-Write-Host "  8 contracts | 3 shifts | work schedules"
+Write-Host "  5 departments | 6 positions | $($emps.Count) employees"
+Write-Host "  $($emps.Count) contracts | 3 shifts | work schedules"
 Write-Host "  1 payroll rule | 1 payroll period"
 Write-Host ""
 Write-Host "  Visit: http://localhost:5173" -ForegroundColor Cyan

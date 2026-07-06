@@ -14,4 +14,5 @@ public interface IAllowanceService
     Task<Result<EmployeeAllowanceDto>> UpdateAsync(Guid id, UpdateEmployeeAllowanceDto dto);
     Task<Result> DeleteAsync(Guid id);
     Task<Result<IEnumerable<AllowanceTypeDto>>> GetAllowanceTypesAsync();
+    Task<Result<AllowanceTypeDto>> CreateAllowanceTypeAsync(string name);
 }

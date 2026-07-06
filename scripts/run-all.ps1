@@ -77,7 +77,7 @@ if (-not (Test-Path (Join-Path $frontendDir "node_modules"))) {
     Pop-Location
 }
 
-$ports = @(5000, 5001, 5002, 5003, 5173)
+$ports = @(5005, 5001, 5002, 5003, 5173)
 foreach ($port in $ports) {
     if (Test-PortOpen -Port $port) {
         Write-Warning "Port $port is already in use. Existing process will be reused."
@@ -108,7 +108,7 @@ if (-not (Test-PortOpen -Port 5003)) {
         -WorkingDirectory $repoRoot
 }
 
-if (-not (Test-PortOpen -Port 5000)) {
+if (-not (Test-PortOpen -Port 5005)) {
     Start-AppProcess `
         -Name "API Gateway" `
         -FilePath "dotnet" `
@@ -127,7 +127,7 @@ if (-not (Test-PortOpen -Port 5173)) {
 Wait-Port -Port 5001 -Name "HR Core Service"
 Wait-Port -Port 5002 -Name "Attendance Service"
 Wait-Port -Port 5003 -Name "Payroll & Report Service"
-Wait-Port -Port 5000 -Name "API Gateway"
+Wait-Port -Port 5005 -Name "API Gateway"
 Wait-Port -Port 5173 -Name "Frontend"
 
 Write-Host ""

@@ -9,4 +9,5 @@ export const deductionService = {
   create: (dto: CreateDeductionDto) => apiClient.post<{ data: EmployeeDeduction }>(BASE, dto).then(extractData),
   update: (id: string, dto: Partial<CreateDeductionDto>) => apiClient.put<{ data: EmployeeDeduction }>(`${BASE}/${id}`, dto).then(extractData),
   delete: (id: string) => apiClient.delete(`${BASE}/${id}`),
+  createType: (name: string) => apiClient.post<{ data: DeductionType }>(`${BASE}/types`, { name }).then(extractData),
 }

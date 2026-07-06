@@ -16,7 +16,9 @@ public record PayslipDto(
     decimal TotalDeduction,
     decimal NetSalary,
     string Status,
-    List<PayslipItemDto> Items
+    List<PayslipItemDto> Items,
+    string? PeriodName = null,
+    string? PeriodCode = null
 );
 
 public record PayslipItemDto(
@@ -26,4 +28,9 @@ public record PayslipItemDto(
     string Name,
     decimal Amount,
     string? SourceType
+);
+
+public record UpdatePayslipDto(
+    decimal WorkedDays,
+    decimal PaidLeaveDays
 );

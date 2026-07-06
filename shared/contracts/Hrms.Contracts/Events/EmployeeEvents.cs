@@ -10,13 +10,17 @@ public sealed record EmployeeProjectionPayload(
     Guid? PositionId,
     string? PositionName,
     Guid? ManagerEmployeeId,
-    string Status);
+    string Status,
+    DateTime HireDate);
 
 public sealed record EmployeeStatusChangedPayload(
     Guid EmployeeId,
     string? OldStatus,
     string NewStatus,
     string? Reason);
+
+public sealed record EmployeeDeletedPayload(
+    Guid EmployeeId);
 
 public sealed record ContractSalaryPayload(
     Guid ContractId,

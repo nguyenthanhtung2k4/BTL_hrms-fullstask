@@ -7,6 +7,9 @@
 PRINT 'Cleaning HRMS_HrCoreDb...';
 USE [HRMS_HrCoreDb];
 GO
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_NULLS ON;
+GO
 
 -- 1. Drop constraints to avoid circular dependencies and query plan errors
 IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_Users_Employee')
@@ -28,6 +31,9 @@ IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_Departments_ParentDep
 GO
 
 -- 2. Safely delete data
+IF OBJECT_ID('dbo.RefreshTokens', 'U') IS NOT NULL DELETE FROM dbo.RefreshTokens;
+IF OBJECT_ID('dbo.UserRoles', 'U') IS NOT NULL DELETE FROM dbo.UserRoles WHERE UserId <> (SELECT Id FROM dbo.Users WHERE Email = 'admin@hrms.com');
+IF OBJECT_ID('dbo.Users', 'U') IS NOT NULL DELETE FROM dbo.Users WHERE Email <> 'admin@hrms.com';
 IF OBJECT_ID('dbo.EmployeeStatusHistories', 'U') IS NOT NULL DELETE FROM dbo.EmployeeStatusHistories;
 IF OBJECT_ID('dbo.AuditLogs', 'U') IS NOT NULL DELETE FROM dbo.AuditLogs;
 IF OBJECT_ID('dbo.OutboxMessages', 'U') IS NOT NULL DELETE FROM dbo.OutboxMessages;
@@ -58,6 +64,7 @@ IF OBJECT_ID('dbo.AttendanceRecords', 'U') IS NOT NULL DELETE FROM dbo.Attendanc
 IF OBJECT_ID('dbo.WorkSchedules', 'U') IS NOT NULL DELETE FROM dbo.WorkSchedules;
 IF OBJECT_ID('dbo.InboxMessages', 'U') IS NOT NULL DELETE FROM dbo.InboxMessages;
 IF OBJECT_ID('dbo.OutboxMessages', 'U') IS NOT NULL DELETE FROM dbo.OutboxMessages;
+IF OBJECT_ID('dbo.LeaveBalances', 'U') IS NOT NULL DELETE FROM dbo.LeaveBalances;
 IF OBJECT_ID('dbo.EmployeeProjections', 'U') IS NOT NULL DELETE FROM dbo.EmployeeProjections WHERE EmployeeCode <> 'EMP000';
 IF OBJECT_ID('dbo.LeaveTypes', 'U') IS NOT NULL DELETE FROM dbo.LeaveTypes;
 IF OBJECT_ID('dbo.Shifts', 'U') IS NOT NULL DELETE FROM dbo.Shifts;

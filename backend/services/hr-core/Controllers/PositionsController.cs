@@ -41,6 +41,7 @@ public class PositionsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin,HR")]
     public async Task<ActionResult<ApiResponse<PositionDto>>> Create([FromBody] CreatePositionDto dto)
     {
         var result = await _positionService.CreateAsync(dto);
@@ -53,6 +54,7 @@ public class PositionsController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Roles = "Admin,HR")]
     public async Task<ActionResult<ApiResponse<PositionDto>>> Update(Guid id, [FromBody] UpdatePositionDto dto)
     {
         var result = await _positionService.UpdateAsync(id, dto);
@@ -65,6 +67,7 @@ public class PositionsController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Roles = "Admin,HR")]
     public async Task<ActionResult<ApiResponse>> Delete(Guid id)
     {
         var result = await _positionService.DeleteAsync(id);

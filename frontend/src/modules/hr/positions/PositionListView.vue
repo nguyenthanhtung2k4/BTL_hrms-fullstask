@@ -11,6 +11,8 @@ import AppBadge from '../../../components/ui/AppBadge.vue'
 import AppConfirm from '../../../components/ui/AppConfirm.vue'
 import AppModal from '../../../components/ui/AppModal.vue'
 import AppInput from '../../../components/ui/AppInput.vue'
+import AppPagination from '../../../components/ui/AppPagination.vue'
+import { usePagination } from '../../../composables/usePagination'
 
 const auth = useAuthStore()
 const toast = useToastStore()
@@ -89,6 +91,8 @@ async function confirmDelete() {
   finally { deleteLoading.value = false }
 }
 
+const { currentPage, perPage, paginatedData, total } = usePagination(filtered)
+
 onMounted(load)
 </script>
 
@@ -109,8 +113,7 @@ onMounted(load)
       </div>
     </div>
 
-    <div class="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
-    <AppTable :columns="columns" :rows="filtered" :loading="loading" row-key="id" empty-text="Chưa có chức vụ nào">
+    <AppTable :page-size="10" :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Chưa có chức vụ nào">
       <template #default="{ row }">
         <td class="px-4 py-3 text-sm font-mono text-slate-600">{{ asPosition(row).code }}</td>
         <td class="px-4 py-3 text-sm font-medium">{{ asPosition(row).name }}</td>
@@ -124,7 +127,7 @@ onMounted(load)
         </td>
       </template>
     </AppTable>
-    </div>
+    <AppPagination :total="total" :current="currentPage" :per-page="perPage" @change="currentPage = $event" @per-page-change="perPage = $event" />
 
     <!-- Form Modal -->
     <AppModal v-if="showForm" :title="editTarget ? 'Sửa chức vụ' : 'Thêm chức vụ'" @close="showForm = false">
@@ -149,3 +152,4 @@ onMounted(load)
     <AppConfirm v-if="deleteTarget" title="Xóa chức vụ" :message="`Xóa chức vụ &quot;${deleteTarget.name}&quot;?`" confirm-text="Xóa" :danger="true" :loading="deleteLoading" @confirm="confirmDelete" @cancel="deleteTarget = null" />
   </div>
 </template>
+

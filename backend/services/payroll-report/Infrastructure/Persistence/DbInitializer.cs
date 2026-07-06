@@ -13,6 +13,42 @@ public static class DbInitializer
         // Ensure database tables exist
         await context.Database.EnsureCreatedAsync();
 
+        // Migrate HireDate column if it does not exist
+        await context.Database.ExecuteSqlRawAsync(
+            "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.EmployeeProjections') AND name = 'HireDate') " +
+            "ALTER TABLE dbo.EmployeeProjections ADD HireDate DATETIME2(0) NOT NULL DEFAULT SYSUTCDATETIME();"
+        );
+
+        // Migrate IsDeleted column if it does not exist
+        await context.Database.ExecuteSqlRawAsync(
+            "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.EmployeeProjections') AND name = 'IsDeleted') " +
+            "BEGIN " +
+            "    ALTER TABLE dbo.EmployeeProjections ADD IsDeleted BIT NOT NULL DEFAULT 0; " +
+            "END"
+        );
+
+        // Migrate advanced fields for PayrollRules if they do not exist
+        await context.Database.ExecuteSqlRawAsync(
+            "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.PayrollRules') AND name = 'GracePeriodMinutes') " +
+            "ALTER TABLE dbo.PayrollRules ADD GracePeriodMinutes INT NOT NULL DEFAULT 15;"
+        );
+        await context.Database.ExecuteSqlRawAsync(
+            "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.PayrollRules') AND name = 'LateDeductionRate') " +
+            "ALTER TABLE dbo.PayrollRules ADD LateDeductionRate DECIMAL(18,2) NOT NULL DEFAULT 0.05;"
+        );
+        await context.Database.ExecuteSqlRawAsync(
+            "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.PayrollRules') AND name = 'WeekendOvertimeRate') " +
+            "ALTER TABLE dbo.PayrollRules ADD WeekendOvertimeRate DECIMAL(18,2) NOT NULL DEFAULT 2.00;"
+        );
+        await context.Database.ExecuteSqlRawAsync(
+            "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.PayrollRules') AND name = 'HolidayOvertimeRate') " +
+            "ALTER TABLE dbo.PayrollRules ADD HolidayOvertimeRate DECIMAL(18,2) NOT NULL DEFAULT 3.00;"
+        );
+        await context.Database.ExecuteSqlRawAsync(
+            "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.PayrollRules') AND name = 'RoundingMinutes') " +
+            "ALTER TABLE dbo.PayrollRules ADD RoundingMinutes INT NOT NULL DEFAULT 15;"
+        );
+
         // 1. Seed Allowance Types
         var allowanceTypes = new[]
         {

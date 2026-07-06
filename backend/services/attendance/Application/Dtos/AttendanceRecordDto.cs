@@ -15,7 +15,10 @@ public record AttendanceRecordDto(
     int WorkedMinutes,
     string Status,
     DateTime CreatedAt,
-    DateTime? UpdatedAt
+    DateTime? UpdatedAt,
+    string? CheckInReason = null,
+    string? CheckOutReason = null
 );
 
-public record CheckInRequest(string ShiftCode);
+public record CheckInRequest(string ShiftCode, string? Reason = null);
+public record CheckOutRequest(string? Reason = null);

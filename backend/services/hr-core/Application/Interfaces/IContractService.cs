@@ -9,6 +9,7 @@ namespace Hrms.HrCore.Application.Interfaces;
 public interface IContractService
 {
     Task<Result<IEnumerable<ContractDto>>> GetAllAsync();
+    Task<Result<IEnumerable<ContractDto>>> GetByEmployeeIdAsync(Guid employeeId);
     Task<Result<ContractDto>> GetByIdAsync(Guid id);
     Task<Result<ContractDto>> CreateAsync(CreateContractDto dto);
     Task<Result<ContractDto>> UpdateAsync(Guid id, UpdateContractDto dto);

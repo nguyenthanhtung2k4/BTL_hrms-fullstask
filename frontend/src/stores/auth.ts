@@ -1,20 +1,19 @@
 import { defineStore } from 'pinia'
 import { authService } from '../services/auth.service'
-import type { UserInfo } from '../types/auth.types'
+import { TOKEN_STORAGE_KEY } from '../services/apiClient'
+import type { UserInfo, ChangePasswordPayload } from '../types/auth.types'
 
-// Backend có thể trả roles dưới dạng string hoặc string[]
-// Normalize về string[] để đồng nhất
+// Backend có thể trả roles dưới dạng string hoặc string[] → normalize
 function normalizeRoles(roles: string | string[] | undefined): string[] {
   if (!roles) return []
   if (Array.isArray(roles)) return roles
-  // "Admin" → ["Admin"] | "Admin,HR" → ["Admin","HR"]
   return roles.split(',').map((r) => r.trim()).filter(Boolean)
 }
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: null as UserInfo | null,
-    token: localStorage.getItem('hrms_token') ?? '',
+    token: localStorage.getItem(TOKEN_STORAGE_KEY) ?? '',
     loading: false,
     initialized: false,
   }),
@@ -25,8 +24,9 @@ export const useAuthStore = defineStore('auth', {
     roles: (state) => state.user?.roles ?? [],
     employeeId: (state) => state.user?.employeeId ?? null,
     userId: (state) => state.user?.id ?? null,
+    avatarUrl: (state) => state.user?.avatarUrl ?? null,
 
-    // Role helpers
+    // Role helpers — giữ nguyên quyền theo đúng spec dự án
     isAdmin: (state) => state.user?.roles.includes('Admin') ?? false,
     isHR: (state) =>
       state.user?.roles.some((r) => ['Admin', 'HR'].includes(r)) ?? false,
@@ -42,22 +42,21 @@ export const useAuthStore = defineStore('auth', {
   },
 
   actions: {
+    // ─── Login ────────────────────────────────────────────────────────────────
     async login(email: string, password: string) {
       this.loading = true
       try {
         const result = await authService.login({ email, password })
         this.token = result.accessToken
-        // Normalize roles: backend có thể trả string hoặc string[]
-        this.user = {
-          ...result.user,
-          roles: normalizeRoles((result.user as any).roles),
-        }
-        localStorage.setItem('hrms_token', result.accessToken)
+        const localAvatar = localStorage.getItem('avatar_' + result.user.id)
+        this.user = { ...result.user, roles: normalizeRoles((result.user as any).roles), avatarUrl: localAvatar || undefined }
+        authService.saveTokens(result.accessToken, result.refreshToken)
       } finally {
         this.loading = false
       }
     },
 
+    // ─── Fetch me (gọi khi app khởi động) ────────────────────────────────────
     async fetchMe() {
       if (!this.token) {
         this.initialized = true
@@ -65,20 +64,63 @@ export const useAuthStore = defineStore('auth', {
       }
       try {
         const me = await authService.getMe()
-        this.user = { ...me, roles: normalizeRoles((me as any).roles) }
+        const localAvatar = localStorage.getItem('avatar_' + me.id)
+        this.user = { ...me, roles: normalizeRoles((me as any).roles), avatarUrl: localAvatar || undefined }
       } catch {
-        // Token hết hạn hoặc không hợp lệ → logout
-        this.logout()
+        // Token không hợp lệ → thử refresh trước khi logout
+        const refreshed = await this.tryRefresh()
+        if (!refreshed) this.logout()
       } finally {
         this.initialized = true
       }
     },
 
-    logout() {
+    // ─── Thử refresh token ────────────────────────────────────────────────────
+    async tryRefresh(): Promise<boolean> {
+      const refreshToken = authService.getRefreshToken()
+      if (!refreshToken) return false
+      try {
+        const result = await authService.refresh(refreshToken)
+        this.token = result.accessToken
+        const localAvatar = localStorage.getItem('avatar_' + result.user.id)
+        this.user = { ...result.user, roles: normalizeRoles((result.user as any).roles), avatarUrl: localAvatar || undefined }
+        authService.saveTokens(result.accessToken, result.refreshToken)
+        return true
+      } catch {
+        return false
+      }
+    },
+
+    // ─── Cập nhật Avatar ──────────────────────────────────────────────────────
+    updateAvatar(base64Image: string) {
+      if (this.user) {
+        this.user.avatarUrl = base64Image
+        localStorage.setItem('avatar_' + this.user.id, base64Image)
+      }
+    },
+
+    // ─── Đổi mật khẩu ────────────────────────────────────────────────────────
+    async changePassword(payload: ChangePasswordPayload): Promise<void> {
+      await authService.changePassword(payload)
+      // Thu hồi refresh token cũ → buộc đăng nhập lại
+      const rt = authService.getRefreshToken()
+      if (rt) {
+        try { await authService.revoke(rt) } catch { /* ignore */ }
+      }
+      this.logout()
+    },
+
+    // ─── Logout ───────────────────────────────────────────────────────────────
+    async logout() {
+      // Thu hồi refresh token ở backend trước
+      const rt = authService.getRefreshToken()
+      if (rt) {
+        try { await authService.revoke(rt) } catch { /* ignore if failed */ }
+      }
       this.user = null
       this.token = ''
       this.initialized = false
-      localStorage.removeItem('hrms_token')
+      authService.clearTokens()
     },
   },
 })

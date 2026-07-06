@@ -207,7 +207,16 @@ public class PayrollPeriodService : IPayrollPeriodService
             return Result.Failure("PeriodClosed", "Cannot recalculate payroll for a closed payroll period.");
         }
 
-        return await _payslipService.CalculatePeriodPayslipsAsync(id);
+        var result = await _payslipService.CalculatePeriodPayslipsAsync(id);
+        if (result.IsSuccess)
+        {
+            period.Status = "Calculated";
+            period.UpdatedAt = DateTime.UtcNow;
+            _dbContext.PayrollPeriods.Update(period);
+            await _dbContext.SaveChangesAsync();
+        }
+
+        return result;
     }
 
     public async Task<Result> CloseAsync(Guid id, Guid closedBy)

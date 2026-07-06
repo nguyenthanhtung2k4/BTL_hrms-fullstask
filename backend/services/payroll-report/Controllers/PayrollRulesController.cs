@@ -11,7 +11,7 @@ namespace Hrms.PayrollReport.Controllers;
 
 [ApiController]
 [Route("api/v1/payroll/payroll-rules")]
-[Authorize]
+[Authorize(Roles = "Admin,PayrollStaff")]
 public class PayrollRulesController : ControllerBase
 {
     private readonly IPayrollRuleService _ruleService;

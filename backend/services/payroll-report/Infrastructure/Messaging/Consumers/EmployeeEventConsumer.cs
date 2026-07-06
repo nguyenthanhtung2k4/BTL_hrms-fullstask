@@ -34,6 +34,7 @@ public class EmployeeEventConsumer : IConsumer<IntegrationEvent<EmployeeProjecti
                 PositionId = payload.PositionId,
                 ManagerEmployeeId = payload.ManagerEmployeeId,
                 Status = payload.Status,
+                HireDate = payload.HireDate,
                 LastSyncedAt = DateTime.UtcNow
             };
             _dbContext.EmployeeProjections.Add(employee);
@@ -47,6 +48,7 @@ public class EmployeeEventConsumer : IConsumer<IntegrationEvent<EmployeeProjecti
             employee.PositionId = payload.PositionId;
             employee.ManagerEmployeeId = payload.ManagerEmployeeId;
             employee.Status = payload.Status;
+            employee.HireDate = payload.HireDate;
             employee.LastSyncedAt = DateTime.UtcNow;
             _dbContext.EmployeeProjections.Update(employee);
         }

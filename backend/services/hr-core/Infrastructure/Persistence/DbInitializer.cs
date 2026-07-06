@@ -14,6 +14,42 @@ public static class DbInitializer
         // Ensure database is created or migrated
         await context.Database.EnsureCreatedAsync();
 
+        // Add IsDeleted column to Employees table if it doesn't exist (Soft delete support)
+        await context.Database.ExecuteSqlRawAsync(
+            "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Employees') AND name = 'IsDeleted') " +
+            "BEGIN " +
+            "    ALTER TABLE dbo.Employees ADD IsDeleted BIT NOT NULL DEFAULT 0; " +
+            "END"
+        );
+
+        // Add AttachmentUrl column to Contracts table if it doesn't exist
+        await context.Database.ExecuteSqlRawAsync(
+            "IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Contracts') AND name = 'AttachmentUrl') " +
+            "BEGIN " +
+            "    ALTER TABLE dbo.Contracts ADD AttachmentUrl NVARCHAR(MAX) NULL; " +
+            "END"
+        );
+
+        // Create Notifications table if not exists
+        await context.Database.ExecuteSqlRawAsync(
+            "IF OBJECT_ID('dbo.Notifications', 'U') IS NULL " +
+            "BEGIN " +
+            "    CREATE TABLE dbo.Notifications ( " +
+            "        Id UNIQUEIDENTIFIER NOT NULL PRIMARY KEY, " +
+            "        EmployeeId UNIQUEIDENTIFIER NULL, " +
+            "        Title NVARCHAR(250) NOT NULL, " +
+            "        Content NVARCHAR(MAX) NOT NULL, " +
+            "        Type NVARCHAR(50) NOT NULL, " +
+            "        IsRead BIT NOT NULL DEFAULT 0, " +
+            "        CreatedAt DATETIME2 NOT NULL, " +
+            "        CreatedBy NVARCHAR(MAX) NULL, " +
+            "        UpdatedAt DATETIME2 NULL, " +
+            "        UpdatedBy NVARCHAR(MAX) NULL, " +
+            "        CONSTRAINT FK_Notifications_Employees_EmployeeId FOREIGN KEY (EmployeeId) REFERENCES dbo.Employees(Id) ON DELETE CASCADE " +
+            "    ); " +
+            "END"
+        );
+
         // Seed Admin role if it does not exist
         var adminRole = await context.Roles.FirstOrDefaultAsync(r => r.Name == "Admin");
         if (adminRole == null)

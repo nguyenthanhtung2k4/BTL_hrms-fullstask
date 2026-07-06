@@ -1,33 +1,13 @@
 <script setup lang="ts">
-// AppButton — Button với các variant, size và loading state
+// AppButton — Reusable button with variants, sizes, loading state, and Dark Mode support
 
 defineProps<{
   variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'success'
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'xs' | 'sm' | 'md' | 'lg'
   loading?: boolean
   disabled?: boolean
   type?: 'button' | 'submit' | 'reset'
-  icon?: string
 }>()
-
-const variantClass: Record<string, string> = {
-  primary:
-    'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 disabled:bg-blue-300',
-  secondary:
-    'bg-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900 focus:ring-slate-300 disabled:opacity-40',
-  danger:
-    'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 disabled:bg-red-300',
-  ghost:
-    'text-slate-600 hover:bg-slate-100 hover:text-slate-900 focus:ring-slate-400 disabled:opacity-40',
-  success:
-    'bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-500 disabled:bg-emerald-300',
-}
-
-const sizeClass: Record<string, string> = {
-  sm: 'h-8 px-3 text-xs gap-1.5',
-  md: 'h-10 px-4 text-sm gap-2',
-  lg: 'h-11 px-5 text-sm gap-2',
-}
 </script>
 
 <template>
@@ -35,27 +15,110 @@ const sizeClass: Record<string, string> = {
     :type="type ?? 'button'"
     :disabled="disabled || loading"
     :class="[
-      'inline-flex items-center justify-center rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed',
-      variantClass[variant ?? 'primary'],
-      sizeClass[size ?? 'md'],
+      'btn',
+      `btn--${variant ?? 'primary'}`,
+      `btn--${size ?? 'md'}`,
+      (disabled || loading) ? 'btn--disabled' : '',
     ]"
   >
     <!-- Loading spinner -->
     <svg
       v-if="loading"
-      class="animate-spin"
-      :class="size === 'sm' ? 'h-3 w-3' : 'h-4 w-4'"
+      class="animate-spin flex-shrink-0"
+      :class="size === 'xs' || size === 'sm' ? 'h-3 w-3' : 'h-4 w-4'"
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 24 24"
     >
       <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-      <path
-        class="opacity-75"
-        fill="currentColor"
-        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-      />
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
     </svg>
     <slot />
   </button>
 </template>
+
+<style scoped>
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  font-size: 0.875rem;
+  line-height: 1;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast),
+    color var(--transition-fast), opacity var(--transition-fast), box-shadow var(--transition-fast);
+  white-space: nowrap;
+  outline: none;
+  gap: 0.5rem;
+}
+.btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Sizes */
+.btn--xs  { height: 1.625rem; padding: 0 0.5rem;  font-size: 0.75rem;  gap: 0.25rem; }
+.btn--sm  { height: 2rem;     padding: 0 0.75rem; font-size: 0.75rem;  gap: 0.375rem; }
+.btn--md  { height: 2.25rem;  padding: 0 1rem;    font-size: 0.875rem; }
+.btn--lg  { height: 2.75rem;  padding: 0 1.25rem; font-size: 0.875rem; }
+
+/* Variants */
+.btn--primary {
+  background: linear-gradient(135deg, var(--color-primary), hsl(165, 80%, 30%)) !important;
+  color: var(--text-inverse) !important;
+  border-color: transparent !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+  transition: all var(--transition-fast) !important;
+}
+.btn--primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--color-primary-hover), hsl(165, 80%, 25%)) !important;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-primary) 30%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+}
+
+.btn--secondary {
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+.btn--secondary:hover:not(:disabled) {
+  background-color: var(--bg-subtle);
+}
+
+.btn--danger {
+  background-color: var(--color-danger);
+  color: white;
+  border-color: var(--color-danger);
+}
+.btn--danger:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+.btn--ghost {
+  background-color: transparent;
+  color: var(--text-secondary);
+  border-color: transparent;
+}
+.btn--ghost:hover:not(:disabled) {
+  background-color: var(--bg-subtle);
+  color: var(--text-primary);
+}
+
+.btn--success {
+  background-color: var(--color-success);
+  color: white;
+  border-color: var(--color-success);
+}
+.btn--success:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+/* Disabled state */
+.btn--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+</style>

@@ -11,6 +11,8 @@ import AppModal from '../../../components/ui/AppModal.vue'
 import AppInput from '../../../components/ui/AppInput.vue'
 import AppBadge from '../../../components/ui/AppBadge.vue'
 import AppConfirm from '../../../components/ui/AppConfirm.vue'
+import AppPagination from '../../../components/ui/AppPagination.vue'
+import { usePagination } from '../../../composables/usePagination'
 
 const auth = useAuthStore()
 const toast = useToastStore()
@@ -72,9 +74,7 @@ async function confirmDelete() {
   finally { deleteLoading.value = false }
 }
 
-function getShift(row: any): Shift {
-  return row as Shift
-}
+const { currentPage, perPage, paginatedData, total } = usePagination(shifts)
 
 onMounted(load)
 </script>
@@ -83,15 +83,14 @@ onMounted(load)
   <div>
     <PageHeader title="Ca làm việc" subtitle="Quản lý các ca làm việc" :breadcrumbs="[{ label: 'Chấm công' }, { label: 'Ca làm việc' }]">
       <template #actions>
-        <AppButton v-if="auth.isHR" @click="openCreate">
+        <AppButton v-if="auth.isManager" @click="openCreate">
           <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
           Thêm ca
         </AppButton>
       </template>
     </PageHeader>
 
-    <div class="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
-    <AppTable :columns="columns" :rows="shifts" :loading="loading" row-key="id" empty-text="Chưa có ca làm việc nào">
+    <AppTable :page-size="10" :columns="columns" :rows="paginatedData" :loading="loading" row-key="id" empty-text="Chưa có ca làm việc nào">
       <template #default="{ row }">
         <td class="px-4 py-3 text-sm font-mono">{{ getShift(row).code }}</td>
         <td class="px-4 py-3 text-sm font-medium">{{ getShift(row).name }}</td>
@@ -101,13 +100,13 @@ onMounted(load)
         <td class="px-4 py-3"><AppBadge :status="getShift(row).isActive ? 'Active' : 'Inactive'" /></td>
         <td class="px-4 py-3 text-right">
           <div class="flex justify-end gap-2">
-            <AppButton v-if="auth.isHR" size="sm" variant="secondary" @click="openEdit(getShift(row))">Sửa</AppButton>
-            <AppButton v-if="auth.isAdmin" size="sm" variant="danger" @click="deleteTarget = getShift(row)">Xóa</AppButton>
+            <AppButton v-if="auth.isManager" size="sm" variant="secondary" @click="openEdit(row as Shift)">Sửa</AppButton>
+            <AppButton v-if="auth.isManager" size="sm" variant="danger" @click="deleteTarget = row as Shift">Xóa</AppButton>
           </div>
         </td>
       </template>
     </AppTable>
-    </div>
+    <AppPagination :total="total" :current="currentPage" :per-page="perPage" @change="currentPage = $event" @per-page-change="perPage = $event" />
 
     <AppModal v-if="showForm" :title="editTarget ? 'Sửa ca làm việc' : 'Thêm ca làm việc'" @close="showForm = false">
       <div class="space-y-4">
@@ -132,3 +131,4 @@ onMounted(load)
     <AppConfirm v-if="deleteTarget" title="Xóa ca làm việc" :message="`Xóa ca &quot;${deleteTarget.name}&quot;?`" confirm-text="Xóa" :danger="true" :loading="deleteLoading" @confirm="confirmDelete" @cancel="deleteTarget = null" />
   </div>
 </template>
+
