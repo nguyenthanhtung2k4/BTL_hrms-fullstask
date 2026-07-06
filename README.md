@@ -292,3 +292,15 @@ Frontend chỉ gọi API Gateway. Không gọi thẳng từng service từ Vue.
 - `docs/01_NHOM_7_HR_CORE_KIEN_TRUC.md`: task nhóm 7.
 - `docs/02_NHOM_8_ATTENDANCE_SERVICE.md`: task nhóm 8.
 - `docs/03_NHOM_9_PAYROLL_REPORT_SERVICE.md`: task nhóm 9.
+
+## 10. Giao diện Demo Hệ thống
+
+Dưới đây là một số hình ảnh demo trực quan về giao diện của hệ thống với 2 vai trò chính:
+
+### 10.1. Giao diện Admin Dashboard (Tổng quan của Quản trị viên)
+Hiển thị tổng số nhân viên, tỷ lệ đi làm trong ngày, các thống kê biến động quỹ lương, tỷ lệ nhân viên theo phòng ban và các hoạt động đăng nhập hệ thống thời gian thực.
+![Admin Dashboard](docs/images/admin_dashboard.png)
+
+### 10.2. Giao diện Phiếu lương của tôi (Vai trò Nhân viên)
+Giao diện trực quan của nhân viên để theo dõi chi tiết lương hàng tháng với bộ lọc tìm kiếm kỳ lương linh hoạt và khả năng chuyển đổi giao diện hiển thị dạng Lưới (Card) hoặc dạng Danh sách (Table).
+![Employee Payslip](docs/images/employee_payslips.png)
